@@ -54,25 +54,36 @@ class Solver(object):
         
         nIterations = num_epochs*iter_per_epoch
         
+        # Epoch
         for j in range(num_epochs):
+            # Batch of items in training set
             for i, data in enumerate(train_loader, 0):
                 
                 it = j*iter_per_epoch + i
+                # Load the items in this batch and their labels from the train_loader
                 inputs, labels = data
+                # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
+                labels = labels.unsqueeze(3)
+
+                # Convert these to cuda types if cuda is available
                 if torch.cuda.is_available():
                     inputs, labels = inputs.cuda(), labels.cuda()
                 
+                # DEPRECATED - calling Variable should no longer be necessary, but leave in for now
                 inputs = Variable(inputs)
                 labels = Variable(labels)
+                # Set the model to training mode
                 model.train()
+                # train the model (forward propgataion) on the inputs
                 outputs = model.forward(inputs)
+                # Apply a natural logarithm to the outputs, i.e. outputs = log_e(outputs)
                 outputs = torch.log(outputs)
+                # Normalize the labels by dividing each value by the sum of values of that item
+                # Create a list of label sums (i.e. one entry per item, each entry is the sum of values in that label)
                 labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
-                temp_1 = labels_sum.contiguous()
-                temp_2 = temp_1.view(*labels_sum.size(), 1, 1)
-                temp_3 = temp_2.expand_as(labels)
-                labels /= temp_3
-                #labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1).expand_as(labels)
+                
+                labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
+                
                 loss = self.loss_func(outputs, labels)
                 optim.zero_grad()
                 loss.backward()
@@ -80,7 +91,7 @@ class Solver(object):
                 
                 if it%log_nth==0:
                     print('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
-                    self.train_loss_history.append(loss.data[0])
+                    self.train_loss_history.append(loss.item())
             
             model.eval()
             
@@ -95,7 +106,7 @@ class Solver(object):
                     outputs_val = model.forward(inputs_val)
                     outputs_val = torch.log(outputs_val)
                     labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
-                    labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1).expand_as(labels)
+                    labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
                     val_loss = self.loss_func(outputs_val, labels_val)
                     self.val_loss_history.append(loss.data[0])
             print('[Epoch %i/%i] TRAIN KLD Loss: %f' % (j, num_epochs, loss.data[0]))
