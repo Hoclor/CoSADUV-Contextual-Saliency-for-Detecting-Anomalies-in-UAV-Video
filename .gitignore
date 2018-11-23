@@ -1,2 +1,3 @@
 *.pth
 *.log
+.vscode/settings.json
