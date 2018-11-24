@@ -1,4 +1,6 @@
 # DSCLRCN-PyTorch
+Initial/base code in this folder cloned from https://github.com/AAshqar/DSCLRCN-PyTorch
+
 PyTorch implementation of https://arxiv.org/abs/1610.01708
 
 - The main file used to run training and testing is 'DSCLRCN_exp.ipynb'. Please have a look at it
