@@ -98,6 +98,8 @@ class Solver(object):
             rand_select = randint(0, len(val_loader)-1)
             for ii, data in enumerate(val_loader, 0):
                 inputs, labels = data
+                # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
+                labels = labels.unsqueeze(3)
                 if rand_select == ii:
                     if torch.cuda.is_available():
                         inputs, labels = inputs.cuda(), labels.cuda()
