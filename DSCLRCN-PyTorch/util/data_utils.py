@@ -49,9 +49,9 @@ def get_SALICON_datasets():
     Load and preprocess the CIFAR-10 dataset.
     """
 
-    mean_image = np.load('C:/Users/simon/Downloads/Project Datasets/SALICON/Transformed/mean_image.npy').astype(np.float32)/255.
+    mean_image = np.load('Dataset/Transformed/mean_image.npy').astype(np.float32)/255.
     
-    with open('C:/Users/simon/Downloads/Project Datasets/SALICON/Transformed/train_datadict.pickle', 'rb') as f:
+    with open('Dataset/Transformed/train_datadict.pickle', 'rb') as f:
         train_data = pickle.load(f)
     X_train = [(image.astype(np.float32)/255. - mean_image).transpose(2,0,1) for image in train_data['images']]
     y_train = [fix_map.astype(np.float32)/255. for fix_map in train_data['fix_maps']]
@@ -59,7 +59,7 @@ def get_SALICON_datasets():
     sys.stdout.write('Progress: 50%\r')
     sys.stdout.flush()
 
-    with open('C:/Users/simon/Downloads/Project Datasets/SALICON/Transformed/val_datadict.pickle', 'rb') as f:
+    with open('Dataset/Transformed/val_datadict.pickle', 'rb') as f:
         val_data = pickle.load(f)
     X_val = [(image.astype(np.float32)/255. - mean_image).transpose(2,0,1) for image in val_data['images']]
     y_val = [fix_map.astype(np.float32)/255. for fix_map in val_data['fix_maps']]
@@ -67,7 +67,7 @@ def get_SALICON_datasets():
     sys.stdout.write('Progress: 75%\r')
     sys.stdout.flush()
 
-    with open('C:/Users/simon/Downloads/Project Datasets/SALICON/Transformed/test_datadict.pickle', 'rb') as f:
+    with open('Dataset/Transformed/test_datadict.pickle', 'rb') as f:
         test_data = pickle.load(f)
     X_test = [(image.astype(np.float32)/255. - mean_image).transpose(2,0,1) for image in test_data['images']]
     y_test = [fix_map.astype(np.float32)/255. for fix_map in test_data['fix_maps']]
