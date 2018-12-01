@@ -110,7 +110,7 @@ class Solver(object):
                     labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
                     labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
                     val_loss = self.loss_func(outputs_val, labels_val)
-                    self.val_loss_history.append(loss.item())
+                    self.val_loss_history.append(val_loss.item())
             print('[Epoch %i/%i] TRAIN KLD Loss: %f' % (j, num_epochs, loss.item()))
             print('[Epoch %i/%i] VAL KLD Loss: %f' % (j, num_epochs, val_loss.item()))
             
