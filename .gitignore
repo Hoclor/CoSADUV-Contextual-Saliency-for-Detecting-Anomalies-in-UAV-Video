@@ -3,10 +3,6 @@
 *.pickle
 *.npy
 
-DSCLRCN-PyTorch/.ipynb_checkpoints/DSCLRCN_exp-checkpoint.ipynb
-DSCLRCN-PyTorch/util/__pycache__/
-
-
 
 
 ### Pre-generated ###
