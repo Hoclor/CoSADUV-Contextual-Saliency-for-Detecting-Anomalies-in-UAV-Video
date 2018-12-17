@@ -122,6 +122,6 @@ def convert_SALICON_Data(input_directory='C:/Users/simon/Downloads/Project Datas
         pickle.dump(val_datadict, f)
     print('Done')
 
-# Execute this function with h=96, w=128 if this file is the main file
+# Execute this function with h=480, w=640 if this file is the main file, and output_directory renamed to reflect this width/height
 if __name__ == "__main__":
-    convert_SALICON_Data(height=96, width=128)
+    convert_SALICON_Data(output_directory='../DSCLRCN-PyTorch/Dataset/Transformed_640x480', height=480, width=640)
