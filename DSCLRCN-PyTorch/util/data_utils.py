@@ -44,14 +44,17 @@ class SaliconData(data.Dataset):
         return len(self.y)
 
     
-def get_SALICON_datasets():
+def get_SALICON_datasets(dataset_folder='Dataset/Transformed/'):
     """
-    Load and preprocess the CIFAR-10 dataset.
+    Load and preprocess the SALICON dataset.
     """
 
-    mean_image = np.load('Dataset/Transformed/mean_image.npy').astype(np.float32)/255.
+    if not dataset_folder.endswith('/'):
+        dataset_folder += '/'
+
+    mean_image = np.load(dataset_folder + 'mean_image.npy').astype(np.float32)/255.
     
-    with open('Dataset/Transformed/train_datadict.pickle', 'rb') as f:
+    with open(dataset_folder + 'train_datadict.pickle', 'rb') as f:
         train_data = pickle.load(f)
     X_train = [(image.astype(np.float32)/255. - mean_image).transpose(2,0,1) for image in train_data['images']]
     y_train = [fix_map.astype(np.float32)/255. for fix_map in train_data['fix_maps']]
@@ -59,7 +62,7 @@ def get_SALICON_datasets():
     sys.stdout.write('Progress: 50%\r')
     sys.stdout.flush()
 
-    with open('Dataset/Transformed/val_datadict.pickle', 'rb') as f:
+    with open(dataset_folder + 'val_datadict.pickle', 'rb') as f:
         val_data = pickle.load(f)
     X_val = [(image.astype(np.float32)/255. - mean_image).transpose(2,0,1) for image in val_data['images']]
     y_val = [fix_map.astype(np.float32)/255. for fix_map in val_data['fix_maps']]
@@ -67,7 +70,7 @@ def get_SALICON_datasets():
     sys.stdout.write('Progress: 75%\r')
     sys.stdout.flush()
 
-    with open('Dataset/Transformed/test_datadict.pickle', 'rb') as f:
+    with open(dataset_folder + 'test_datadict.pickle', 'rb') as f:
         test_data = pickle.load(f)
     X_test = [(image.astype(np.float32)/255. - mean_image).transpose(2,0,1) for image in test_data['images']]
     y_test = [fix_map.astype(np.float32)/255. for fix_map in test_data['fix_maps']]
@@ -79,11 +82,13 @@ def get_SALICON_datasets():
             SaliconData(X_val, y_val),
             SaliconData(X_test, y_test))
 
-def get_SALICON_subset(file_name):
-    
-    mean_image = np.load('Dataset/Transformed/mean_image.npy').astype(np.float32)/255.
+def get_SALICON_subset(file_name, dataset_folder='Dataset/Transformed/'):
+    if not dataset_folder.endswith('/'):
+        dataset_folder += '/'
 
-    with open('Dataset/Transformed/'+file_name, 'rb') as f:
+    mean_image = np.load(dataset_folder + 'mean_image.npy').astype(np.float32)/255.
+
+    with open(dataset_folder + ''+file_name, 'rb') as f:
         data = pickle.load(f)
     X = [image.astype(np.float32)/255. - mean_image for image in data['images']]
     y = [fix_map.astype(np.float32)/255. for fix_map in data['fix_maps']]
