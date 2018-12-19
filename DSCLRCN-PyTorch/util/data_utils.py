@@ -110,8 +110,13 @@ def get_raw_SALICON_datasets(dataset_folder='C:/Users/simon/Downloads/Project Da
         print('Reading dataset from {}'.format(input_directory))
         
         # Read the files and put their names in a list
-        with os.scandir(full_directory) as file_iterator:
-            file_names = [file_object.name for file_object in list(file_iterator)]
+        if os.name == 'posix':
+            # Unix
+            file_names = os.listdir(full_directory)
+        else:
+            # Windows (os.name == 'nt')
+            with os.scandir(full_directory) as file_iterator:
+                file_names = [file_object.name for file_object in list(file_iterator)]
 
         print('')
         print('Reading image files: All')
@@ -146,8 +151,13 @@ def get_raw_SALICON_datasets(dataset_folder='C:/Users/simon/Downloads/Project Da
         print('')
         print('Reading fixation maps: Training')
         full_directory = input_directory + '/fixation maps/train'
-        with os.scandir(full_directory) as file_iterator:
-            file_names = [file_object.name for file_object in list(file_iterator)]
+        if os.name == 'posix':
+            # Unix
+            file_names = os.listdir(full_directory)
+        else:
+            # Windows (os.name == 'nt')
+            with os.scandir(full_directory) as file_iterator:
+                file_names = [file_object.name for file_object in list(file_iterator)]
 
         file_names = sorted(file_names)
         count = 0
@@ -165,8 +175,13 @@ def get_raw_SALICON_datasets(dataset_folder='C:/Users/simon/Downloads/Project Da
         print('')
         print('Reading fixation maps: Validation')
         full_directory = input_directory + '/fixation maps/val'
-        with os.scandir(full_directory) as file_iterator:
-            file_names = [file_object.name for file_object in list(file_iterator)]
+        if os.name == 'posix':
+            # Unix
+            file_names = os.listdir(full_directory)
+        else:
+            # Windows (os.name == 'nt')
+            with os.scandir(full_directory) as file_iterator:
+                file_names = [file_object.name for file_object in list(file_iterator)]
 
         file_names = sorted(file_names)
         count = 0
