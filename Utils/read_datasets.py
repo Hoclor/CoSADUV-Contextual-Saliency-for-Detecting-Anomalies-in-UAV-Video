@@ -33,8 +33,13 @@ def convert_SALICON_Data(input_directory='C:/Users/simon/Downloads/Project Datas
     print('Reading dataset from {}'.format(input_directory))
     
     # Read the files and put their names in a list
-    with os.scandir(full_directory) as file_iterator:
-        file_names = [file_object.name for file_object in list(file_iterator)]
+    if os.name == 'posix':
+        # Unix
+        file_names = os.listdir(full_directory)
+    else:
+        # Windows (os.name == 'nt')
+        with os.scandir(full_directory) as file_iterator:
+            file_names = [file_object.name for file_object in list(file_iterator)]
 
     print('')
     print('Reading image files: All')
@@ -69,9 +74,16 @@ def convert_SALICON_Data(input_directory='C:/Users/simon/Downloads/Project Datas
     print('')
     print('Reading fixation maps: Training')
     full_directory = input_directory + '/fixation maps/train'
-    with os.scandir(full_directory) as file_iterator:
-        file_names = [file_object.name for file_object in list(file_iterator)]
 
+    # Read the files and put their names in a list
+    if os.name == 'posix':
+        # Unix
+        file_names = os.listdir(full_directory)
+    else:
+        # Windows (os.name == 'nt')
+        with os.scandir(full_directory) as file_iterator:
+            file_names = [file_object.name for file_object in list(file_iterator)]
+    
     file_names = sorted(file_names)
     count = 0
     for image_file in tqdm(file_names):
@@ -88,8 +100,15 @@ def convert_SALICON_Data(input_directory='C:/Users/simon/Downloads/Project Datas
     print('')
     print('Reading fixation maps: Validation')
     full_directory = input_directory + '/fixation maps/val'
-    with os.scandir(full_directory) as file_iterator:
-        file_names = [file_object.name for file_object in list(file_iterator)]
+
+    # Read the files and put their names in a list
+    if os.name == 'posix':
+        # Unix
+        file_names = os.listdir(full_directory)
+    else:
+        # Windows (os.name == 'nt')
+        with os.scandir(full_directory) as file_iterator:
+            file_names = [file_object.name for file_object in list(file_iterator)]
 
     file_names = sorted(file_names)
     count = 0
@@ -110,13 +129,22 @@ def convert_SALICON_Data(input_directory='C:/Users/simon/Downloads/Project Datas
     print('Writing Data to {}'.format(output_directory))
     
     print('Writing mean image')
-    np.save(output_directory + '/mean_image.npy', mean_image)
+
+    try:
+        np.save(output_directory + '/mean_image.npy', mean_image)
+    except IOError:
+        # The directory does not exist, so create it and try writing again
+        os.mkdir(output_directory)
+        np.save(output_directory + '/mean_image.npy', mean_image)
+    
     print('Writing Training data')
     with open(output_directory + '/train_datadict.pickle', 'wb') as f:
         pickle.dump(train_datadict, f)
+
     print('Writing Testing data')
     with open(output_directory + '/test_datadict.pickle', 'wb') as f:
         pickle.dump(test_datadict, f)
+
     print('Writing Validation data')
     with open(output_directory + '/val_datadict.pickle', 'wb') as f:
         pickle.dump(val_datadict, f)
@@ -124,4 +152,4 @@ def convert_SALICON_Data(input_directory='C:/Users/simon/Downloads/Project Datas
 
 # Execute this function with h=480, w=640 if this file is the main file, and output_directory renamed to reflect this width/height
 if __name__ == "__main__":
-    convert_SALICON_Data(output_directory='../DSCLRCN-PyTorch/Dataset/Transformed_640x480', height=480, width=640)
+    convert_SALICON_Data(input_directory = '../../', output_directory='../DSCLRCN-PyTorch/Dataset/Transformed_640x480', height=480, width=640)
