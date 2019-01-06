@@ -7,7 +7,6 @@ from torch.autograd import Variable
 
 from random import *
 
-
 class Solver(object):
     default_adam_args = {"lr": 1e-4,
                          "betas": (0.9, 0.999),
@@ -31,6 +30,7 @@ class Solver(object):
         """
         self.train_loss_history = []
         self.val_loss_history = []
+        self.best_val_loss = 1
 
     def train(self, model, train_loader, val_loader, num_epochs=10, log_nth=0):
         """
@@ -111,6 +111,15 @@ class Solver(object):
                     labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
                     val_loss = self.loss_func(outputs_val, labels_val)
                     self.val_loss_history.append(val_loss.item())
+                    # Check if this is the best validation loss so far. If so, save the current model state
+                    if val_loss.item() < self.best_val_loss:
+                        best_val_loss = val_loss
+                        torch.save({
+                            'epoch': j + 1,
+                            'state_dict': model.state_dict(),
+                            'best_accuracy': val_loss.item()
+                        }, 'pretrained/model_state_dict_best_loss_{}.pth'.format(val_loss.item()))
+                    
             print('[Epoch %i/%i] TRAIN KLD Loss: %f' % (j, num_epochs, loss.item()))
             print('[Epoch %i/%i] VAL KLD Loss: %f' % (j, num_epochs, val_loss.item()))
             
