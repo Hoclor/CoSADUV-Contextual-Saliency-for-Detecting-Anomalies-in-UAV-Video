@@ -32,7 +32,7 @@ class Solver(object):
         self.val_loss_history = []
         self.best_val_loss = 1
 
-    def train(self, model, train_loader, val_loader, num_epochs=10, log_nth=0):
+    def train(self, model, train_loader, val_loader, num_epochs=10, log_nth=0, filename_args={}):
         """
         Train a given model with the provided data.
 
@@ -113,12 +113,19 @@ class Solver(object):
                     self.val_loss_history.append(val_loss.item())
                     # Check if this is the best validation loss so far. If so, save the current model state
                     if val_loss.item() < self.best_val_loss:
+                        if len(filename_args) < 3:
+                            filename = 'pretrained/model_state_dict_best_loss_{:6f}.pth'.format(val_loss.item())
+                        else:
+                            filename = 'pretrained/best_model_{}_100_lr4_batch{}_epoch{}.pth'.format(
+                                filename_args['net_type'],
+                                filename_args['batchsize'],
+                                filename_args['epoch_number'])
                         self.best_val_loss = val_loss.item()
                         torch.save({
                             'epoch': j + 1,
                             'state_dict': model.state_dict(),
                             'best_accuracy': val_loss.item()
-                        }, 'pretrained/model_state_dict_best_loss_{:6f}.pth'.format(val_loss.item()))
+                        }, filename)
                     
             print('[Epoch %i/%i] TRAIN KLD Loss: %f' % (j, num_epochs, loss.item()))
             print('[Epoch %i/%i] VAL KLD Loss: %f' % (j, num_epochs, val_loss.item()))
