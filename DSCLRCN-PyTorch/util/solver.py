@@ -93,8 +93,7 @@ class Solver(object):
                 model.train()
                 # train the model (forward propgataion) on the inputs
                 outputs = model(inputs)
-                # transpose the outputsso it's in the order [N, H, W, C]
-                # instead of [N, C, H, W]
+                # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
                 outputs = outputs.transpose(1, 3)
                 outputs = outputs.transpose(1, 2)
         
@@ -127,8 +126,13 @@ class Solver(object):
                         inputs, labels = inputs.cuda(), labels.cuda()
                     inputs_val = Variable(inputs)
                     labels_val = Variable(labels)
+                    
                     outputs_val = model(inputs_val)
+                    # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
+                    outputs_val = outputs_val.transpose(1, 3)
+                    outputs_val = outputs_val.transpose(1, 2)
                     outputs_val = torch.log(outputs_val)
+                    
                     labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
                     labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
                     val_loss = self.loss_func(outputs_val, labels_val)
