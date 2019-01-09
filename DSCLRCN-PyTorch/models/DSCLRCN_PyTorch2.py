@@ -119,10 +119,6 @@ class DSCLRCN(nn.Module):
         
         output_score = output_score.contiguous().view(N, C, H, W)
 
-        # transpose the output_score so it's in the order [N, H, W, C]
-        output_score = output_score.transpose(1, 3)
-        output_score = output_score.transpose(1, 2)
-
         return output_score
 
     
