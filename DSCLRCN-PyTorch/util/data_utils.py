@@ -83,7 +83,8 @@ def get_SALICON_datasets(dataset_folder='Dataset/Transformed/'):
     
     return (SaliconData(X_train, y_train),
             SaliconData(X_val, y_val),
-            SaliconData(X_test, y_test))
+            SaliconData(X_test, y_test),
+            mean_image)
 
 def get_raw_SALICON_datasets(dataset_folder='C:/Users/simon/Downloads/Project Datasets/SALICON/', height=480, width=640):
     """
@@ -258,7 +259,8 @@ def get_raw_SALICON_datasets(dataset_folder='C:/Users/simon/Downloads/Project Da
     
     return (SaliconData(X_train, y_train),
             SaliconData(X_val, y_val),
-            SaliconData(X_test, y_test))
+            SaliconData(X_test, y_test),
+            mean_image)
 
 def get_SALICON_subset(file_name, dataset_folder='Dataset/Transformed/'):
     if not dataset_folder.endswith('/'):
