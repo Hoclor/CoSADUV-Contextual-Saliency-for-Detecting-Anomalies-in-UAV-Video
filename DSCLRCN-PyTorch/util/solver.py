@@ -105,9 +105,9 @@ class Solver(object):
                 outputs = torch.log(outputs)
                 # Normalize the labels by dividing each value by the sum of values of that item
                 # Create a list of label sums (i.e. one entry per item, each entry is the sum of values in that label)
-                labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
+#                 labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
                 
-                labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
+#                 labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
                 
                 loss = self.loss_func(outputs, labels)
                 optim.zero_grad()
@@ -123,7 +123,7 @@ class Solver(object):
             rand_select = randint(0, len(val_loader)-1)
             for ii, data in enumerate(val_loader, 0):
                 inputs, labels = data
-                # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
+                # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
                 labels = labels.unsqueeze(3)
                 if rand_select == ii:
                     if torch.cuda.is_available():
@@ -137,8 +137,8 @@ class Solver(object):
                     outputs_val = outputs_val.transpose(1, 2)
                     outputs_val = torch.log(outputs_val)
                     
-                    labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
-                    labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
+#                     labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
+#                     labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
                     val_loss = self.loss_func(outputs_val, labels_val)
                     self.val_loss_history.append(val_loss.item())
                     # Check if this is the best validation loss so far. If so, save the current model state
