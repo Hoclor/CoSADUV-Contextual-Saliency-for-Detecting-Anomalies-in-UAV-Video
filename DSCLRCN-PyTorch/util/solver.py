@@ -64,8 +64,9 @@ class Solver(object):
         optim.add_param_group(pretrained_param_group)
         self._reset_histories()
         iter_per_epoch = len(train_loader)
-
-
+        
+        # Create the scheduler to allow lr adjustment
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=1/2.5)
 
         print('START TRAIN.')
         
@@ -73,6 +74,9 @@ class Solver(object):
         
         # Epoch
         for j in range(num_epochs):
+            # Downscale the learning rate by a factor of 2.5 (i.e. multiply by 1/2.5) every epoch
+            scheduler.step()
+            
             # Batch of items in training set
             for i, data in enumerate(train_loader, 0):
                 
@@ -139,11 +143,12 @@ class Solver(object):
                     self.val_loss_history.append(val_loss.item())
                     # Check if this is the best validation loss so far. If so, save the current model state
                     if val_loss.item() < self.best_val_loss:
-                        if len(filename_args) < 3:
+                        if len(filename_args) < 4:
                             filename = 'pretrained/model_state_dict_best_loss_{:6f}.pth'.format(val_loss.item())
                         else:
-                            filename = 'pretrained/best_model_{}_100_lr4_batch{}_epoch{}.pth'.format(
+                            filename = 'pretrained/best_model_{}_{}_lr4_batch{}_epoch{}.pth'.format(
                                 filename_args['net_type'],
+                                filename_args['optim'],
                                 filename_args['batchsize'],
                                 filename_args['epoch_number'])
                         self.best_val_loss = val_loss.item()
