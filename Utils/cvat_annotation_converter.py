@@ -215,9 +215,6 @@ def draw_groundtruth(video, annotations, display=False):
         
         # Write the frame with boxes 
         out.write(frame)
-        if frame_count == 700:
-            cv2.imwrite('test.jpg', og_frame)
-            cv2.imwrite('test_GT.jpg', frame)
         # Display the resulting frame
         if display:
             cv2.imshow('frame',frame)
