@@ -64,8 +64,9 @@ class Solver(object):
         optim.add_param_group(pretrained_param_group)
         self._reset_histories()
         iter_per_epoch = len(train_loader)
-
-
+        
+        # Create the scheduler to allow lr adjustment
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=1/2.5)
 
         print('START TRAIN.')
         
@@ -73,6 +74,9 @@ class Solver(object):
         
         # Epoch
         for j in range(num_epochs):
+            # Downscale the learning rate by a factor of 2.5 (i.e. multiply by 1/2.5) every epoch
+            scheduler.step()
+            
             # Batch of items in training set
             for i, data in enumerate(train_loader, 0):
                 
@@ -93,8 +97,7 @@ class Solver(object):
                 model.train()
                 # train the model (forward propgataion) on the inputs
                 outputs = model(inputs)
-                # transpose the outputsso it's in the order [N, H, W, C]
-                # instead of [N, C, H, W]
+                # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
                 outputs = outputs.transpose(1, 3)
                 outputs = outputs.transpose(1, 2)
         
@@ -102,9 +105,9 @@ class Solver(object):
                 outputs = torch.log(outputs)
                 # Normalize the labels by dividing each value by the sum of values of that item
                 # Create a list of label sums (i.e. one entry per item, each entry is the sum of values in that label)
-                labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
+#                 labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
                 
-                labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
+#                 labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
                 
                 loss = self.loss_func(outputs, labels)
                 optim.zero_grad()
@@ -120,26 +123,32 @@ class Solver(object):
             rand_select = randint(0, len(val_loader)-1)
             for ii, data in enumerate(val_loader, 0):
                 inputs, labels = data
-                # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
+                # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
                 labels = labels.unsqueeze(3)
                 if rand_select == ii:
                     if torch.cuda.is_available():
                         inputs, labels = inputs.cuda(), labels.cuda()
                     inputs_val = Variable(inputs)
                     labels_val = Variable(labels)
+                    
                     outputs_val = model(inputs_val)
+                    # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
+                    outputs_val = outputs_val.transpose(1, 3)
+                    outputs_val = outputs_val.transpose(1, 2)
                     outputs_val = torch.log(outputs_val)
-                    labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
-                    labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
+                    
+#                     labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
+#                     labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
                     val_loss = self.loss_func(outputs_val, labels_val)
                     self.val_loss_history.append(val_loss.item())
                     # Check if this is the best validation loss so far. If so, save the current model state
                     if val_loss.item() < self.best_val_loss:
-                        if len(filename_args) < 3:
+                        if len(filename_args) < 4:
                             filename = 'pretrained/model_state_dict_best_loss_{:6f}.pth'.format(val_loss.item())
                         else:
-                            filename = 'pretrained/best_model_{}_100_lr4_batch{}_epoch{}.pth'.format(
+                            filename = 'pretrained/best_model_{}_{}_lr4_batch{}_epoch{}.pth'.format(
                                 filename_args['net_type'],
+                                filename_args['optim'],
                                 filename_args['batchsize'],
                                 filename_args['epoch_number'])
                         self.best_val_loss = val_loss.item()

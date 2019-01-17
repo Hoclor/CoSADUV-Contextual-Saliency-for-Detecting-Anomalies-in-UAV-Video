@@ -1,10 +1,7 @@
 """LocalFeaturesCNN
-This version is a copy of DSCLRCN_PyTorch.py, implemented using
-PyTorch-implemented Bidirectional LSTMs instead of manually-implemented
-BLSTMs (through defining two LSTMs for each BLSTM)
-
+This version is a copy of DSCLRCN_PyTorch.py, implemented using PyTorch
+implemented Bidirectional LSTMs instead of manually-implemented BLSTMs.
 """
-
 import torch
 import torchvision
 import torch.nn as nn
