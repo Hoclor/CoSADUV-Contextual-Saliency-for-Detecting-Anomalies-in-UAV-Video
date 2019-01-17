@@ -93,6 +93,7 @@ class Solver(object):
                 # DEPRECATED - calling Variable should no longer be necessary, but leave in for now
                 inputs = Variable(inputs)
                 labels = Variable(labels)
+                
                 # Set the model to training mode
                 model.train()
                 # train the model (forward propgataion) on the inputs
@@ -100,14 +101,14 @@ class Solver(object):
                 # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
                 outputs = outputs.transpose(1, 3)
                 outputs = outputs.transpose(1, 2)
+                
+                # Individual output values are extremely low due to use of Softmax function (the values in the image add up to 1).
+                # To return the values to the range [0, 1], divide each value by the largest value in the output
+                # INSTEAD of altering the labels by dividing each value by the sum of values in the label
+#                 outputs /= outputs.max()
         
                 # Apply a natural logarithm to the outputs, i.e. outputs = log_e(outputs)
-                outputs = torch.log(outputs)
-                # Normalize the labels by dividing each value by the sum of values of that item
-                # Create a list of label sums (i.e. one entry per item, each entry is the sum of values in that label)
-#                 labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
-                
-#                 labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
+#                 outputs = torch.log(outputs)
                 
                 loss = self.loss_func(outputs, labels)
                 optim.zero_grad()
@@ -135,10 +136,9 @@ class Solver(object):
                     # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
                     outputs_val = outputs_val.transpose(1, 3)
                     outputs_val = outputs_val.transpose(1, 2)
-                    outputs_val = torch.log(outputs_val)
                     
-#                     labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
-#                     labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
+#                     outputs_val = torch.log(outputs_val)
+                    
                     val_loss = self.loss_func(outputs_val, labels_val)
                     self.val_loss_history.append(val_loss.item())
                     # Check if this is the best validation loss so far. If so, save the current model state
