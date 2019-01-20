@@ -1,0 +1,21 @@
+#!/bin/bash
+# 1 Node, 1 core
+#SBATCH -N 1
+#SBATCH -c 1
+# 8GB RAM
+#SBATCH --mem=8G
+# GPU selection, job type, QOS
+#SBATCH --gres=gpu:1
+#SBATCH -p "ug-gpu-small"
+#SBATCH --qos="short"
+# Time limit
+#SBATCH -t 2-0
+# Source the bash profile
+# (required to use the module command)
+source /etc/profile
+# use cuda 9
+module load cuda/9.0
+# Use virtualenv
+source ~/envs/MastersProject/bin/activate
+# Run your program
+python3 DSCLRCN_exp.ipynb
