@@ -31,7 +31,7 @@ def main():
         return -scanpath.mean()
     
     from util.data_utils import OverfitSampler
-    from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
+    from models.DSCLRCN_PyTorch2 import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
 
     batchsize = 10 # Recommended: 20
