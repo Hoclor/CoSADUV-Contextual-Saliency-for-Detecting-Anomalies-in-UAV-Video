@@ -1,0 +1,5 @@
+# Ignore all files in this folder
+*
+# Except myself and README.md
+!.gitignore
+!README.md
