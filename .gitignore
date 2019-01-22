@@ -1,7 +1,15 @@
+# Pretrained models
 *.pth
+
+# IDE settings
 .vscode/settings.json
+
+# Datasets
 *.pickle
 *.npy
+
+# Slurm output
+*.out
 
 ### Pre-generated ###
 
