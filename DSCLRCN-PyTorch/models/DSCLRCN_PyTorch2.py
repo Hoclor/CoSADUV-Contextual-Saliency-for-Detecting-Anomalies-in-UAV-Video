@@ -123,6 +123,7 @@ class DSCLRCN(nn.Module):
         # To return the values to the range [0, 1], divide each value by the largest value in the output
         # INSTEAD of altering the labels by dividing each value by the sum of values in the label
 #         output_result = output_score/output_score.max()
+        output_result = output_score
         
         return output_result
 
