@@ -6,7 +6,6 @@ import torch.nn as nn
 import pickle
 from random import randint
 import sys
-import cv2
 
 def main():
     from util.data_utils import get_SALICON_datasets
