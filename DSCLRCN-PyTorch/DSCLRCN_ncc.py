@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
 import torchvision
 from torch.autograd import Variable
@@ -7,7 +6,6 @@ import torch.nn as nn
 import pickle
 from random import randint
 import sys
-from tqdm import tqdm as tqdm
 import cv2
 
 def main():
