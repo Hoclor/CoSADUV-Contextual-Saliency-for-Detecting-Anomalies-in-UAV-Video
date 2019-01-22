@@ -67,5 +67,5 @@ if __name__ == '__main__':
     #       Subsequently you must call the set_start_method and your main function from inside this
     #       if-statement. If you don't do that, each worker will attempt to run all of your training
     #       code and everything will go very wild and very wrong.
-    torch.multiprocessing.set_start_method('forkserver')
+    torch.multiprocessing.set_start_method('spawn') # spawn, forkserver, or fork
     main()
