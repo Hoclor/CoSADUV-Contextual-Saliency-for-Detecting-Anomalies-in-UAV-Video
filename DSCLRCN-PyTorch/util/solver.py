@@ -106,6 +106,10 @@ class Solver(object):
                 # To return the values to the range [0, 1], divide each value by the largest value in the output
                 # INSTEAD of altering the labels by dividing each value by the sum of values in the label
 #                 outputs /= outputs.max()
+
+                # Normalize the labels into range [0, 1] with sum of values in each image = 1, as this is how the output is structured
+                labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
+                labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
         
                 # Apply a natural logarithm to the outputs, i.e. outputs = log_e(outputs)
 #                 outputs = torch.log(outputs)
@@ -137,6 +141,10 @@ class Solver(object):
                     outputs_val = outputs_val.transpose(1, 3)
                     outputs_val = outputs_val.transpose(1, 2)
                     
+                    # Normalize the labels into range [0, 1] with sum of values in each image = 1, as this is how the output is structured
+                    labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
+                    labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
+                    
 #                     outputs_val = torch.log(outputs_val)
                     
                     val_loss = self.loss_func(outputs_val, labels_val)
@@ -157,6 +165,7 @@ class Solver(object):
                             'state_dict': model.state_dict(),
                             'best_accuracy': val_loss.item()
                         }, filename)
+                        print("Checkpoint created with loss: {}".format(val_loss.item()))
                     
             print('[Epoch %i/%i] TRAIN KLD Loss: %f' % (j, num_epochs, loss.item()))
             print('[Epoch %i/%i] VAL KLD Loss: %f' % (j, num_epochs, val_loss.item()))
