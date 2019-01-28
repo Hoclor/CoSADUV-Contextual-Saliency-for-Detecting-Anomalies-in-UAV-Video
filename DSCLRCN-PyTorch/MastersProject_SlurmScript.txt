@@ -9,7 +9,7 @@
 #SBATCH -p "ug-gpu-small"
 #SBATCH --qos="short"
 # Time limit
-#SBATCH -t 0-4
+#SBATCH -t 04:00:00
 # Source the bash profile
 # (required to use the module command)
 source /etc/profile
