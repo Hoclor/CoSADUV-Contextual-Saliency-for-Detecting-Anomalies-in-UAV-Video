@@ -165,7 +165,7 @@ class Solver(object):
                             'state_dict': model.state_dict(),
                             'best_accuracy': val_loss.item()
                         }, filename)
-                        print("Checkpoint created with loss: {}".format(val_loss.item()))
+                        print("Checkpoint created with loss: {:6f}".format(val_loss.item()))
                     
             print('[Epoch %i/%i] TRAIN KLD Loss: %f' % (j, num_epochs, loss.item()))
             print('[Epoch %i/%i] VAL KLD Loss: %f' % (j, num_epochs, val_loss.item()))
