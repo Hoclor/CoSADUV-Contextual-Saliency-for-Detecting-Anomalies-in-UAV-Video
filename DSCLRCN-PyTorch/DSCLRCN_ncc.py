@@ -1,11 +1,5 @@
-import numpy as np
 import torch
-import torchvision
-from torch.autograd import Variable
-import torch.nn as nn
 import pickle
-from random import randint
-import sys
 
 def main():
     from util.data_utils import get_SALICON_datasets
@@ -19,21 +13,19 @@ def main():
         Computes the Normalized Scanpath Saliency between x (output of a model)
         and y (label). X and Y are assumed to be torch tensors.
         """
-        # Use threshold=0 always
-
         # Normalize x
         x = (x - x.mean())/x.std()
         # Create a binary mask to select values from x where the corresponding y value is > 0
-        mask = y > 0
+        mask = y > 0 #Use threshold=0 always
         scanpath = torch.masked_select(x, mask)
         # return negative mean, as loss is minimized in training
         return -scanpath.mean()
-    
+
     from util.data_utils import OverfitSampler
-    from models.DSCLRCN_PyTorch2 import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
+    from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
 
-    batchsize = 10 # Recommended: 20
+    batchsize = 20 # Recommended: 20
     epoch_number = 10 # Recommended: 10 (epoch_number =~ batchsize/2)
     net_type = 'Seg' # 'Seg' or 'CNN' Recommended: Seg
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
@@ -67,5 +59,6 @@ if __name__ == '__main__':
     #       Subsequently you must call the set_start_method and your main function from inside this
     #       if-statement. If you don't do that, each worker will attempt to run all of your training
     #       code and everything will go very wild and very wrong.
-    torch.multiprocessing.set_start_method('spawn') # spawn, forkserver, or fork
+    torch.multiprocessing.set_start_method('forkserver') # spawn, forkserver, or fork
+    print(torch.multiprocessing.get_start_method())
     main()
