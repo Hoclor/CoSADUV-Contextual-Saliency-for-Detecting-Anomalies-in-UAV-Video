@@ -10,6 +10,10 @@
 #SBATCH --qos="short"
 # Time limit
 #SBATCH -t 04:00:00
+# Job tracking
+#SBATCH --job-name=Model_1
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user simon.gokstorp@durham.ac.uk
 # Source the bash profile
 # (required to use the module command)
 source /etc/profile
