@@ -154,7 +154,7 @@ class Solver(object):
                         if len(filename_args) < 4:
                             filename = 'trained_models/model_state_dict_best_loss_{:6f}.pth'.format(val_loss.item())
                         else:
-                            filename = 'trained_models/best_model_{}_{}_lr4_batch{}_epoch{}.pth'.format(
+                            filename = 'trained_models/best_model_{}_{}_lr2_batch{}_epoch{}.pth'.format(
                                 filename_args['net_type'],
                                 filename_args['optim'],
                                 filename_args['batchsize'],
@@ -167,8 +167,8 @@ class Solver(object):
                         }, filename)
                         print("Checkpoint created with loss: {:6f}".format(val_loss.item()))
                     
-            print('[Epoch %i/%i] TRAIN KLD Loss: %f' % (j, num_epochs, loss.item()))
-            print('[Epoch %i/%i] VAL KLD Loss: %f' % (j, num_epochs, val_loss.item()))
+            print('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, loss.item()))
+            print('[Epoch %i/%i] VAL NSS Loss: %f' % (j, num_epochs, val_loss.item()))
             
         
         print('FINISH.')

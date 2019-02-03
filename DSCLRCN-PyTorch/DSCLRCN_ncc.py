@@ -3,10 +3,14 @@ import pickle
 
 def main():
     from util.data_utils import get_SALICON_datasets
-    # from util.data_utils import get_raw_SALICON_datasets
+    from util.data_utils import get_direct_datasets
 
-    train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
-    #train_data, val_data, test_data, mean_image = get_raw_SALICON_datasets(dataset_folder='/tmp/pbqk24_tmp') # 640x480
+#     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
+    dataset_root_dir = 'Dataset/Raw Dataset'
+    mean_image_name = 'mean_image.npy'
+    img_size = (96, 128) # height, width
+    train_data, val_data, test_data = get_direct_datasets(dataset_root_dir, mean_image_name, img_size)
+
 
     def NSS_loss(x, y):
         """
@@ -21,7 +25,6 @@ def main():
         # return negative mean, as loss is minimized in training
         return -scanpath.mean()
 
-    from util.data_utils import OverfitSampler
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
 
@@ -40,7 +43,7 @@ def main():
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4)
 
     # Attempt to train a model using the original image sizes
-    model = DSCLRCN(input_dim=(96, 128), local_feats_net=net_type)
+    model = DSCLRCN(input_dim=img_size, local_feats_net=net_type)
     # Set solver as torch.optim.SGD and lr as 1e-2, or torch.optim.Adam and lr 1e-4
     solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func)
     solver.train(model, train_loader, val_loader, num_epochs=epoch_number, log_nth=50, filename_args={
@@ -49,8 +52,8 @@ def main():
     )
 
     #Saving the model:
-    model.save('trained_models/model_{}_{}_lr4_batch{}_epoch{}_model1'.format(net_type, optim_str, batchsize, epoch_number))
-    with open('trained_models/solver_{}_{}_lr4_batch{}_epoch{}_model1.pkl'.format(net_type, optim_str, batchsize, epoch_number), 'wb') as outf:
+    model.save('trained_models/model_{}_{}_lr2_batch{}_epoch{}_model1'.format(net_type, optim_str, batchsize, epoch_number))
+    with open('trained_models/solver_{}_{}_lr2_batch{}_epoch{}_model1.pkl'.format(net_type, optim_str, batchsize, epoch_number), 'wb') as outf:
         pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)
 
 if __name__ == '__main__':
