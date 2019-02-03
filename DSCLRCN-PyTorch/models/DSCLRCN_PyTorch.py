@@ -17,6 +17,10 @@ class DSCLRCN(nn.Module):
         super(DSCLRCN, self).__init__()
 
         self.input_dim = input_dim
+        
+        # TEST
+        LSTMs_input_size = (int(128*input_dim[0]/8), int(128*input_dim[1]/8))
+        
         self.LSTMs_isz = LSTMs_input_size
 
         if local_feats_net == 'Seg':
@@ -24,7 +28,7 @@ class DSCLRCN(nn.Module):
         else:
             self.local_feats = LocalFeatsCNN()
 
-        self.context = PlacesCNN()
+        self.context = PlacesCNN(input_dim=input_dim)
 
         self.fc_h = nn.Linear(128, LSTMs_input_size[0])
         self.fc_v = nn.Linear(128, 2*LSTMs_input_size[1])

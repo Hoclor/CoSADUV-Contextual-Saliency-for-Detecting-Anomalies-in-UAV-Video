@@ -3,11 +3,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.places_vgg16 import PlacesCNN as PCNN
+import math
 
 
 class PlacesCNN(nn.Module):
 
-    def __init__(self, model_path='models/places_vgg16/PlacesCNN.pth'):
+    def __init__(self, model_path='models/places_vgg16/PlacesCNN.pth', input_dim=(96, 128)):
         super(PlacesCNN, self).__init__()
 
         complete_model = PCNN.PlacesCNN
@@ -22,7 +23,7 @@ class PlacesCNN(nn.Module):
         
         self.feats.load_state_dict(pretrained_dict)
         
-        self.fc = nn.Linear(512*3*4, 128)
+        self.fc = nn.Linear(512*math.ceil(input_dim[0]/32)*math.ceil(input_dim[1]/32), 128) # (512*3*4, 128)
         
         #self.upsample = nn.Upsample(size=output_dim, mode='bilinear')
                         
