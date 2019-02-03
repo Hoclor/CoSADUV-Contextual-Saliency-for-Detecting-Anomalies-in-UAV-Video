@@ -8,7 +8,7 @@ def main():
 #     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
     dataset_root_dir = 'Dataset/Raw Dataset'
     mean_image_name = 'mean_image.npy'
-    img_size = (96, 128) # height, width
+    img_size = (96, 128) # height, width - original: 480, 640, reimplementation: 96, 128
     train_data, val_data, test_data = get_direct_datasets(dataset_root_dir, mean_image_name, img_size)
 
 
