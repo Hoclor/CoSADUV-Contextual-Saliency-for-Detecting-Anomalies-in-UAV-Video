@@ -11,6 +11,23 @@ def main():
     img_size = (96, 128) # height, width - original: 480, 640, reimplementation: 96, 128
     train_data, val_data, test_data = get_direct_datasets(dataset_root_dir, mean_image_name, img_size)
 
+    def NSS_loss_alt(x, y):
+        """
+        Computes the Normalized Scanpath Saliency between x (output of a model)
+        and y (label). X and Y are assumed to be torch tensors.
+        """
+        # Normalize x
+        x = (x - x.mean())/x.std()
+        # Create a binary mask to select values from x where the corresponding y value is > 0
+        
+        # Compute the element-wise multiplication of x and y
+        scanpath = x * y
+        
+        # NSS = sum(scanpath)/sum(y)
+        nss = scanpath.sum()/y.sum()
+        
+        # NSS loss = -NSS
+        return -nss
 
     def NSS_loss(x, y):
         """
@@ -33,7 +50,7 @@ def main():
     net_type = 'Seg' # 'Seg' or 'CNN' Recommended: Seg
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {'lr': 1e-2} # 1e-2 if SGD, 1e-4 if Adam
-    loss_func = NSS_loss # NSS_loss or torch.nn.KLDivLoss() Recommended: torch.nn.KLDivLoss()
+    loss_func = NSS_loss_alt # NSS_loss or torch.nn.KLDivLoss() Recommended: torch.nn.KLDivLoss()
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
