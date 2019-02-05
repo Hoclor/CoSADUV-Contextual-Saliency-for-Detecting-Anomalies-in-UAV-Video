@@ -14,16 +14,15 @@ def main():
     def NSS_loss_alt(x, y):
         """
         Computes the Normalized Scanpath Saliency between x (output of a model)
-        and y (label). X and Y are assumed to be torch tensors.
+        and y (label). x and y are assumed to be torch tensors.
         """
         # Normalize x
         x = (x - x.mean())/x.std()
-        # Create a binary mask to select values from x where the corresponding y value is > 0
         
         # Compute the element-wise multiplication of x and y
         scanpath = x * y
         
-        # NSS = sum(scanpath)/sum(y)
+        # Compute the sum of the scanpath divided by the sum of values in y as NSS
         nss = scanpath.sum()/y.sum()
         
         # NSS loss = -NSS
