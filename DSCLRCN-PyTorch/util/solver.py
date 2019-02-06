@@ -77,6 +77,9 @@ class Solver(object):
             # Downscale the learning rate by a factor of 2.5 (i.e. multiply by 1/2.5) every epoch
             scheduler.step()
             
+            # Set the model to training mode
+            model.train()
+            
             # Batch of items in training set
             for i, data in enumerate(train_loader, 0):
                 
@@ -94,25 +97,11 @@ class Solver(object):
                 inputs = Variable(inputs)
                 labels = Variable(labels)
                 
-                # Set the model to training mode
-                model.train()
                 # train the model (forward propgataion) on the inputs
                 outputs = model(inputs)
                 # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
                 outputs = outputs.transpose(1, 3)
                 outputs = outputs.transpose(1, 2)
-                
-                # Individual output values are extremely low due to use of Softmax function (the values in the image add up to 1).
-                # To return the values to the range [0, 1], divide each value by the largest value in the output
-                # INSTEAD of altering the labels by dividing each value by the sum of values in the label
-#                 outputs /= outputs.max()
-
-                # Normalize the labels into range [0, 1] with sum of values in each image = 1, as this is how the output is structured
-                labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
-                labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
-        
-                # Apply a natural logarithm to the outputs, i.e. outputs = log_e(outputs)
-#                 outputs = torch.log(outputs)
                 
                 loss = self.loss_func(outputs, labels)
                 optim.zero_grad()
