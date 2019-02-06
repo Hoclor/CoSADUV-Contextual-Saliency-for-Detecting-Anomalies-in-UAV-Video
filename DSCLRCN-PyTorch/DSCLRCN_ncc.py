@@ -20,10 +20,10 @@ def main():
         x = (x - x.mean())/x.std()
         
         # Compute the element-wise multiplication of x and y
-        scanpath = x * y
+        nss = x * y
         
         # Compute the sum of the scanpath divided by the sum of values in y as NSS
-        nss = scanpath.sum()/y.sum()
+        nss = nss.sum()/y.sum()
         
         # NSS loss = -NSS
         return -nss
@@ -44,7 +44,7 @@ def main():
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
 
-    batchsize = 20 # Recommended: 20
+    batchsize = 10 # Recommended: 20
     epoch_number = 10 # Recommended: 10 (epoch_number =~ batchsize/2)
     net_type = 'Seg' # 'Seg' or 'CNN' Recommended: Seg
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
@@ -79,5 +79,5 @@ if __name__ == '__main__':
     #       if-statement. If you don't do that, each worker will attempt to run all of your training
     #       code and everything will go very wild and very wrong.
     torch.multiprocessing.set_start_method('forkserver') # spawn, forkserver, or fork
-    print(torch.multiprocessing.get_start_method())
+    print("Using multiprocessing start method:", torch.multiprocessing.get_start_method())
     main()
