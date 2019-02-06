@@ -10,41 +10,11 @@ def main():
     mean_image_name = 'mean_image.npy'
     img_size = (96, 128) # height, width - original: 480, 640, reimplementation: 96, 128
     train_data, val_data, test_data = get_direct_datasets(dataset_root_dir, mean_image_name, img_size)
-
-    def NSS_loss_alt(x, y):
-        """
-        Computes the Normalized Scanpath Saliency between x (output of a model)
-        and y (label). x and y are assumed to be torch tensors.
-        """
-        # Normalize x
-        x = (x - x.mean())/x.std()
-        
-        # Compute the element-wise multiplication of x and y
-        nss = x * y
-        
-        # Compute the sum of the scanpath divided by the sum of values in y as NSS
-        nss = nss.sum()/y.sum()
-        
-        # NSS loss = -NSS
-        return -nss
-
-    def NSS_loss(x, y):
-        """
-        Computes the Normalized Scanpath Saliency between x (output of a model)
-        and y (label). X and Y are assumed to be torch tensors.
-        """
-        # Normalize x
-        x = (x - x.mean())/x.std()
-        # Create a binary mask to select values from x where the corresponding y value is > 0
-        mask = y > 0 #Use threshold=0 always
-        scanpath = torch.masked_select(x, mask)
-        # return negative mean, as loss is minimized in training
-        return -scanpath.mean()
-
+    
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
 
-    batchsize = 10 # Recommended: 20
+    batchsize = 15 # Recommended: 20
     epoch_number = 10 # Recommended: 10 (epoch_number =~ batchsize/2)
     net_type = 'Seg' # 'Seg' or 'CNN' Recommended: Seg
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
@@ -54,9 +24,9 @@ def main():
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
     #num_train = 100
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batchsize, shuffle=True, num_workers=4)#,
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)#,
                                             #sampler=OverfitSampler(num_train))
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
 
     # Attempt to train a model using the original image sizes
     model = DSCLRCN(input_dim=img_size, local_feats_net=net_type)
@@ -80,4 +50,32 @@ if __name__ == '__main__':
     #       code and everything will go very wild and very wrong.
     torch.multiprocessing.set_start_method('forkserver') # spawn, forkserver, or fork
     print("Using multiprocessing start method:", torch.multiprocessing.get_start_method())
+    
+    def NSS_loss_alt(x, y):
+        """
+        Computes the Normalized Scanpath Saliency between x (output of a model)
+        and y (label). x and y are assumed to be torch tensors.
+        """
+        # Normalize x
+        x = (x - x.mean())/x.std()
+        # Compute the element-wise multiplication of x and y
+        nss = x * y
+        # Compute the sum of the scanpath divided by the sum of values in y as NSS
+        nss = nss.sum()/y.sum()
+        # NSS loss = -NSS
+        return -nss
+
+    def NSS_loss(x, y):
+        """
+        Computes the Normalized Scanpath Saliency between x (output of a model)
+        and y (label). X and Y are assumed to be torch tensors.
+        """
+        # Normalize x
+        x = (x - x.mean())/x.std()
+        # Create a binary mask to select values from x where the corresponding y value is > 0
+        mask = y > 0 #Use threshold=0 always
+        scanpath = torch.masked_select(x, mask)
+        # return negative mean, as loss is minimized in training
+        return -scanpath.mean()
+    
     main()
