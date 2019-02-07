@@ -48,8 +48,7 @@ class SaliconData(data.Dataset):
         return len(self.y)
     
 class DirectSaliconData(data.Dataset):
-    """ Salicon dataset, loaded from image files and dynamically resized as specified
-    """
+    """ Salicon dataset, loaded from image files and dynamically resized as specified"""
     def __init__(self, root_dir, mean_image_name, section, img_size=(96, 128)):
         self.root_dir = root_dir
         self.section = section.lower()
