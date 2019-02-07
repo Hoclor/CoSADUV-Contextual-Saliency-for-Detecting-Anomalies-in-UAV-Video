@@ -4,6 +4,7 @@ import pickle
 def main():
     from util.data_utils import get_SALICON_datasets
     from util.data_utils import get_direct_datasets
+    from tqdm import tqdm
 
 #     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
     dataset_root_dir = 'Dataset/Raw Dataset'
@@ -43,6 +44,93 @@ def main():
     model.save('trained_models/model_{}_{}_lr2_batch{}_epoch{}_model1'.format(net_type, optim_str, batchsize, epoch_number))
     with open('trained_models/solver_{}_{}_lr2_batch{}_epoch{}_model1.pkl'.format(net_type, optim_str, batchsize, epoch_number), 'wb') as outf:
         pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)
+    
+    tqdm.write("Testing model and best checkpoint on SALICON validation set")
+    
+    # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
+    test_losses = []
+    test_loader = torch.utils.data.DataLoader(val_data, batch_size=20, shuffle=True, num_workers=4, pin_memory=True)
+    for data in tqdm(test_loader):
+        inputs, labels = data
+        if torch.cuda.is_available():
+            inputs = Variable(inputs.cuda())
+            labels = Variable(labels.cuda())
+        else:
+            inputs = Variable(inputs)
+            labels = Variable(labels)
+
+        # Produce the output
+        outputs = model(inputs).squeeze()
+        # Move the output to the CPU so we can process it using numpy
+        outputs = outputs.cpu().data.numpy()
+
+        # Resize the images to input size
+        outputs = np.array([cv2.resize(output, (labels.shape[2], labels.shape[1])) for output in outputs])
+
+        # Apply a Gaussian filter to blur the saliency maps
+        sigma = 0.035*min(labels.shape[1], labels.shape[2])
+        outputs = np.array([cv2.GaussianBlur(output, (int(4*sigma), int(4*sigma)), sigma) for output in outputs])
+
+        # Compute the loss and append it to the list
+        labels = labels.cpu().numpy()
+        test_losses.append(NSS_loss(outputs, labels).item())
+    
+    # Delete the model to free up memory, load the best checkpoint of the model, and test this too
+    del model
+    filename = 'trained_models/best_model_{}_{}_lr2_batch{}_epoch{}.pth'.format(
+                                net_type,
+                                optim_str,
+                                batchsize,
+                                epoch_number)
+    
+    # Load the checkpoint
+    if torch.cuda.is_available():
+        checkpoint = torch.load(filename)
+    else:
+        checkpoint = torch.load(filename, map_location='cpu')
+    start_epoch = checkpoint['epoch']
+    best_accuracy = checkpoint['best_accuracy']
+    
+    # Create the model
+    model = DSCLRCN(input_dim=(96, 128), local_feats_net=net_type)
+    model.load_state_dict(checkpoint['state_dict'])
+    if torch.cuda.is_available():
+        model = model.cuda()
+    
+    # Test the checkpoint
+    test_losses_checkpoint = []
+    test_loader = torch.utils.data.DataLoader(val_data, batch_size=20, shuffle=True, num_workers=4, pin_memory=True)
+    for data in tqdm(test_loader):
+        inputs, labels = data
+        if torch.cuda.is_available():
+            inputs = Variable(inputs.cuda())
+            labels = Variable(labels.cuda())
+        else:
+            inputs = Variable(inputs)
+            labels = Variable(labels)
+
+        # Produce the output
+        outputs = model(inputs).squeeze()
+        # Move the output to the CPU so we can process it using numpy
+        outputs = outputs.cpu().data.numpy()
+
+        # Resize the images to input size
+        outputs = np.array([cv2.resize(output, (labels.shape[2], labels.shape[1])) for output in outputs])
+
+        # Apply a Gaussian filter to blur the saliency maps
+        sigma = 0.035*min(labels.shape[1], labels.shape[2])
+        outputs = np.array([cv2.GaussianBlur(output, (int(4*sigma), int(4*sigma)), sigma) for output in outputs])
+
+        # Compute the loss and append it to the list
+        labels = labels.cpu().numpy()
+        test_losses_checkpoint.append(NSS_loss(outputs, labels).item())
+
+    # Print out the result
+    print()
+    print('NSS on Validation set:')
+    print('Last model     : {:6f}'.format(-1*np.mean(test_losses)))
+    print('Best Checkpoint: {:6f}'.format(-1*np.mean(test_losses_checkpoint)))
+
 
 if __name__ == '__main__':
     # Note: You must put all your training code into one function rather than in the global scope
