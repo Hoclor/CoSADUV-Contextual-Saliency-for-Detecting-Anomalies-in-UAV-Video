@@ -13,13 +13,15 @@ def main():
     
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
+    
+    from util.loss_functions import NSS_loss
 
-    batchsize = 15 # Recommended: 20
+    batchsize = 20 # Recommended: 20
     epoch_number = 10 # Recommended: 10 (epoch_number =~ batchsize/2)
     net_type = 'Seg' # 'Seg' or 'CNN' Recommended: Seg
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {'lr': 1e-2} # 1e-2 if SGD, 1e-4 if Adam
-    loss_func = NSS_loss_alt # NSS_loss or torch.nn.KLDivLoss() Recommended: torch.nn.KLDivLoss()
+    loss_func = NSS_loss # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
@@ -49,33 +51,11 @@ if __name__ == '__main__':
     #       if-statement. If you don't do that, each worker will attempt to run all of your training
     #       code and everything will go very wild and very wrong.
     torch.multiprocessing.set_start_method('forkserver') # spawn, forkserver, or fork
-    print("Using multiprocessing start method:", torch.multiprocessing.get_start_method())
     
-    def NSS_loss_alt(x, y):
-        """
-        Computes the Normalized Scanpath Saliency between x (output of a model)
-        and y (label). x and y are assumed to be torch tensors.
-        """
-        # Normalize x
-        x = (x - x.mean())/x.std()
-        # Compute the element-wise multiplication of x and y
-        nss = x * y
-        # Compute the sum of the scanpath divided by the sum of values in y as NSS
-        nss = nss.sum()/y.sum()
-        # NSS loss = -NSS
-        return -nss
-
-    def NSS_loss(x, y):
-        """
-        Computes the Normalized Scanpath Saliency between x (output of a model)
-        and y (label). X and Y are assumed to be torch tensors.
-        """
-        # Normalize x
-        x = (x - x.mean())/x.std()
-        # Create a binary mask to select values from x where the corresponding y value is > 0
-        mask = y > 0 #Use threshold=0 always
-        scanpath = torch.masked_select(x, mask)
-        # return negative mean, as loss is minimized in training
-        return -scanpath.mean()
+    # Use CuDNN with benchmarking for performance improvement - from 1.05 batch20/s to 1.55 batch20/s on Quadro P4000
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True
+    
+    print("Using multiprocessing start method:", torch.multiprocessing.get_start_method())
     
     main()
