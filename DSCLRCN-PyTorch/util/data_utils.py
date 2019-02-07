@@ -14,7 +14,6 @@ from skimage import io, transform
 import pickle
 
 import cv2
-from tqdm import tqdm
 
 class OverfitSampler(object):
     """
