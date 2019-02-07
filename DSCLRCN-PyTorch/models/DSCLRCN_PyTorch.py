@@ -19,7 +19,7 @@ class DSCLRCN(nn.Module):
         self.input_dim = input_dim
         
         # TEST
-        LSTMs_input_size = (int(128*input_dim[0]/8), int(128*input_dim[1]/8))
+        LSTMs_input_size = (128*input_dim[0]//8, 128*input_dim[1]//8)
         
         self.LSTMs_isz = LSTMs_input_size
 

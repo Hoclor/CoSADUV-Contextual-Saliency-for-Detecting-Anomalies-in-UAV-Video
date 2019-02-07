@@ -20,6 +20,10 @@ class DSCLRCN(nn.Module):
         super(DSCLRCN, self).__init__()
 
         self.input_dim = input_dim
+        
+        # TEST
+        LSTMs_input_size = (128*input_dim[0]//8, 128*input_dim[1]//8)
+        
         self.LSTMs_isz = LSTMs_input_size
 
         if local_feats_net == 'Seg':
@@ -35,6 +39,11 @@ class DSCLRCN(nn.Module):
         # Constructing LSTMs:
         self.lstm_h = nn.LSTM(LSTMs_input_size[0], LSTMs_input_size[0], 1, batch_first=True, bidirectional=True)
         self.lstm_v = nn.LSTM(2*LSTMs_input_size[1], 2*LSTMs_input_size[1], 1, batch_first=True, bidirectional=True)
+        
+        # Second SLSTM:
+        self.lstm_h_2 = nn.LSTM(LSTMs_input_size[0], LSTMs_input_size[0], 1, batch_first=True, bidirectional=True)
+        self.lstm_v_2 = nn.LSTM(2*LSTMs_input_size[1], 2*LSTMs_input_size[1], 1, batch_first=True, bidirectional=True)
+        
 
         # Last conv to move to one channel
         self.last_conv = nn.Conv2d(4*128, 1, 1)
