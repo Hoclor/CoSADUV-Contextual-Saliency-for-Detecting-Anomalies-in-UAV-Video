@@ -42,7 +42,7 @@ class DSCLRCN(nn.Module):
 
         # softmax & upsampling
         
-        self.upsample = nn.Upsample(size=input_dim, mode='bilinear')
+        self.upsample = nn.Upsample(size=input_dim, mode='bilinear', align_corners=False) # align_corners=False assumed, default behaviour was changed from True to False from pytorch 0.3.1 to 0.4
         
         self.score = nn.Softmax(dim=2)
 
