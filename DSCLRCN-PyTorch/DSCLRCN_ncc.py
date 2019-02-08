@@ -5,6 +5,9 @@ def main():
     from util.data_utils import get_SALICON_datasets
     from util.data_utils import get_direct_datasets
     from tqdm import tqdm
+    from torch.autograd import Variable
+    import numpy as np
+    import cv2
 
 #     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
     dataset_root_dir = 'Dataset/Raw Dataset'
@@ -21,7 +24,7 @@ def main():
     epoch_number = 10 # Recommended: 10 (epoch_number =~ batchsize/2)
     net_type = 'Seg' # 'Seg' or 'CNN' Recommended: Seg
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
-    optim_args = {'lr': 1e-2} # 1e-2 if SGD, 1e-4 if Adam
+    optim_args = {'lr': 5e-2} # 1e-2 if SGD, 1e-4 if Adam
     loss_func = NSS_loss # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
@@ -96,6 +99,8 @@ def main():
     model.load_state_dict(checkpoint['state_dict'])
     if torch.cuda.is_available():
         model = model.cuda()
+        
+    print("START TEST.")
     
     # Test the checkpoint
     test_losses_checkpoint = []
