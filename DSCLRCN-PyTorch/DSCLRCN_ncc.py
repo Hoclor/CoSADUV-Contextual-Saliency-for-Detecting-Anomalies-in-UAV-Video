@@ -44,8 +44,8 @@ def main():
     )
 
     #Saving the model:
-    model.save('trained_models/model_{}_{}_lr2_batch{}_epoch{}_model1'.format(net_type, optim_str, batchsize, epoch_number))
-    with open('trained_models/solver_{}_{}_lr2_batch{}_epoch{}_model1.pkl'.format(net_type, optim_str, batchsize, epoch_number), 'wb') as outf:
+    model.save('trained_models/model_{}_{}_lr2_batch{}_epoch{}'.format(net_type, optim_str, batchsize, epoch_number))
+    with open('trained_models/solver_{}_{}_lr2_batch{}_epoch{}.pkl'.format(net_type, optim_str, batchsize, epoch_number), 'wb') as outf:
         pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)
     
     tqdm.write("Testing model and best checkpoint on SALICON validation set")
