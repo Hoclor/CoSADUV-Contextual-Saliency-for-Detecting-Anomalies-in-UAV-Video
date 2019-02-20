@@ -12,42 +12,32 @@ except ImportError:
 
 __all__ = ['resnet50']
 
-
-model_urls = {
-    'resnet50': 'http://sceneparsing.csail.mit.edu/model/pretrained_resnet/resnet50-places365.pth',
-}
-
-def conv3x3(in_planes, out_planes, stride=1):
-    "3x3 convolution with padding"
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
-
 class ResNet50(nn.Module):
     def __init__(self, num_classes=365):
         self.inplanes = 64
         super(ResNet50, self).__init__()
         
         # Block 1
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=True)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu1 = nn.ReLU(inplace=True)
         
         self.pool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         
         # Block 2
-        self.conv2 = self._make_layer(ResidualBlock, 64, 3)
+        self.layer1 = self._make_layer(ResidualBlock, 64, 3)
         
         # Block 3
-        self.conv3 = self._make_layer(ResidualBlock, 128, 4, stride=2)
+        self.layer2 = self._make_layer(ResidualBlock, 128, 4, stride=2)
         
         # Block 4
-        self.conv4 = self._make_layer(ResidualBlock, 256, 6, dilation=2)
+        self.layer3 = self._make_layer(ResidualBlock, 256, 6, dilation=2)
         
         # Block 5
-        self.conv5 = self._make_layer(ResidualBlock, 512, 3, dilation=4)
+        self.layer4 = self._make_layer(ResidualBlock, 512, 3, dilation=4)
         
         # FC layer used for training
-        self.fc = nn.Linear(512 * block.expansion, num_classes)
+        self.fc = nn.Linear(512 * ResidualBlock.expansion, num_classes)
 
     def _make_layer(self, block, planes, blocks, stride=1, dilation=1):
         downsample = None
@@ -60,7 +50,7 @@ class ResNet50(nn.Module):
             )
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, dilaton, downsample))
+        layers.append(block(self.inplanes, planes, stride, dilation, downsample))
         # Update self.inplanes to planes * block.expansion, as each block expands the channels of the tensor
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
@@ -72,10 +62,10 @@ class ResNet50(nn.Module):
         x = self.relu1(self.bn1(self.conv1(x)))
         x = self.pool1(x)
 
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
         
         x = x.view(x.size(0), -1)
         x = self.fc(x)
@@ -86,10 +76,11 @@ class ResidualBlock(nn.Module):
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, dilation=2, downsample=None):
-        super(Bottleneck, self).__init__()
+        super(ResidualBlock, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, padding=1, dilation=dilation, bias=False)
+        # padding = dilation to ensure width and height remain the same
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, padding=dilation, dilation=dilation, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * 4)
@@ -118,6 +109,16 @@ class ResidualBlock(nn.Module):
         out = self.relu(out)
 
         return out
+    
+def resnet50(pretrained=False, **kwargs):
+    """Constructs a ResNet-50 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on Places
+    """
+    model = ResNet50(**kwargs)
+    if pretrained:
+        model.load_state_dict(load_url(model_urls['resnet50']))
+    return model
 
 def load_url(url, model_dir='./pretrained', map_location=None):
     if not os.path.exists(model_dir):
