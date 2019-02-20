@@ -24,10 +24,10 @@ class SegmentationNN(nn.Module):
 
     def __init__(self, models_path='models/segmentation_resnet50/'):
         super(SegmentationNN, self).__init__()
-
-        encoder_path = models_path+'encoder_best.pth'
+        
+        encoder_path = models_path+'resnet50_kaggle.pth'
         decoder_path = models_path+'decoder_best.pth'
-
+        
         builder = ModelBuilder()
         self.net_encoder = builder.build_encoder(weights=encoder_path)
         
