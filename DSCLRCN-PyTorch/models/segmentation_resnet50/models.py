@@ -24,8 +24,11 @@ class ModelBuilder():
         # net_encoder.apply(self.weights_init)
         if len(weights) > 0:
             print('Loading weights for net_encoder')
-            net_encoder.load_state_dict(
-                torch.load(weights, map_location=lambda storage, loc: storage))
+            # Filter out unnecessary keys (fc.weight and fc.bias) - code from https://discuss.pytorch.org/t/how-to-load-part-of-pre-trained-model/1113/2
+            weight_dict = torch.load(weights, map_location=lambda storage, loc: storage)
+            
+            filtered_weights = {key: value for key, value in weight_dict.items() if 'fc.' not in key}
+            net_encoder.load_state_dict(filtered_weights)
         return net_encoder
 
     def build_decoder(self, arch='c1_bilinear', fc_dim=512, num_class=150,
@@ -65,19 +68,19 @@ class Resnet(nn.Module):
         self.relu1 = orig_resnet.relu1
         self.pool1 = orig_resnet.pool1
         
-        self.conv2 = orig_resnet.conv2
-        self.conv3 = orig_resnet.conv3
-        self.conv4 = orig_resnet.conv4
-        self.conv5 = orig_resnet.conv5
+        self.layer1 = orig_resnet.layer1
+        self.layer2 = orig_resnet.layer2
+        self.layer3 = orig_resnet.layer3
+        self.layer4 = orig_resnet.layer4
 
     def forward(self, x):
         x = self.relu1(self.bn1(self.conv1(x)))
         x = self.pool1(x)
         
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
         return x
 
 
