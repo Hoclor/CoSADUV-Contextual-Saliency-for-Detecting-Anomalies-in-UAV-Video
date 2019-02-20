@@ -19,7 +19,7 @@ class DSCLRCN(nn.Module):
         self.input_dim = input_dim
         
         # TEST
-        LSTMs_input_size = (128*input_dim[0]//8, 128*input_dim[1]//8)
+        LSTMs_input_size = (512*input_dim[0]//8, 512*input_dim[1]//8)
         
         self.LSTMs_isz = LSTMs_input_size
 
@@ -38,7 +38,7 @@ class DSCLRCN(nn.Module):
         self.lstm_v = nn.LSTM(2*LSTMs_input_size[1], 2*LSTMs_input_size[1], 1, batch_first=True)
 
         # Last conv to move to one channel
-        self.last_conv = nn.Conv2d(4*128, 1, 1)
+        self.last_conv = nn.Conv2d(4*512, 1, 1)
 
         # softmax & upsampling
         
@@ -61,6 +61,7 @@ class DSCLRCN(nn.Module):
         
         local_feats = self.local_feats(x)
         H_lf, W_lf = local_feats.size()[2:]
+        
         context = self.context(x)
         
         perm_h = np.arange(W_lf-1, -1, -1)
@@ -77,12 +78,12 @@ class DSCLRCN(nn.Module):
         # 1st LSTM
         output_h1, hz1 = self.lstm_h(local_feats_h1)
         output_h1 = output_h1[:,1:,:]
-        output_h1 = output_h1.contiguous().view(N, 128, H_lf, W_lf)
+        output_h1 = output_h1.contiguous().view(N, 512, H_lf, W_lf)
         
         # 2nd LSTM
         output_h2, hz2 = self.lstm_h(local_feats_h2)
         output_h2 = output_h2[:,1:,:]
-        output_h2 = output_h2.contiguous().view(N, 128, H_lf, W_lf)
+        output_h2 = output_h2.contiguous().view(N, 512, H_lf, W_lf)
         
         output_h12 = torch.cat((output_h1, output_h2), dim=1)
         
@@ -97,12 +98,12 @@ class DSCLRCN(nn.Module):
         # 3rd LSTM
         output_h12v1, hz3 = self.lstm_v(output_h12v1)
         output_h12v1 = output_h12v1[:,1:,:]
-        output_h12v1 = output_h12v1.contiguous().view(N, 2*128, H_lf, W_lf)
+        output_h12v1 = output_h12v1.contiguous().view(N, 2*512, H_lf, W_lf)
         
         # 4th LSTM
         output_h12v2, hz4 = self.lstm_v(output_h12v2)
         output_h12v2 = output_h12v2[:,1:,:]
-        output_h12v2 = output_h12v2.contiguous().view(N, 2*128, H_lf, W_lf)
+        output_h12v2 = output_h12v2.contiguous().view(N, 2*512, H_lf, W_lf)
         
         output_h12v12 = torch.cat((output_h12v1, output_h12v2), dim=1)
         
@@ -118,12 +119,8 @@ class DSCLRCN(nn.Module):
         
         output_score = output_score.contiguous().view(N, C, H, W)
         
-        # Individual output values are extremely low due to use of Softmax function (the values in the image add up to 1).
-        # To return the values to the range [0, 1], divide each value by the largest value in the output
-        # INSTEAD of altering the labels by dividing each value by the sum of values in the label
-#         output_result = output_score/output_score.max()
         output_result = output_score
-
+        
         return output_result
 
     
