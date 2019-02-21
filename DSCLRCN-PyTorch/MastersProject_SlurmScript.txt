@@ -12,14 +12,15 @@
 #SBATCH -t 04:00:00
 # Job tracking
 #SBATCH --job-name=Model_1
-#SBATCH --mail-type=ALL
+#SBATCH --mail-type ALL
 #SBATCH --mail-user simon.gokstorp@durham.ac.uk
 # Source the bash profile
 # (required to use the module command)
 source /etc/profile
 # use cuda 9
-module load cuda/9.0
+module load cuda/9.2
 # Use virtualenv
 source ~/envs/MastersProject/bin/activate
 # Run your program
-python3 DSCLRCN_ncc.py
+stdbuf -oL python3 DSCLRCN_ncc.py
+#python3 DSCLRCN_ncc.py
