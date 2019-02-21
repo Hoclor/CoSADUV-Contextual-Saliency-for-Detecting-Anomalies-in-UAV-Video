@@ -19,7 +19,7 @@ class Solver(object):
                         "momentum": 0.9}
 
     def __init__(self, optim=torch.optim.Adam, optim_args={},
-                 loss_func=torch.nn.KLDivLoss()):
+                 loss_func=torch.nn.KLDivLoss(), location='ncc'):
         if optim == torch.optim.Adam:
             optim_args_merged = self.default_adam_args.copy()
         else:
@@ -30,6 +30,8 @@ class Solver(object):
         self.loss_func = loss_func
 
         self._reset_histories()
+
+        self.location = location
 
     def _reset_histories(self):
         """
@@ -74,16 +76,29 @@ class Solver(object):
         
         nIterations = num_epochs*iter_per_epoch
         
+        epoch_loop = range(num_epochs)
+        if self.location != 'ncc':
+            epoch_loop = tqdm(epoch_loop)
+
         # Epoch
-        for j in tqdm(range(num_epochs)):
+        for j in epoch_loop:
+            train_loss_logs = 0
             # Downscale the learning rate by a factor of 2.5 (i.e. multiply by 1/2.5) every epoch
             scheduler.step()
-            
+            print('Starting an epoch')
+
             # Set the model to training mode
             model.train()
-            
+
+            if self.location != 'ncc':
+                train_loop = enumerate(tqdm(train_loader), 0)
+            else:
+                print('enumerating train_loader')
+                train_loop = enumerate(train_loader, 0)
+                print('train_loader enumerated')
+
             # Batch of items in training set
-            for i, data in enumerate(tqdm(train_loader), 0):
+            for i, data in train_loop:
                 
                 it = j*iter_per_epoch + i
                 # Load the items in this batch and their labels from the train_loader
@@ -113,6 +128,7 @@ class Solver(object):
                 if it%log_nth==0:
                     tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
                     self.train_loss_history.append(loss.item())
+                    train_loss_logs += 1
                 
                 # Free up memory
                 del loss, outputs
@@ -165,7 +181,8 @@ class Solver(object):
                     # Free up memory
                     del val_loss, outputs_val
                     
-            tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, self.train_loss_history[-1]))
+            # Print the average Train loss for the last epoch (avg of the logged losses, as decided by lo_nth value)
+            tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, sum(self.train_loss_history[-train_loss_logs:])/train_loss_logs))
             tqdm.write('[Epoch %i/%i] VAL NSS Loss: %f' % (j, num_epochs, self.val_loss_history[-1]))
             
         
