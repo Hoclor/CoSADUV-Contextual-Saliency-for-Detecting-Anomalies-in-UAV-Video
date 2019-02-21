@@ -1,16 +1,23 @@
-import torch
-import pickle
+#import torch
 
 def main():
+    location = 'ncc' # ncc or '', where the code is to be run (affects output)
+    if location == 'ncc':
+        print_func = print
+    else:
+        print_func = tqdm.write
+
+
     from util.data_utils import get_SALICON_datasets
     from util.data_utils import get_direct_datasets
     from tqdm import tqdm
     from torch.autograd import Variable
     import numpy as np
     import cv2
+    import pickle
 
 #     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
-    dataset_root_dir = 'Dataset/Raw Dataset'
+    dataset_root_dir = '/home2/pbqk24/GitRepositories/MastersProject/DSCLRCN-PyTorch/Dataset/Raw_Dataset'
     mean_image_name = 'mean_image.npy'
     img_size = (96, 128) # height, width - original: 480, 640, reimplementation: 96, 128
     train_data, val_data, test_data = get_direct_datasets(dataset_root_dir, mean_image_name, img_size)
@@ -24,15 +31,15 @@ def main():
     epoch_number = 10 # Recommended: 10 (epoch_number =~ batchsize/2)
     net_type = 'Seg' # 'Seg' or 'CNN' Recommended: Seg
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
-    optim_args = {'lr': 5e-2} # 1e-2 if SGD, 1e-4 if Adam
+    optim_args = {'lr': 1e-2} # 1e-2 if SGD, 1e-4 if Adam
     loss_func = NSS_loss # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
     #num_train = 100
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)#,
-                                            #sampler=OverfitSampler(num_train))
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batchsize, shuffle=True, num_workers=8, pin_memory=True)
+
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=8, pin_memory=True)
 
     # Attempt to train a model using the original image sizes
     model = DSCLRCN(input_dim=img_size, local_feats_net=net_type)
@@ -48,12 +55,17 @@ def main():
     with open('trained_models/solver_{}_{}_lr2_batch{}_epoch{}.pkl'.format(net_type, optim_str, batchsize, epoch_number), 'wb') as outf:
         pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)
     
-    tqdm.write("Testing model and best checkpoint on SALICON validation set")
+    print_func("Testing model and best checkpoint on SALICON validation set")
     
     # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
     test_losses = []
     test_loader = torch.utils.data.DataLoader(val_data, batch_size=20, shuffle=True, num_workers=4, pin_memory=True)
-    for data in tqdm(test_loader):
+    
+    looper=test_loader
+    if location != 'ncc':
+        looper=tqdm(looper)
+
+    for data in looper:
         inputs, labels = data
         if torch.cuda.is_available():
             inputs = Variable(inputs.cuda())
@@ -105,7 +117,12 @@ def main():
     # Test the checkpoint
     test_losses_checkpoint = []
     test_loader = torch.utils.data.DataLoader(val_data, batch_size=20, shuffle=True, num_workers=4, pin_memory=True)
-    for data in tqdm(test_loader):
+    
+    looper = test_loader
+    if location != 'ncc':
+        looper = tqdm(looper)
+    
+    for data in looper:
         inputs, labels = data
         if torch.cuda.is_available():
             inputs = Variable(inputs.cuda())
@@ -143,11 +160,12 @@ if __name__ == '__main__':
     #       Subsequently you must call the set_start_method and your main function from inside this
     #       if-statement. If you don't do that, each worker will attempt to run all of your training
     #       code and everything will go very wild and very wrong.
+    import torch
     torch.multiprocessing.set_start_method('forkserver') # spawn, forkserver, or fork
     
     # Use CuDNN with benchmarking for performance improvement - from 1.05 batch20/s to 1.55 batch20/s on Quadro P4000
-    torch.backends.cudnn.enabled = True
-    torch.backends.cudnn.benchmark = True
+    #torch.backends.cudnn.enabled = True
+    #torch.backends.cudnn.benchmark = True
     
     print("Using multiprocessing start method:", torch.multiprocessing.get_start_method())
     
