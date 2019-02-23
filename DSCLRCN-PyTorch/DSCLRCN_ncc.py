@@ -37,9 +37,9 @@ def main():
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
     #num_train = 100
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batchsize, shuffle=True, num_workers=8, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batchsize, shuffle=True, num_workers=8, pin_memory=False)
 
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=8, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=8, pin_memory=False)
 
     # Attempt to train a model using the original image sizes
     model = DSCLRCN(input_dim=img_size, local_feats_net=net_type)
