@@ -17,7 +17,7 @@ class L2Norm(nn.Module):
 
     def forward(self, x):
         norm = x.pow(2).sum(dim=1, keepdim=True).sqrt()+self.eps
-        x = x / norm * self.weight.view(1,-1,1,1)
+        x = x / norm * self.weight.view(1,-1)
         return x
 
 class PlacesCNN(nn.Module):
@@ -53,7 +53,6 @@ class PlacesCNN(nn.Module):
         """
         
         x = self.relu(self.feats(x))
-        
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         
