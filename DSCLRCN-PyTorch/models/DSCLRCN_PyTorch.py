@@ -13,13 +13,15 @@ import numpy as np
 
 class DSCLRCN(nn.Module):
 
-    def __init__(self, input_dim=(96, 128), LSTMs_input_size=(128*12, 128*16), local_feats_net='CNN'):#, LSTM_hs=256):
+    def __init__(self, input_dim=(96, 128), local_feats_net='CNN'):
         super(DSCLRCN, self).__init__()
 
         self.input_dim = input_dim
         
-        # TEST
-        LSTMs_input_size = (128*input_dim[0]//8, 128*input_dim[1]//8)
+        # Input size of the LSTMs
+        # LSTM_1 input size: channel * height, of local_feats output (i.e. 512 * input_height/8)
+        # LSTM_2 input size: 256 * width (2 * 128 as LSTMs output 128 values, *2 for bidirectional LSTMs)
+        self.LSTMs_isz = (128*input_dim[0]//8, 256*input_dim[1]//8)
         
         self.LSTMs_isz = LSTMs_input_size
 
