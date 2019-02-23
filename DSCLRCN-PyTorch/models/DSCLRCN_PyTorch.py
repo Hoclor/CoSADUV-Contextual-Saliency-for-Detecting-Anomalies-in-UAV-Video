@@ -61,8 +61,11 @@ class DSCLRCN(nn.Module):
         N = x.size(0)
         H,W = self.input_dim
         
+        # Get local feature map
         local_feats = self.local_feats(x)
         H_lf, W_lf = local_feats.size()[2:]
+        
+        # Get scene feature information
         context = self.context(x)
         
         perm_h = np.arange(W_lf-1, -1, -1)
@@ -113,20 +116,14 @@ class DSCLRCN(nn.Module):
         N, C, H_l, W_l, = output_conv.size()
         
         # Upsampling
+        output_upsampled = nn.functional.interpolate(output_conv, size=self.input_dim, mode='bilinear', align_corners=False) # align_corners=False assumed, default behaviour was changed from True to False from pytorch 0.3.1 to 0.4
         
-        output_upsampled = self.upsample(output_conv)
-        
+        # Softmax scoring
         output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
         
         output_score = output_score.contiguous().view(N, C, H, W)
         
-        # Individual output values are extremely low due to use of Softmax function (the values in the image add up to 1).
-        # To return the values to the range [0, 1], divide each value by the largest value in the output
-        # INSTEAD of altering the labels by dividing each value by the sum of values in the label
-#         output_result = output_score/output_score.max()
-        output_result = output_score
-
-        return output_result
+        return output_score
 
     
     @property
