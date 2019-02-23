@@ -131,7 +131,7 @@ class Solver(object):
                     train_loss_logs += 1
                 
                 # Free up memory
-                del loss, outputs
+                del loss, inputs, outputs, labels
             
             model.eval()
             
@@ -152,13 +152,8 @@ class Solver(object):
                     outputs_val = outputs_val.transpose(1, 3)
                     outputs_val = outputs_val.transpose(1, 2)
                     
-                    # Normalize the labels into range [0, 1] with sum of values in each image = 1, as this is how the output is structured
-                    labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
-                    labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
-                    
-#                     outputs_val = torch.log(outputs_val)
-                    
                     val_loss = self.loss_func(outputs_val, labels_val)
+                    
                     self.val_loss_history.append(val_loss.item())
                     # Check if this is the best validation loss so far. If so, save the current model state
                     if val_loss.item() < self.best_val_loss:
@@ -179,7 +174,7 @@ class Solver(object):
                         tqdm.write("Checkpoint created with loss: {:6f}".format(val_loss.item()))
                     
                     # Free up memory
-                    del val_loss, outputs_val
+                    del val_loss, inputs_val, outputs_val, labels_val
                     
             # Print the average Train loss for the last epoch (avg of the logged losses, as decided by log_nth value)
             tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, sum(self.train_loss_history[-train_loss_logs:])/train_loss_logs))
