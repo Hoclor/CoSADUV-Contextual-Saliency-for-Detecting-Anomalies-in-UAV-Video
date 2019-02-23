@@ -13,15 +13,20 @@ import numpy as np
 
 class DSCLRCN(nn.Module):
 
-    def __init__(self, input_dim=(96, 128), LSTMs_input_size=(128*12, 128*16), local_feats_net='CNN'):#, LSTM_hs=256):
+    def __init__(self, input_dim=(96, 128), local_feats_net='CNN'):
         super(DSCLRCN, self).__init__()
 
         self.input_dim = input_dim
         
-        # TEST
-        LSTMs_input_size = (512*input_dim[0]//8, 512*input_dim[1]//8)
+        # Input size of the LSTMs
+        # LSTM_1 input size: channel * height, of local_feats output (i.e. 512 * input_height/8)
+        # LSTM_2 input size: 256 * width (2 * 128 as LSTMs output 128 values, *2 for bidirectional LSTMs)
+        self.LSTMs_isz = (128*input_dim[0]//8, 256*input_dim[1]//8)
         
-        self.LSTMs_isz = LSTMs_input_size
+        # Hidden size of the LSTMs
+        # LSTM_1 hidden size: 128 * height (of local_feats output)
+        # LSTM_2 hidden size: 128 * width (of local_feats output)
+        self.LSTMs_hsz = (128*input_dim[0]//8, 128*input_dim[1]//8)
 
         if local_feats_net == 'Seg':
             self.local_feats = SegmentationNN()
@@ -30,20 +35,17 @@ class DSCLRCN(nn.Module):
 
         self.context = PlacesCNN(input_dim=input_dim)
 
-        self.fc_h = nn.Linear(128, LSTMs_input_size[0])
-        self.fc_v = nn.Linear(128, 2*LSTMs_input_size[1])
+        self.fc_h = nn.Linear(128, self.LSTMs_isz[0])
+        self.fc_v = nn.Linear(128, self.LSTMs_isz[1])
 
         # Constructing LSTMs:
-        self.lstm_h = nn.LSTM(LSTMs_input_size[0], LSTMs_input_size[0], 1, batch_first=True)
-        self.lstm_v = nn.LSTM(2*LSTMs_input_size[1], 2*LSTMs_input_size[1], 1, batch_first=True)
+        self.lstm_h = nn.LSTM(input_size=self.LSTMs_isz[0], hidden_size=self.LSTMs_hsz[0], num_layers=1, batch_first=True, bidirectional=True)
+        self.lstm_v = nn.LSTM(input_size=self.LSTMs_isz[1], hidden_size=self.LSTMs_hsz[1], num_layers=1, batch_first=True, bidirectional=True)
 
         # Last conv to move to one channel
-        self.last_conv = nn.Conv2d(4*512, 1, 1)
+        self.last_conv = nn.Conv2d(2*128, 1, 1)
 
-        # softmax & upsampling
-        
-        self.upsample = nn.Upsample(size=input_dim, mode='bilinear', align_corners=False) # align_corners=False assumed, default behaviour was changed from True to False from pytorch 0.3.1 to 0.4
-        
+        # softmax
         self.score = nn.Softmax(dim=2)
 
 
@@ -59,69 +61,53 @@ class DSCLRCN(nn.Module):
         N = x.size(0)
         H,W = self.input_dim
         
+        # Get local feature map
         local_feats = self.local_feats(x)
         H_lf, W_lf = local_feats.size()[2:]
         
+        # Get scene feature information
         context = self.context(x)
-        
-        perm_h = np.arange(W_lf-1, -1, -1)
-        perm_v = np.arange(H_lf-1, -1, -1)
         
         # Including Context:
         context_h = self.fc_h(context)
         context_h = context_h.contiguous().view(N, 1, self.LSTMs_isz[0])
         local_feats_h = local_feats.contiguous().view(N, W_lf, self.LSTMs_isz[0])
-        local_feats_h1 = torch.cat((context_h, local_feats_h), dim=1)
-        local_feats_h2 = local_feats_h[:, perm_h, :]
-        local_feats_h2 = torch.cat((context_h, local_feats_h2), dim=1)
-        
-        # 1st LSTM
-        output_h1, hz1 = self.lstm_h(local_feats_h1)
-        output_h1 = output_h1[:,1:,:]
-        output_h1 = output_h1.contiguous().view(N, 512, H_lf, W_lf)
-        
-        # 2nd LSTM
-        output_h2, hz2 = self.lstm_h(local_feats_h2)
-        output_h2 = output_h2[:,1:,:]
-        output_h2 = output_h2.contiguous().view(N, 512, H_lf, W_lf)
-        
-        output_h12 = torch.cat((output_h1, output_h2), dim=1)
+        lstm_input_h = torch.cat((context_h, local_feats_h), dim=1)
+                
+        # Horizontal BLSTM
+        output_h, _ = self.lstm_h(lstm_input_h)
+        # Remove the output from the context (this is included in the other values through cell memory)
+        output_h = output_h[:,1:,:]
+        # Resize the output to (C, H, W)
+        output_h = output_h.contiguous().view(N, 2*128, H_lf, W_lf)
         
         # Including Context:
         context_v = self.fc_v(context)
-        context_v = context_v.contiguous().view(N, 1, 2*self.LSTMs_isz[1])
-        output_h12v = output_h12.contiguous().view(N, H_lf, 2*self.LSTMs_isz[1])
-        output_h12v1 = torch.cat((context_v, output_h12v), dim=1)
-        output_h12v2 = output_h12v[:, perm_v, :]
-        output_h12v2 = torch.cat((context_v, output_h12v2), dim=1)
+        context_v = context_v.contiguous().view(N, 1, self.LSTMs_isz[1])
+        output_hv = output_h.contiguous().view(N, H_lf, self.LSTMs_isz[1])
+        output_hv = torch.cat((context_v, output_hv), dim=1)
         
-        # 3rd LSTM
-        output_h12v1, hz3 = self.lstm_v(output_h12v1)
-        output_h12v1 = output_h12v1[:,1:,:]
-        output_h12v1 = output_h12v1.contiguous().view(N, 2*512, H_lf, W_lf)
+        # Vertical BLSTM
+        output_hv, _ = self.lstm_v(output_hv)
+        # Remove the output from the context (this is included in the other values through cell memory)
+        output_hv = output_hv[:,1:,:]
+        # Resize the output to (C, H, W)
+        output_hv = output_hv.contiguous().view(N, 2*128, H_lf, W_lf)
         
-        # 4th LSTM
-        output_h12v2, hz4 = self.lstm_v(output_h12v2)
-        output_h12v2 = output_h12v2[:,1:,:]
-        output_h12v2 = output_h12v2.contiguous().view(N, 2*512, H_lf, W_lf)
-        
-        output_h12v12 = torch.cat((output_h12v1, output_h12v2), dim=1)
-        
-        output_conv = self.last_conv(output_h12v12)
+        # Reduce channel dimension to 1
+        output_conv = self.last_conv(output_hv)
         
         N, C, H_l, W_l, = output_conv.size()
         
         # Upsampling
+        output_upsampled = nn.functional.interpolate(output_conv, size=self.input_dim, mode='bilinear', align_corners=False) # align_corners=False assumed, default behaviour was changed from True to False from pytorch 0.3.1 to 0.4
         
-        output_upsampled = self.upsample(output_conv)
-        
+        # Softmax scoring
         output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
         
         output_score = output_score.contiguous().view(N, C, H, W)
-        
-        output_result = output_score
-        
-        return output_result
+
+        return output_score
 
     
     @property
