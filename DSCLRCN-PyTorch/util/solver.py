@@ -114,7 +114,7 @@ class Solver(object):
                 inputs = Variable(inputs)
                 labels = Variable(labels)
                 
-                # train the model (forward propgataion) on the inputs
+                # train the model (forward propagation) on the inputs
                 outputs = model(inputs)
                 # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
                 outputs = outputs.transpose(1, 3)
@@ -181,7 +181,7 @@ class Solver(object):
                     # Free up memory
                     del val_loss, outputs_val
                     
-            # Print the average Train loss for the last epoch (avg of the logged losses, as decided by lo_nth value)
+            # Print the average Train loss for the last epoch (avg of the logged losses, as decided by log_nth value)
             tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, sum(self.train_loss_history[-train_loss_logs:])/train_loss_logs))
             tqdm.write('[Epoch %i/%i] VAL NSS Loss: %f' % (j, num_epochs, self.val_loss_history[-1]))
             
