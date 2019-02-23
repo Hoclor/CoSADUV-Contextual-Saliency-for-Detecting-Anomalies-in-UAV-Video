@@ -23,7 +23,10 @@ class DSCLRCN(nn.Module):
         # LSTM_2 input size: 256 * width (2 * 128 as LSTMs output 128 values, *2 for bidirectional LSTMs)
         self.LSTMs_isz = (128*input_dim[0]//8, 256*input_dim[1]//8)
         
-        self.LSTMs_isz = LSTMs_input_size
+        # Hidden size of the LSTMs
+        # LSTM_1 hidden size: 128 * height (of local_feats output)
+        # LSTM_2 hidden size: 128 * width (of local_feats output)
+        self.LSTMs_hsz = (128*input_dim[0]//8, 128*input_dim[1]//8)
 
         if local_feats_net == 'Seg':
             self.local_feats = SegmentationNN()
@@ -32,20 +35,17 @@ class DSCLRCN(nn.Module):
 
         self.context = PlacesCNN(input_dim=input_dim)
 
-        self.fc_h = nn.Linear(128, LSTMs_input_size[0])
-        self.fc_v = nn.Linear(128, 2*LSTMs_input_size[1])
+        self.fc_h = nn.Linear(128, self.LSTMs_isz[0])
+        self.fc_v = nn.Linear(128, self.LSTMs_isz[1])
 
         # Constructing LSTMs:
-        self.lstm_h = nn.LSTM(LSTMs_input_size[0], LSTMs_input_size[0], 1, batch_first=True)
-        self.lstm_v = nn.LSTM(2*LSTMs_input_size[1], 2*LSTMs_input_size[1], 1, batch_first=True)
+        self.lstm_h = nn.LSTM(input_size=self.LSTMs_isz[0], hidden_size=self.LSTMs_hsz[0], num_layers=1, batch_first=True, bidirectional=True)
+        self.lstm_v = nn.LSTM(input_size=self.LSTMs_isz[1], hidden_size=self.LSTMs_hsz[1], num_layers=1, batch_first=True, bidirectional=True)
 
         # Last conv to move to one channel
-        self.last_conv = nn.Conv2d(4*128, 1, 1)
+        self.last_conv = nn.Conv2d(2*128, 1, 1)
 
-        # softmax & upsampling
-        
-        self.upsample = nn.Upsample(size=input_dim, mode='bilinear', align_corners=False) # align_corners=False assumed, default behaviour was changed from True to False from pytorch 0.3.1 to 0.4
-        
+        # softmax
         self.score = nn.Softmax(dim=2)
 
 
