@@ -1,7 +1,5 @@
-
 import torch
 import torch.nn as nn
-#import torch.legacy.nn as lnn
 from functools import reduce
 from torch.autograd import Variable
 class LambdaBase(nn.Sequential):
