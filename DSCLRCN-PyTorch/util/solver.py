@@ -85,7 +85,6 @@ class Solver(object):
             train_loss_logs = 0
             # Downscale the learning rate by a factor of 2.5 (i.e. multiply by 1/2.5) every epoch
             scheduler.step()
-            print('Starting an epoch')
 
             # Set the model to training mode
             model.train()
@@ -93,9 +92,7 @@ class Solver(object):
             if self.location != 'ncc':
                 train_loop = enumerate(tqdm(train_loader), 0)
             else:
-                print('enumerating train_loader')
                 train_loop = enumerate(train_loader, 0)
-                print('train_loader enumerated')
 
             # Batch of items in training set
             for i, data in train_loop:
