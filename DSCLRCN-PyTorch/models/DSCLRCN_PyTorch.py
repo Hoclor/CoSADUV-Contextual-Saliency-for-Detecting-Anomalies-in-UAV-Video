@@ -21,7 +21,7 @@ class DSCLRCN(nn.Module):
         # Input size of the LSTMs
         # LSTM_1 input size: channel * height, of local_feats output (i.e. 512 * input_height/8)
         # LSTM_2 input size: 256 * width (2 * 128 as LSTMs output 128 values, *2 for bidirectional LSTMs)
-        self.LSTMs_isz = (128*input_dim[0]//8, 256*input_dim[1]//8)
+        self.LSTMs_isz = (512*input_dim[0]//8, 256*input_dim[1]//8)
         
         # Hidden size of the LSTMs
         # LSTM_1 hidden size: 128 * height (of local_feats output)
