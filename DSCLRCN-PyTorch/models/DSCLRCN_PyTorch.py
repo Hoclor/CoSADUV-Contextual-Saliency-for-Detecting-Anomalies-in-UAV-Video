@@ -47,7 +47,7 @@ class DSCLRCN(nn.Module):
 
         self.fc_h = nn.Linear(128, self.LSTMs_isz[0])
         self.fc_v = nn.Linear(128, self.LSTMs_isz[1])
-        self.fc_h_2 = nn.Linear(128, self.LSTM_isz[2])
+        self.fc_h_2 = nn.Linear(128, self.LSTMs_isz[2])
 
         # Constructing LSTMs:
         self.blstm_h_1 = nn.LSTM(input_size=self.LSTMs_isz[0], hidden_size=self.LSTMs_hsz[0], num_layers=1, batch_first=True, bidirectional=True)
