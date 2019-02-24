@@ -97,7 +97,7 @@ class DSCLRCN(nn.Module):
         # Reduce channel dimension to 1
         output_conv = self.last_conv(output_hv)
         
-        N, C, H_l, W_l, = output_conv.size()
+        N, C, _, _, = output_conv.size()
         
         # Upsampling
         output_upsampled = nn.functional.interpolate(output_conv, size=self.input_dim, mode='bilinear', align_corners=False) # align_corners=False assumed, default behaviour was changed from True to False from pytorch 0.3.1 to 0.4
