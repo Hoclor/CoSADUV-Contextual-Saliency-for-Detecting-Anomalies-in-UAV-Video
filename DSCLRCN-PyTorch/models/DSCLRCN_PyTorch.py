@@ -47,6 +47,7 @@ class DSCLRCN(nn.Module):
 
         self.fc_h = nn.Linear(128, self.LSTMs_isz[0])
         self.fc_v = nn.Linear(128, self.LSTMs_isz[1])
+        self.fc_h_2 = nn.Linear(128, self.LSTM_isz[2])
 
         # Constructing LSTMs:
         self.blstm_h_1 = nn.LSTM(input_size=self.LSTMs_isz[0], hidden_size=self.LSTMs_hsz[0], num_layers=1, batch_first=True, bidirectional=True)
@@ -78,9 +79,10 @@ class DSCLRCN(nn.Module):
         H_lf, W_lf = local_feats.size()[2:]
 
         # Get scene feature information
-        context = self.context(x)
-        context_h = self.fc_h(context)
-        context_v = self.fc_v(context)
+        context     = self.context(x)
+        context_h   = self.fc_h(context)
+        context_v   = self.fc_v(context)
+        context_h_2 = self.fc_h_2(context)
 
         # Horizontal BLSTM_1
         context_h = context_h.contiguous().view(N, 1, self.LSTMs_isz[0]) # Reshape context
@@ -103,7 +105,7 @@ class DSCLRCN(nn.Module):
         output_hv = output_hv.contiguous().view(N, 2*128, H_lf, W_lf)
 
         # Horizontal BLSTM_2
-        context_h = context_h.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
+        context_h_2 = context_h_2.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
         output_hv = output_hv.contiguous().view(N, W_lf, self.LSTMs_isz[2]) # Reshape features
         lstm_input_hvh = torch.cat((context_h, output_hv), dim=1) # Produce input tensor by appending features to context
         output_hvh, _ = self.blstm_h_2(lstm_input_hvh) # Apply LSTM
