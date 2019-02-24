@@ -25,7 +25,8 @@ class SegmentationNN(nn.Module):
     def __init__(self, models_path='models/segmentation_resnet50/'):
         super(SegmentationNN, self).__init__()
         
-        encoder_path = models_path+'resnet50_kaggle.pth'
+        encoder_path = models_path+'resnet50_kaggle.pth' # New model (trained on PlacesCNN)
+        #encoder_path = models_path+'encoder_best.pth' # Old path name
         decoder_path = models_path+'decoder_best.pth'
         
         builder = ModelBuilder()
@@ -48,7 +49,6 @@ class SegmentationNN(nn.Module):
         
         # Apply conv1 to conv5
         x = self.net_encoder(x)
-        
         # conv6 - reduce dimensionality from 2048 to 512
         x = self.relu6(self.conv6(x))
         
