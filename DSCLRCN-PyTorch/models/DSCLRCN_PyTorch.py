@@ -64,36 +64,36 @@ class DSCLRCN(nn.Module):
         # Get local feature map
         local_feats = self.local_feats(x)
         H_lf, W_lf = local_feats.size()[2:]
-        
+
         # Get scene feature information
         context = self.context(x)
-        
+
         # Including Context:
         context_h = self.fc_h(context)
         context_h = context_h.contiguous().view(N, 1, self.LSTMs_isz[0])
         local_feats_h = local_feats.contiguous().view(N, W_lf, self.LSTMs_isz[0])
         lstm_input_h = torch.cat((context_h, local_feats_h), dim=1)
-                
+         
         # Horizontal BLSTM
         output_h, _ = self.lstm_h(lstm_input_h)
         # Remove the output from the context (this is included in the other values through cell memory)
         output_h = output_h[:,1:,:]
         # Resize the output to (C, H, W)
         output_h = output_h.contiguous().view(N, 2*128, H_lf, W_lf)
-        
+
         # Including Context:
         context_v = self.fc_v(context)
         context_v = context_v.contiguous().view(N, 1, self.LSTMs_isz[1])
-        output_hv = output_h.contiguous().view(N, H_lf, self.LSTMs_isz[1])
-        output_hv = torch.cat((context_v, output_hv), dim=1)
+        output_h  = output_h.contiguous().view(N, H_lf, self.LSTMs_isz[1])
+        lstm_input_hv = torch.cat((context_v, output_h), dim=1)
         
         # Vertical BLSTM
-        output_hv, _ = self.lstm_v(output_hv)
+        output_hv, _ = self.lstm_v(lstm_input_hv)
         # Remove the output from the context (this is included in the other values through cell memory)
         output_hv = output_hv[:,1:,:]
         # Resize the output to (C, H, W)
         output_hv = output_hv.contiguous().view(N, 2*128, H_lf, W_lf)
-        
+
         # Reduce channel dimension to 1
         output_conv = self.last_conv(output_hv)
         
@@ -106,7 +106,7 @@ class DSCLRCN(nn.Module):
         output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
         
         output_score = output_score.contiguous().view(N, C, H, W)
-
+        
         return output_score
 
     
