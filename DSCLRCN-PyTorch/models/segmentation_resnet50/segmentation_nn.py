@@ -25,7 +25,7 @@ class SegmentationNN(nn.Module):
     def __init__(self, models_path='models/segmentation_resnet50/'):
         super(SegmentationNN, self).__init__()
         
-        encoder_path = models_path+'resnet50_kaggle.pth' # New model (trained on PlacesCNN)
+        encoder_path = models_path+'resnet50.pth' # New model (trained on ImageNet)
         #encoder_path = models_path+'encoder_best.pth' # Old path name
         decoder_path = models_path+'decoder_best.pth'
         
