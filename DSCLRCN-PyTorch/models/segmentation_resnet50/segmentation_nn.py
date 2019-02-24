@@ -26,7 +26,7 @@ class SegmentationNN(nn.Module):
         super(SegmentationNN, self).__init__()
         
         encoder_path = models_path+'resnet50.pth' # New model (trained on ImageNet) - from https://www.kaggle.com/pvlima/pretrained-pytorch-models
-        #encoder_path = models_path+'encoder_best.pth' # Old path name
+        #encoder_path = models_path+'resnet50_pytorch.pth' # Alternative model (also trained on ImageNet) - from https://www.kaggle.com/pytorch/resnet50
         decoder_path = models_path+'decoder_best.pth'
         
         builder = ModelBuilder()
