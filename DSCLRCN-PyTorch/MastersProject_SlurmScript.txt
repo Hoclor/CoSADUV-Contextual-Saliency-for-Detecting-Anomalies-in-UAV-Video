@@ -11,9 +11,9 @@
 # Time limit
 #SBATCH -t 02:00:00
 # Job tracking
-#SBATCH --job-name=Pin_False_Test
-#SBATCH --mail-type ALL
-#SBATCH --mail-user simon.gokstorp@durham.ac.uk
+#SBATCH --job-name=MastersProject
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=simon.gokstorp@durham.ac.uk
 # Source the bash profile
 # (required to use the module command)
 source /etc/profile
