@@ -107,7 +107,7 @@ class DSCLRCN(nn.Module):
         # Horizontal BLSTM_2
         context_h_2 = context_h_2.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
         output_hv = output_hv.contiguous().view(N, W_lf, self.LSTMs_isz[2]) # Reshape features
-        lstm_input_hvh = torch.cat((context_h, output_hv), dim=1) # Produce input tensor by appending features to context
+        lstm_input_hvh = torch.cat((context_h_2, output_hv), dim=1) # Produce input tensor by appending features to context
         output_hvh, _ = self.blstm_h_2(lstm_input_hvh) # Apply LSTM
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvh = output_hvh[:,1:,:]
