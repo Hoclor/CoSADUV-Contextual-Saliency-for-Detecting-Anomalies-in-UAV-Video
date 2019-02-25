@@ -129,8 +129,11 @@ class DSCLRCN(nn.Module):
         
         N, C, _, _, = output_conv.size()
         
-        # Upsampling
-        output_upsampled = nn.functional.interpolate(output_conv, size=self.input_dim, mode='bilinear', align_corners=False) # align_corners=False assumed, default behaviour was changed from True to False from pytorch 0.3.1 to 0.4
+        # Upsampling - nn.functional.interpolate does not exist in < 0.4.1, but upsample is deprecated in > 0.4.0, so use this switch
+        if torch.__version__ == '0.4.0':
+            output_upsampled = nn.functional.upsample(output_conv, size=self.input_dim, mode='bilinear', align_corners=False)
+        else:
+            output_upsampled = nn.functional.interpolate(output_conv, size=self.input_dim, mode='bilinear', align_corners=False) # align_corners=False assumed, default behaviour was changed from True to False from pytorch 0.3.1 to 0.4
         
         # Softmax scoring
         output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
