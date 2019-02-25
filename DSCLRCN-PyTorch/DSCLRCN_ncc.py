@@ -107,7 +107,7 @@ def main():
     best_accuracy = checkpoint['best_accuracy']
     
     # Create the model
-    model = DSCLRCN(input_dim=(96, 128), local_feats_net=net_type)
+    model = DSCLRCN(input_dim=img_size, local_feats_net=net_type)
     model.load_state_dict(checkpoint['state_dict'])
     if torch.cuda.is_available():
         model = model.cuda()
@@ -141,8 +141,12 @@ def main():
 
         # Apply a Gaussian filter to blur the saliency maps
         sigma = 0.035*min(labels.shape[1], labels.shape[2])
-        outputs = np.array([cv2.GaussianBlur(output, (int(4*sigma), int(4*sigma)), sigma) for output in outputs])
-
+        kernel_size = int(4*sigma)
+        # make sure the kernel size is odd
+        kernel_size += 1 if kernel_size % 2 == 0 else 0
+        
+        outputs = np.array([cv2.GaussianBlur(output, (kernel_size, kernel_size), sigma) for output in outputs])
+        
         # Compute the loss and append it to the list
         labels = labels.cpu().numpy()
         test_losses_checkpoint.append(NSS_loss(outputs, labels).item())
