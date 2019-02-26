@@ -19,25 +19,27 @@ class DSCLRCN(nn.Module):
 
         self.input_dim = input_dim
         
+        # Hidden size of the LSTMs
+        # LSTM_1 hidden size: 128
+        # LSTM_2 hidden size: 128
+        # LSTM_3 hidden size: 128
+        # LSTM_4 hidden size: 128
+        self.LSTMs_hsz = (512,
+                          512,
+                          512,
+                          512)
+        
         # Input size of the LSTMs
         # LSTM_1 input size: channel of local_feats output (512)
         # LSTM_2 input size: 256 (2 * 128 as LSTMs output 128 values, *2 for bidirectional LSTMs)
         # LSTM_3 input size: 256 (same reason as above)
         # LSTM_4 input size: 256 (same reason as above)
         self.LSTMs_isz = (512,
-                          256,
-                          256,
-                          256)
+                          2*self.LSTMs_hsz[0],
+                          2*self.LSTMs_hsz[1],
+                          2*self.LSTMs_hsz[2])
         
-        # Hidden size of the LSTMs
-        # LSTM_1 hidden size: 128
-        # LSTM_2 hidden size: 128
-        # LSTM_3 hidden size: 128
-        # LSTM_4 hidden size: 128
-        self.LSTMs_hsz = (128,
-                          128,
-                          128,
-                          128)
+        
 
         if local_feats_net == 'Seg':
             self.local_feats = SegmentationNN()
@@ -90,7 +92,8 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_h = output_h[:,1:,:]
         # Resize the output to (C, H, W)
-        output_h = output_h.contiguous().view(N, 2*self.LSTMs_hsz[0], H_lf, W_lf)
+#         output_h = output_h.contiguous().view(N, H_lf, W_lf, 2*self.LSTMs_hsz[0])
+#         output_h = output_h.transpose(1, 3).transpose(3, 2)
         
         # Vertical BLSTM_1
         context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[1]) # Reshape context
@@ -100,7 +103,8 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hv = output_hv[:,1:,:]
         # Resize the output to (C, H, W)
-        output_hv = output_hv.contiguous().view(N, 2*self.LSTMs_hsz[1], H_lf, W_lf)
+#         output_hv = output_hv.contiguous().view(N, H_lf, W_lf, 2*self.LSTMs_hsz[1])
+#         output_hv = output_hv.transpose(1, 3).transpose(3, 2)
 
         # Horizontal BLSTM_2
         context_h_2 = context_rest.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
@@ -110,7 +114,8 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvh = output_hvh[:,1:,:]
         # Resize the output to (C, H, W)
-        output_hvh = output_hvh.contiguous().view(N, 2*self.LSTMs_hsz[2], H_lf, W_lf)
+#         output_hvh = output_hvh.contiguous().view(N, H_lf, W_lf, 2*self.LSTMs_hsz[2])
+#         output_hvh = output_hvh.transpose(1, 3).transpose(3, 2)
 
         # Vertical BLSTM_2
         context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[3]) # Reshape context
@@ -119,9 +124,10 @@ class DSCLRCN(nn.Module):
         output_hvhv, _ = self.blstm_v_2(lstm_input_hvhv) # Apply LSTM
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvhv = output_hvhv[:,1:,:]
-        # Resize the output to (C, H, W)
+        # Resize the output from (N, H*W, C) to (N, C, H, W)
+        output_hvhv = output_hvhv.transpose(1, 2)
         output_hvhv = output_hvhv.contiguous().view(N, 2*self.LSTMs_hsz[3], H_lf, W_lf)
-
+        
         # Reduce channel dimension to 1
         output_conv = self.last_conv(output_hvhv)
         
