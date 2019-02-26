@@ -53,7 +53,7 @@ class DSCLRCN(nn.Module):
         self.blstm_v_2 = nn.LSTM(input_size=self.LSTMs_isz[3], hidden_size=self.LSTMs_hsz[3], num_layers=1, batch_first=True, bidirectional=True)
 
         # Last conv to move to one channel
-        self.last_conv = nn.Conv2d(2*128, 1, 1)
+        self.last_conv = nn.Conv2d(2*self.LSTMs_hsz[3], 1, 1)
 
         # softmax
         self.score = nn.Softmax(dim=2)
@@ -76,11 +76,11 @@ class DSCLRCN(nn.Module):
         H_lf, W_lf = local_feats.size()[2:]
 
         # Get scene feature information
-        context      = self.context(x)
-        # Create context input into BLSTM_1 by padding context from 128 channels to 512
-        context_1 = F.pad(context.contiguous().view(N, 1, 128), (0, 384), "constant", 0)
-        # Create context input into BLSTM_[2,3,4] by padding context from 128 channels to 256
-        context_rest = F.pad(context.contiguous().view(N, 1, 128), (0, 128), "constant", 0)
+        context = self.context(x)
+        # Create context input into BLSTM_1 by padding context from 128 channels to self.LSTM_isz[1]
+        context_1 = F.pad(context.contiguous().view(N, 1, 128), (0, self.LSTMs_isz[0] - 128), "constant", 0)
+        # Create context input into BLSTM_[2,3,4] by padding context from 128 channels to self.LSTM_isz[2,3,4]
+        context_rest = F.pad(context.contiguous().view(N, 1, 128), (0, self.LSTMs_isz[1] - 128), "constant", 0)
 
         # Horizontal BLSTM_1
         context_h = context_1.contiguous().view(N, 1, self.LSTMs_isz[0]) # Reshape context
@@ -90,7 +90,7 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_h = output_h[:,1:,:]
         # Resize the output to (C, H, W)
-        output_h = output_h.contiguous().view(N, 2*128, H_lf, W_lf)
+        output_h = output_h.contiguous().view(N, 2*self.LSTMs_hsz[0], H_lf, W_lf)
         
         # Vertical BLSTM_1
         context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[1]) # Reshape context
@@ -100,7 +100,7 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hv = output_hv[:,1:,:]
         # Resize the output to (C, H, W)
-        output_hv = output_hv.contiguous().view(N, 2*128, H_lf, W_lf)
+        output_hv = output_hv.contiguous().view(N, 2*self.LSTMs_hsz[1], H_lf, W_lf)
 
         # Horizontal BLSTM_2
         context_h_2 = context_rest.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
@@ -110,7 +110,7 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvh = output_hvh[:,1:,:]
         # Resize the output to (C, H, W)
-        output_hvh = output_hvh.contiguous().view(N, 2*128, H_lf, W_lf)
+        output_hvh = output_hvh.contiguous().view(N, 2*self.LSTMs_hsz[2], H_lf, W_lf)
 
         # Vertical BLSTM_2
         context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[3]) # Reshape context
@@ -120,7 +120,7 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvhv = output_hvhv[:,1:,:]
         # Resize the output to (C, H, W)
-        output_hvhv = output_hvhv.contiguous().view(N, 2*128, H_lf, W_lf)
+        output_hvhv = output_hvhv.contiguous().view(N, 2*self.LSTMs_hsz[3], H_lf, W_lf)
 
         # Reduce channel dimension to 1
         output_conv = self.last_conv(output_hvhv)
