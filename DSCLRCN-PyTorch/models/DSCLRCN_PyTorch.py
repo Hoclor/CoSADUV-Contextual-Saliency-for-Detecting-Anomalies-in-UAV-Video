@@ -92,7 +92,7 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_h = output_h[:,1:,:]
         # Resize the output to (C, H, W)
-        output_h = output_h.contiguous().view(N, 2*128, H_lf, W_lf)
+#         output_h = output_h.contiguous().view(N, 2*128, H_lf, W_lf)
         
         # Vertical BLSTM_1
         context_v = context_v.contiguous().view(N, 1, self.LSTMs_isz[1]) # Reshape context
@@ -102,7 +102,7 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hv = output_hv[:,1:,:]
         # Resize the output to (C, H, W)
-        output_hv = output_hv.contiguous().view(N, 2*128, H_lf, W_lf)
+#         output_hv = output_hv.contiguous().view(N, 2*128, H_lf, W_lf)
 
         # Horizontal BLSTM_2
         context_h_2 = context_h_2.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
@@ -112,7 +112,7 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvh = output_hvh[:,1:,:]
         # Resize the output to (C, H, W)
-        output_hvh = output_hvh.contiguous().view(N, 2*128, H_lf, W_lf)
+#         output_hvh = output_hvh.contiguous().view(N, 2*128, H_lf, W_lf)
 
         # Vertical BLSTM_2
         context_v = context_v.contiguous().view(N, 1, self.LSTMs_isz[3]) # Reshape context
@@ -122,7 +122,8 @@ class DSCLRCN(nn.Module):
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvhv = output_hvhv[:,1:,:]
         # Resize the output to (C, H, W)
-        output_hvhv = output_hvhv.contiguous().view(N, 2*128, H_lf, W_lf)
+        output_hvhv = output_hvhv.transpose(1, 2)
+        output_hvhv = output_hvhv.contiguous().view(N, 2*self.LSTMs_hsz[3], H_lf, W_lf)
 
         # Reduce channel dimension to 1
         output_conv = self.last_conv(output_hvhv)
