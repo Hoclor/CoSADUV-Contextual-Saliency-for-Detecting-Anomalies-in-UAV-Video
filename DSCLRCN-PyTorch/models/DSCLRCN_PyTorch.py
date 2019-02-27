@@ -1,3 +1,4 @@
+# New design of BLSTMs - apply each LSTM to image as a whole, flattened by row or column for horizontal/vertical, with 128 hidden units
 """LocalFeaturesCNN"""
 import torch
 import torchvision
@@ -18,25 +19,27 @@ class DSCLRCN(nn.Module):
 
         self.input_dim = input_dim
         
-        # Input size of the LSTMs
-        # LSTM_1 input size: channel * height, of local_feats output (i.e. 512 * input_height/8)
-        # LSTM_2 input size: 256 * width (2 * 128 as LSTMs output 128 values, *2 for bidirectional LSTMs)
-        # LSTM_3 input size: 256 * height (same reason as above)
-        # LSTM_4 input size: 256 * width (same reason as above)
-        self.LSTMs_isz = (512*input_dim[0]//8,
-                          256*input_dim[1]//8,
-                          256*input_dim[0]//8,
-                          256*input_dim[1]//8)
-        
         # Hidden size of the LSTMs
-        # LSTM_1 hidden size: 128 * height (of local_feats output)
-        # LSTM_2 hidden size: 128 * width (of local_feats output)
-        # LSTM_3 hidden size: 128 * height (of local_feats output)
-        # LSTM_4 hidden size: 128 * width (of local_feats output)
-        self.LSTMs_hsz = (128*input_dim[0]//8,
-                          128*input_dim[1]//8,
-                          128*input_dim[0]//8,
-                          128*input_dim[1]//8)
+        # LSTM_1 hidden size: 128
+        # LSTM_2 hidden size: 128
+        # LSTM_3 hidden size: 128
+        # LSTM_4 hidden size: 128
+        self.LSTMs_hsz = (128,
+                          128,
+                          128,
+                          128)
+        
+        # Input size of the LSTMs
+        # LSTM_1 input size: channel of local_feats output (512)
+        # LSTM_2 input size: 256 (2 * 128 as LSTMs output 128 values, *2 for bidirectional LSTMs)
+        # LSTM_3 input size: 256 (same reason as above)
+        # LSTM_4 input size: 256 (same reason as above)
+        self.LSTMs_isz = (512,
+                          2*self.LSTMs_hsz[0],
+                          2*self.LSTMs_hsz[1],
+                          2*self.LSTMs_hsz[2])
+        
+        
 
         if local_feats_net == 'Seg':
             self.local_feats = SegmentationNN()
@@ -45,10 +48,6 @@ class DSCLRCN(nn.Module):
 
         self.context = PlacesCNN(input_dim=input_dim)
 
-        self.fc_h = nn.Linear(128, self.LSTMs_isz[0])
-        self.fc_v = nn.Linear(128, self.LSTMs_isz[1])
-        self.fc_h_2 = nn.Linear(128, self.LSTMs_isz[2])
-
         # Constructing LSTMs:
         self.blstm_h_1 = nn.LSTM(input_size=self.LSTMs_isz[0], hidden_size=self.LSTMs_hsz[0], num_layers=1, batch_first=True, bidirectional=True)
         self.blstm_v_1 = nn.LSTM(input_size=self.LSTMs_isz[1], hidden_size=self.LSTMs_hsz[1], num_layers=1, batch_first=True, bidirectional=True)
@@ -56,7 +55,7 @@ class DSCLRCN(nn.Module):
         self.blstm_v_2 = nn.LSTM(input_size=self.LSTMs_isz[3], hidden_size=self.LSTMs_hsz[3], num_layers=1, batch_first=True, bidirectional=True)
 
         # Last conv to move to one channel
-        self.last_conv = nn.Conv2d(2*128, 1, 1)
+        self.last_conv = nn.Conv2d(2*self.LSTMs_hsz[3], 1, 1)
 
         # softmax
         self.score = nn.Softmax(dim=2)
@@ -79,52 +78,56 @@ class DSCLRCN(nn.Module):
         H_lf, W_lf = local_feats.size()[2:]
 
         # Get scene feature information
-        context     = self.context(x)
-        context_h   = self.fc_h(context)
-        context_v   = self.fc_v(context)
-        context_h_2 = self.fc_h_2(context)
+        context = self.context(x)
+        # Create context input into BLSTM_1 by padding context from 128 channels to self.LSTM_isz[1]
+        context_1 = F.pad(context.contiguous().view(N, 1, 128), (0, self.LSTMs_isz[0] - 128), "constant", 0)
+        # Create context input into BLSTM_[2,3,4] by padding context from 128 channels to self.LSTM_isz[2,3,4]
+        context_rest = F.pad(context.contiguous().view(N, 1, 128), (0, self.LSTMs_isz[1] - 128), "constant", 0)
 
         # Horizontal BLSTM_1
-        context_h = context_h.contiguous().view(N, 1, self.LSTMs_isz[0]) # Reshape context
-        local_feats_h = local_feats.contiguous().view(N, W_lf, self.LSTMs_isz[0]) # Reshape features
+        context_h = context_1.contiguous().view(N, 1, self.LSTMs_isz[0]) # Reshape context
+        local_feats_h = local_feats.contiguous().view(N, W_lf*H_lf, self.LSTMs_isz[0]) # Reshape features
         lstm_input_h = torch.cat((context_h, local_feats_h), dim=1) # Produce input tensor by appending features to context
         output_h, _ = self.blstm_h_1(lstm_input_h) # Apply LSTM
         # Remove the context from the output (this is included in the other values through cell memory)
         output_h = output_h[:,1:,:]
         # Resize the output to (C, H, W)
-#         output_h = output_h.contiguous().view(N, 2*128, H_lf, W_lf)
+#         output_h = output_h.contiguous().view(N, H_lf, W_lf, 2*self.LSTMs_hsz[0])
+#         output_h = output_h.transpose(1, 3).transpose(3, 2)
         
         # Vertical BLSTM_1
-        context_v = context_v.contiguous().view(N, 1, self.LSTMs_isz[1]) # Reshape context
-        output_h  = output_h.contiguous().view(N, H_lf, self.LSTMs_isz[1]) # Reshape features
+        context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[1]) # Reshape context
+        output_h  = output_h.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[1]) # Reshape features
         lstm_input_hv = torch.cat((context_v, output_h), dim=1) # Produce input tensor by appending features to context
         output_hv, _ = self.blstm_v_1(lstm_input_hv) # Apply LSTM
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hv = output_hv[:,1:,:]
         # Resize the output to (C, H, W)
-#         output_hv = output_hv.contiguous().view(N, 2*128, H_lf, W_lf)
+#         output_hv = output_hv.contiguous().view(N, H_lf, W_lf, 2*self.LSTMs_hsz[1])
+#         output_hv = output_hv.transpose(1, 3).transpose(3, 2)
 
         # Horizontal BLSTM_2
-        context_h_2 = context_h_2.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
-        output_hv = output_hv.contiguous().view(N, W_lf, self.LSTMs_isz[2]) # Reshape features
+        context_h_2 = context_rest.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
+        output_hv = output_hv.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[2]) # Reshape features
         lstm_input_hvh = torch.cat((context_h_2, output_hv), dim=1) # Produce input tensor by appending features to context
         output_hvh, _ = self.blstm_h_2(lstm_input_hvh) # Apply LSTM
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvh = output_hvh[:,1:,:]
         # Resize the output to (C, H, W)
-#         output_hvh = output_hvh.contiguous().view(N, 2*128, H_lf, W_lf)
+#         output_hvh = output_hvh.contiguous().view(N, H_lf, W_lf, 2*self.LSTMs_hsz[2])
+#         output_hvh = output_hvh.transpose(1, 3).transpose(3, 2)
 
         # Vertical BLSTM_2
-        context_v = context_v.contiguous().view(N, 1, self.LSTMs_isz[3]) # Reshape context
-        output_hvh = output_hvh.contiguous().view(N, H_lf, self.LSTMs_isz[3]) # Reshape features
+        context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[3]) # Reshape context
+        output_hvh = output_hvh.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[3]) # Reshape features
         lstm_input_hvhv = torch.cat((context_v, output_hvh), dim=1) # Produce input tensor by appending features to context
         output_hvhv, _ = self.blstm_v_2(lstm_input_hvhv) # Apply LSTM
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvhv = output_hvhv[:,1:,:]
-        # Resize the output to (C, H, W)
+        # Resize the output from (N, H*W, C) to (N, C, H, W)
         output_hvhv = output_hvhv.transpose(1, 2)
         output_hvhv = output_hvhv.contiguous().view(N, 2*self.LSTMs_hsz[3], H_lf, W_lf)
-
+        
         # Reduce channel dimension to 1
         output_conv = self.last_conv(output_hvhv)
         
