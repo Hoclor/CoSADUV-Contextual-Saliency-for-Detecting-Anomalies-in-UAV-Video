@@ -9,7 +9,8 @@
 #SBATCH -p "ug-gpu-small"
 #SBATCH --qos="short"
 # Time limit
-#SBATCH -t 04:00:00
+#SBATCH -t 05:00:00
+## Time limit ~5 hours for 240x320 20 epochs
 # Job tracking
 #SBATCH --job-name=DSCLRCN
 #SBATCH --mail-type=ALL
