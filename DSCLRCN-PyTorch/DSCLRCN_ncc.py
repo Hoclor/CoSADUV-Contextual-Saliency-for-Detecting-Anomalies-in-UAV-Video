@@ -19,15 +19,15 @@ def main():
 #     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
     dataset_root_dir = 'Dataset/Raw_Dataset'
     mean_image_name = 'mean_image.npy'
-    img_size = (240, 320) # height, width - original: 480, 640, reimplementation: 96, 128
+    img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
     train_data, val_data, test_data = get_direct_datasets(dataset_root_dir, mean_image_name, img_size)
     
-    from models.DSCLRCN_PyTorch3 import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
+    from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
     
     from util.loss_functions import NSS_loss
 
-    batchsize = 20 # Recommended: 20
+    batchsize = 4 # Recommended: 20
     epoch_number = 20 # Recommended: 10 (epoch_number =~ batchsize/2)
     net_type = 'Seg' # 'Seg' or 'CNN' Recommended: Seg
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
@@ -37,9 +37,9 @@ def main():
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
     #num_train = 100
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batchsize, shuffle=True, num_workers=8, pin_memory=False)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
 
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=8, pin_memory=False)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
 
     # Attempt to train a model using the original image sizes
     model = DSCLRCN(input_dim=img_size, local_feats_net=net_type)
@@ -59,7 +59,7 @@ def main():
     
     # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
     test_losses = []
-    test_loader = torch.utils.data.DataLoader(val_data, batch_size=20, shuffle=True, num_workers=4, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
     
     looper=test_loader
     if location != 'ncc':
@@ -120,7 +120,7 @@ def main():
     
     # Test the checkpoint
     test_losses_checkpoint = []
-    test_loader = torch.utils.data.DataLoader(val_data, batch_size=20, shuffle=True, num_workers=4, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
     
     looper = test_loader
     if location != 'ncc':
