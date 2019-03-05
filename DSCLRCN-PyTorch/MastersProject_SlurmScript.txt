@@ -4,6 +4,7 @@
 #SBATCH -c 1
 # 12GB RAM
 #SBATCH --mem=12G
+
 # GPU selection, job type, QOS
 #SBATCH --gres=gpu:1
 #SBATCH -p "ug-gpu-small"
@@ -15,6 +16,7 @@
 #SBATCH --job-name=DSCLRCN
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=simon.gokstorp@durham.ac.uk
+
 # Source the bash profile
 # (required to use the module command)
 source /etc/profile
@@ -22,6 +24,7 @@ source /etc/profile
 module load cuda/9.2
 # Use virtualenv
 source ~/envs/MastersProject/bin/activate
+
 # Run your program
 #stdbuf -oL python3 DSCLRCN_ncc.py
 python3 -u DSCLRCN_ncc.py

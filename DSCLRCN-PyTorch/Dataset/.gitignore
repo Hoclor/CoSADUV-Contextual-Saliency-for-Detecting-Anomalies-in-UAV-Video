@@ -1,2 +1,5 @@
+# Ignore all images in this folder and all subfolders
 *.png
 *.jpg
+*.jpeg
+*.tiff
