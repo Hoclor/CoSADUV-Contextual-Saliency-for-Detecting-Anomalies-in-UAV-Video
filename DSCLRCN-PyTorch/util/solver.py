@@ -19,7 +19,8 @@ class Solver(object):
                         "momentum": 0.9}
 
     def __init__(self, optim=torch.optim.Adam, optim_args={},
-                 loss_func=torch.nn.KLDivLoss(), location='ncc'):
+                 loss_func=torch.nn.KLDivLoss(), location='ncc',
+                 minibatches=1):
         if optim == torch.optim.Adam:
             optim_args_merged = self.default_adam_args.copy()
         else:
@@ -32,6 +33,8 @@ class Solver(object):
         self._reset_histories()
 
         self.location = location
+
+        self.minibatches=minibatches
 
     def _reset_histories(self):
         """
@@ -67,7 +70,7 @@ class Solver(object):
         optim = self.optim(other_parameters, **self.optim_args)
         optim.add_param_group(pretrained_param_group)
         self._reset_histories()
-        iter_per_epoch = len(train_loader)
+        iter_per_epoch = len(train_loader)//self.minibatches
         
         # Create the scheduler to allow lr adjustment
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=1/2.5)
@@ -79,6 +82,12 @@ class Solver(object):
         epoch_loop = range(num_epochs)
         if self.location != 'ncc':
             epoch_loop = tqdm(epoch_loop)
+
+        # Define a list to hold minibatch losses for each batch
+        minibatch_losses = []
+
+        # Iteration counter of batches (NOT minibatches)
+        it = 0
 
         # Epoch
         for j in epoch_loop:
@@ -97,7 +106,6 @@ class Solver(object):
             # Batch of items in training set
             for i, data in train_loop:
                 
-                it = j*iter_per_epoch + i
                 # Load the items in this batch and their labels from the train_loader
                 inputs, labels = data
                 # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
@@ -117,18 +125,30 @@ class Solver(object):
                 outputs = outputs.transpose(1, 3)
                 outputs = outputs.transpose(1, 2)
                 
-                loss = self.loss_func(outputs, labels)
-                optim.zero_grad()
-                loss.backward()
-                optim.step()
-                
-                if it%log_nth==0:
-                    tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
-                    self.train_loss_history.append(loss.item())
-                    train_loss_logs += 1
+                # Add the loss to the list of losses
+                minibatch_losses.append(self.loss_func(outputs, labels))
+
+                # Only perform backprop every `minibatches` iterations
+                if len(minibatch_losses) == self.minibatches:
+                    it += 1
+                    # Compute the avg loss and compute backprop
+                    loss = sum(minibatch_losses)/len(minibatch_losses)
+                    # Reset the list of minibatch losses
+                    minibatch_losses = []
+
+                    optim.zero_grad()
+                    loss.backward()
+                    optim.step()
+                    if it%log_nth==0:
+                        tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
+                        self.train_loss_history.append(loss.item())
+                        train_loss_logs += 1
+                    
+                    # Free up memory
+                    del loss
                 
                 # Free up memory
-                del loss, inputs, outputs, labels
+                del inputs, outputs, labels
             
             model.eval()
             
