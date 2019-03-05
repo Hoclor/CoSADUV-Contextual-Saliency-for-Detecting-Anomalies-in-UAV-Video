@@ -118,8 +118,14 @@ class DSCLRCN(nn.Module):
         output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
         
         output_score = output_score.contiguous().view(N, C, H, W)
-
-        return output_score
+        
+        # Individual output values are extremely low due to use of Softmax function (the values in the image add up to 1).
+        # To return the values to the range [0, 1], divide each value by the largest value in the output
+        # INSTEAD of altering the labels by dividing each value by the sum of values in the label
+#         output_result = output_score/output_score.max()
+        output_result = output_score
+        
+        return output_result
 
     
     @property

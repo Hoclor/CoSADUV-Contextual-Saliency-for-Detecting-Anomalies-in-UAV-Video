@@ -7,6 +7,8 @@ from torch.autograd import Variable
 
 from random import *
 
+from tqdm import tqdm
+
 class Solver(object):
     default_adam_args = {"lr": 1e-4,
                          "betas": (0.9, 0.999),
@@ -17,7 +19,7 @@ class Solver(object):
                         "momentum": 0.9}
 
     def __init__(self, optim=torch.optim.Adam, optim_args={},
-                 loss_func=torch.nn.KLDivLoss()):
+                 loss_func=torch.nn.KLDivLoss(), location='ncc'):
         if optim == torch.optim.Adam:
             optim_args_merged = self.default_adam_args.copy()
         else:
@@ -28,6 +30,8 @@ class Solver(object):
         self.loss_func = loss_func
 
         self._reset_histories()
+
+        self.location = location
 
     def _reset_histories(self):
         """
@@ -68,17 +72,30 @@ class Solver(object):
         # Create the scheduler to allow lr adjustment
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=1/2.5)
 
-        print('START TRAIN.')
+        tqdm.write('START TRAIN.')
         
         nIterations = num_epochs*iter_per_epoch
         
+        epoch_loop = range(num_epochs)
+        if self.location != 'ncc':
+            epoch_loop = tqdm(epoch_loop)
+
         # Epoch
-        for j in range(num_epochs):
+        for j in epoch_loop:
+            train_loss_logs = 0
             # Downscale the learning rate by a factor of 2.5 (i.e. multiply by 1/2.5) every epoch
             scheduler.step()
-            
+
+            # Set the model to training mode
+            model.train()
+
+            if self.location != 'ncc':
+                train_loop = enumerate(tqdm(train_loader), 0)
+            else:
+                train_loop = enumerate(train_loader, 0)
+
             # Batch of items in training set
-            for i, data in enumerate(train_loader, 0):
+            for i, data in train_loop:
                 
                 it = j*iter_per_epoch + i
                 # Load the items in this batch and their labels from the train_loader
@@ -93,21 +110,12 @@ class Solver(object):
                 # DEPRECATED - calling Variable should no longer be necessary, but leave in for now
                 inputs = Variable(inputs)
                 labels = Variable(labels)
-                # Set the model to training mode
-                model.train()
-                # train the model (forward propgataion) on the inputs
+                
+                # train the model (forward propagation) on the inputs
                 outputs = model(inputs)
                 # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
                 outputs = outputs.transpose(1, 3)
                 outputs = outputs.transpose(1, 2)
-        
-                # Apply a natural logarithm to the outputs, i.e. outputs = log_e(outputs)
-                outputs = torch.log(outputs)
-                # Normalize the labels by dividing each value by the sum of values of that item
-                # Create a list of label sums (i.e. one entry per item, each entry is the sum of values in that label)
-#                 labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
-                
-#                 labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
                 
                 loss = self.loss_func(outputs, labels)
                 optim.zero_grad()
@@ -115,17 +123,22 @@ class Solver(object):
                 optim.step()
                 
                 if it%log_nth==0:
-                    print('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
+                    tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
                     self.train_loss_history.append(loss.item())
+                    train_loss_logs += 1
+                
+                # Free up memory
+                del loss, inputs, outputs, labels
             
             model.eval()
             
             rand_select = randint(0, len(val_loader)-1)
             for ii, data in enumerate(val_loader, 0):
-                inputs, labels = data
-                # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
-                labels = labels.unsqueeze(3)
                 if rand_select == ii:
+                    inputs, labels = data
+                    # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
+                    labels = labels.unsqueeze(3)
+                    
                     if torch.cuda.is_available():
                         inputs, labels = inputs.cuda(), labels.cuda()
                     inputs_val = Variable(inputs)
@@ -135,18 +148,16 @@ class Solver(object):
                     # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
                     outputs_val = outputs_val.transpose(1, 3)
                     outputs_val = outputs_val.transpose(1, 2)
-                    outputs_val = torch.log(outputs_val)
                     
-#                     labels_sum = torch.sum(labels.contiguous().view(labels.size(0),-1), dim=1)
-#                     labels /= labels_sum.contiguous().view(*labels_sum.size(), 1, 1, 1).expand_as(labels)
                     val_loss = self.loss_func(outputs_val, labels_val)
+                    
                     self.val_loss_history.append(val_loss.item())
                     # Check if this is the best validation loss so far. If so, save the current model state
                     if val_loss.item() < self.best_val_loss:
                         if len(filename_args) < 4:
-                            filename = 'pretrained/model_state_dict_best_loss_{:6f}.pth'.format(val_loss.item())
+                            filename = 'trained_models/model_state_dict_best_loss_{:6f}.pth'.format(val_loss.item())
                         else:
-                            filename = 'pretrained/best_model_{}_{}_lr4_batch{}_epoch{}.pth'.format(
+                            filename = 'trained_models/best_model_{}_{}_lr2_batch{}_epoch{}.pth'.format(
                                 filename_args['net_type'],
                                 filename_args['optim'],
                                 filename_args['batchsize'],
@@ -157,9 +168,14 @@ class Solver(object):
                             'state_dict': model.state_dict(),
                             'best_accuracy': val_loss.item()
                         }, filename)
+                        tqdm.write("Checkpoint created with loss: {:6f}".format(val_loss.item()))
                     
-            print('[Epoch %i/%i] TRAIN KLD Loss: %f' % (j, num_epochs, loss.item()))
-            print('[Epoch %i/%i] VAL KLD Loss: %f' % (j, num_epochs, val_loss.item()))
+                    # Free up memory
+                    del val_loss, inputs_val, outputs_val, labels_val
+                    
+            # Print the average Train loss for the last epoch (avg of the logged losses, as decided by log_nth value)
+            tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, sum(self.train_loss_history[-train_loss_logs:])/train_loss_logs))
+            tqdm.write('[Epoch %i/%i] VAL NSS Loss: %f' % (j, num_epochs, self.val_loss_history[-1]))
             
         
-        print('FINISH.')
+        tqdm.write('FINISH.')

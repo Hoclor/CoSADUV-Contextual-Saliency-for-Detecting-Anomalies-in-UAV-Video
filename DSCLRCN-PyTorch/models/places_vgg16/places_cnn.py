@@ -1,13 +1,28 @@
 """SegmentationNN"""
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from models.places_vgg16 import PlacesCNN as PCNN
+import math
 
+# L2Norm layer code from https://github.com/clcarwin/SFD_pytorch/blob/master/net_s3fd.py
+class L2Norm(nn.Module):
+    def __init__(self,n_channels, scale=1.0):
+        super(L2Norm,self).__init__()
+        self.n_channels = n_channels
+        self.scale = scale
+        self.eps = 1e-10
+        self.weight = nn.Parameter(torch.Tensor(self.n_channels))
+        self.weight.data *= 0.0
+        self.weight.data += self.scale
+
+    def forward(self, x):
+        norm = x.pow(2).sum(dim=1, keepdim=True).sqrt()+self.eps
+        x = x / norm * self.weight.view(1,-1)
+        return x
 
 class PlacesCNN(nn.Module):
 
-    def __init__(self, model_path='models/places_vgg16/PlacesCNN.pth'):
+    def __init__(self, model_path='models/places_vgg16/PlacesCNN.pth', input_dim=(96, 128)):
         super(PlacesCNN, self).__init__()
 
         complete_model = PCNN.PlacesCNN
@@ -22,10 +37,11 @@ class PlacesCNN(nn.Module):
         
         self.feats.load_state_dict(pretrained_dict)
         
-        self.fc = nn.Linear(512*3*4, 128)
+        self.fc = nn.Linear(512*math.ceil(input_dim[0]/32)*math.ceil(input_dim[1]/32), 128) # (512*3*4, 128)
         
-        #self.upsample = nn.Upsample(size=output_dim, mode='bilinear')
-                        
+        self.l2norm = L2Norm(128, scale=400)
+        
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
         """
@@ -36,18 +52,16 @@ class PlacesCNN(nn.Module):
         - x: PyTorch input Variable
         """
         
-        x = F.relu(self.feats(x))
+        x = self.relu(self.feats(x))
         
-        #print(x.size())
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         
-        #x = self.upsample()
+        x = self.relu(x)
         
-        norm = x.norm(p=2, dim=1, keepdim=True)
-        x_norm = x.div(norm.expand_as(x) + 1e-8)*100
+        x = self.l2norm(x)
 
-        return x_norm
+        return x
 
     
     @property
