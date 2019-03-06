@@ -1,4 +1,3 @@
-# New design of BLSTMs - apply each LSTM to image as a whole, flattened by row or column for horizontal/vertical, with 128 hidden units
 """LocalFeaturesCNN"""
 import torch
 import torchvision
