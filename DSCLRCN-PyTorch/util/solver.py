@@ -41,7 +41,7 @@ class Solver(object):
         self.val_loss_history = []
         self.best_val_loss = 1
 
-    def train(self, model, train_loader, val_loader, num_epochs=10, log_nth=0, filename_args={}):
+    def train(self, model, train_loader, val_loader, num_epochs=10, num_minibatches=1, log_nth=0, filename_args={}):
         """
         Train a given model with the provided data.
 
@@ -67,7 +67,7 @@ class Solver(object):
         optim = self.optim(other_parameters, **self.optim_args)
         optim.add_param_group(pretrained_param_group)
         self._reset_histories()
-        iter_per_epoch = len(train_loader)
+        iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
         
         # Create the scheduler to allow lr adjustment
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=1/2.5)
@@ -93,11 +93,14 @@ class Solver(object):
                 train_loop = enumerate(tqdm(train_loader), 0)
             else:
                 train_loop = enumerate(train_loader, 0)
+                
+            counter = 0 # counter for minibatches
+            it = j*iter_per_epoch
 
             # Batch of items in training set
             for i, data in train_loop:
+                counter += 1 # Count the number of minibatches performed since last backprop
                 
-                it = j*iter_per_epoch + i
                 # Load the items in this batch and their labels from the train_loader
                 inputs, labels = data
                 # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
@@ -118,14 +121,20 @@ class Solver(object):
                 outputs = outputs.transpose(1, 2)
                 
                 loss = self.loss_func(outputs, labels)
-                optim.zero_grad()
                 loss.backward()
-                optim.step()
+                # Only step and zero the gradients every num_minibatches steps
+                if counter == num_minibatches:
+                    counter = 0 # Reset the minibatch counter
+                    
+                    optim.step()
+                    optim.zero_grad()
                 
-                if it%log_nth==0:
-                    tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
-                    self.train_loss_history.append(loss.item())
-                    train_loss_logs += 1
+                    if it%log_nth==0:
+                        tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
+                        self.train_loss_history.append(loss.item())
+                        train_loss_logs += 1
+                    
+                    it += 1 # iteration (batch) number
                 
                 # Free up memory
                 del loss, inputs, outputs, labels
@@ -157,8 +166,7 @@ class Solver(object):
                         if len(filename_args) < 4:
                             filename = 'trained_models/model_state_dict_best_loss_{:6f}.pth'.format(val_loss.item())
                         else:
-                            filename = 'trained_models/best_model_{}_{}_lr2_batch{}_epoch{}.pth'.format(
-                                filename_args['net_type'],
+                            filename = 'trained_models/best_model_{}_lr2_batch{}_epoch{}.pth'.format(
                                 filename_args['optim'],
                                 filename_args['batchsize'],
                                 filename_args['epoch_number'])
