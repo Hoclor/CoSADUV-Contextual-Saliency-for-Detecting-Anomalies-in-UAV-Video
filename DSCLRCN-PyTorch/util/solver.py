@@ -19,7 +19,8 @@ class Solver(object):
                         "momentum": 0.9}
 
     def __init__(self, optim=torch.optim.Adam, optim_args={},
-                 loss_func=torch.nn.KLDivLoss(), location='ncc'):
+                 loss_func=torch.nn.KLDivLoss(), location='ncc',
+                 minibatches=1):
         if optim == torch.optim.Adam:
             optim_args_merged = self.default_adam_args.copy()
         else:
@@ -32,6 +33,8 @@ class Solver(object):
         self._reset_histories()
 
         self.location = location
+
+        self.minibatches=minibatches
 
     def _reset_histories(self):
         """
@@ -80,6 +83,12 @@ class Solver(object):
         if self.location != 'ncc':
             epoch_loop = tqdm(epoch_loop)
 
+        # Define a list to hold minibatch losses for each batch
+        minibatch_losses = []
+
+        # Iteration counter of batches (NOT minibatches)
+        it = 0
+
         # Epoch
         for j in epoch_loop:
             train_loss_logs = 0
@@ -125,19 +134,16 @@ class Solver(object):
                 # Only step and zero the gradients every num_minibatches steps
                 if counter == num_minibatches:
                     counter = 0 # Reset the minibatch counter
-                    
                     optim.step()
                     optim.zero_grad()
-                
                     if it%log_nth==0:
                         tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
                         self.train_loss_history.append(loss.item())
                         train_loss_logs += 1
-                    
                     it += 1 # iteration (batch) number
                 
                 # Free up memory
-                del loss, inputs, outputs, labels
+                del inputs, outputs, labels
             
             model.eval()
             

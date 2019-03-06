@@ -27,24 +27,33 @@ def main():
     
     from util.loss_functions import NSS_loss
 
-    batchsize = 4 # Recommended: 20
+    # batchsize determines how many images are processed before backpropagation is carried out
+    batchsize = 20 # Recommended: 20
+    # Ensure batchsize % minibatchsize = 0. minibatchsize determines how many images are processed on the GPU/CPU at a time
+    minibatchsize = 4 # Recommended: 4 if img_size == 480, 640, else <= 20
     epoch_number = 20 # Recommended: 10 (epoch_number =~ batchsize/2)
     net_type = 'Seg' # 'Seg' or 'CNN' Recommended: Seg
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {'lr': 1e-1} # 1e-2 if SGD, 1e-4 if Adam
     loss_func = NSS_loss # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
 
+    # Check that batchsize % minibatchsize = 0
+    if batchsize % minibatchsize != 0:
+        print("Error: incompatible batchsize ({}) and minibatchsize ({}).\nbatchsize % minibatchsize must equal 0.".format(batchsize, minibatchsize))
+        return 0
+    minibatches = batchsize/minibatchsize
+
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
     #num_train = 100
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
 
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
 
     # Attempt to train a model using the original image sizes
     model = DSCLRCN(input_dim=img_size, local_feats_net=net_type)
     # Set solver as torch.optim.SGD and lr as 1e-2, or torch.optim.Adam and lr 1e-4
-    solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func)
+    solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func, minibatches=minibatches)
     solver.train(model, train_loader, val_loader, num_epochs=epoch_number, log_nth=50, filename_args={
         'batchsize' : batchsize,'epoch_number' : epoch_number,
         'net_type' : net_type, 'optim' : optim_str}
