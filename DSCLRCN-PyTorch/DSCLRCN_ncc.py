@@ -56,8 +56,8 @@ def main():
     )
 
     #Saving the model:
-    model.save('trained_models/model_{}_{}_lr2_batch{}_epoch{}'.format(net_type, optim_str, batchsize, epoch_number))
-    with open('trained_models/solver_{}_{}_lr2_batch{}_epoch{}.pkl'.format(net_type, optim_str, batchsize, epoch_number), 'wb') as outf:
+    model.save('trained_models/model_{}_lr2_batch{}_epoch{}'.format(optim_str, batchsize, epoch_number))
+    with open('trained_models/solver_{}_lr2_batch{}_epoch{}.pkl'.format(optim_str, batchsize, epoch_number), 'wb') as outf:
         pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)
     
     print_func("Testing model and best checkpoint on SALICON validation set")
@@ -101,8 +101,7 @@ def main():
     
     # Delete the model to free up memory, load the best checkpoint of the model, and test this too
     del model
-    filename = 'trained_models/best_model_{}_{}_lr2_batch{}_epoch{}.pth'.format(
-                                net_type,
+    filename = 'trained_models/best_model_{}_lr2_batch{}_epoch{}.pth'.format(
                                 optim_str,
                                 batchsize,
                                 epoch_number)
@@ -116,7 +115,7 @@ def main():
     best_accuracy = checkpoint['best_accuracy']
     
     # Create the model
-    model = DSCLRCN(input_dim=img_size, local_feats_net=net_type)
+    model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
     model.load_state_dict(checkpoint['state_dict'])
     if torch.cuda.is_available():
         model = model.cuda()
