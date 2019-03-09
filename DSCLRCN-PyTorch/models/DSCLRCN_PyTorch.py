@@ -53,6 +53,16 @@ class DSCLRCN(nn.Module):
         self.blstm_h_2 = nn.LSTM(input_size=self.LSTMs_isz[2], hidden_size=self.LSTMs_hsz[2], num_layers=1, batch_first=True, bidirectional=True)
         self.blstm_v_2 = nn.LSTM(input_size=self.LSTMs_isz[3], hidden_size=self.LSTMs_hsz[3], num_layers=1, batch_first=True, bidirectional=True)
 
+        # Initialize the biases of the forget gates to 1 for all blstms
+        for blstm in [self.blstm_h_1, self.blstm_v_1, self.blstm_h_2, self.blstm_v_2]:
+            # Below code taken from https://discuss.pytorch.org/t/set-forget-gate-bias-of-lstm/1745/4
+            for names in blstm._all_weights:
+                for name in filter(lambda n: "bias" in n, names):
+                    bias = getattr(blstm, name)
+                    n = bias.size(0)
+                    start, end = n//4, n//2
+                    bias.data[start:end].fill_(1.)
+        
         # Last conv to move to one channel
         self.last_conv = nn.Conv2d(2*self.LSTMs_hsz[3], 1, 1)
 
