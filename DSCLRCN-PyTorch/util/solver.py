@@ -8,6 +8,8 @@ from torch.autograd import Variable
 from random import *
 
 from tqdm import tqdm
+from tqdm import tqdm_notebook
+
 
 class Solver(object):
     default_adam_args = {"lr": 1e-4,
@@ -81,7 +83,10 @@ class Solver(object):
         
         epoch_loop = range(num_epochs)
         if self.location != 'ncc':
-            epoch_loop = tqdm(epoch_loop)
+            if self.location == 'jupyter':
+                epoch_loop = tqdm_notebook(epoch_loop)
+            else:
+                epoch_loop = tqdm(epoch_loop)
 
         # Define a list to hold minibatch losses for each batch
         minibatch_losses = []
@@ -99,7 +104,10 @@ class Solver(object):
             model.train()
 
             if self.location != 'ncc':
-                train_loop = enumerate(tqdm(train_loader), 0)
+                if self.location == 'jupyter':
+                    train_loop = enumerate(tqdm_notebook(train_loader), 0)
+                else:
+                    train_loop = enumerate(tqdm(train_loader), 0)
             else:
                 train_loop = enumerate(train_loader, 0)
                 
