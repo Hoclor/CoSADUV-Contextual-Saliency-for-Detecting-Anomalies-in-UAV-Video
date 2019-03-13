@@ -80,7 +80,7 @@ class Solver(object):
         iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
         
         # Create the scheduler to allow lr adjustment
-        scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=1/2.5)
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=0.4)
 
         tqdm.write('START TRAIN.')
         
