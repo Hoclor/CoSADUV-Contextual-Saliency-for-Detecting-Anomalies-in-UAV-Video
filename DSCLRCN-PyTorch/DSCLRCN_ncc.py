@@ -39,8 +39,6 @@ def main():
         exit()
     num_minibatches = batchsize/minibatchsize
 
-#    optim_args['lr'] /= num_minibatches # Scale the lr down to account for the number of minibatches we run
-
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
