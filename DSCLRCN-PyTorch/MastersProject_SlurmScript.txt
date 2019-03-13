@@ -11,7 +11,7 @@
 #SBATCH --qos="short"
 # Time limit
 #SBATCH -t 30:00:00
-## Time limit ~5 hours for 240x320 20 epochs
+## Time limit ~5 hours for 240x320 20 epochs, ~26 hours for 480x640 20 epochs
 # Job tracking
 #SBATCH --job-name=DSCLRCN
 #SBATCH --mail-type=ALL
