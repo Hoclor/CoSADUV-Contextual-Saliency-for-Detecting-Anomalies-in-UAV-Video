@@ -15,21 +15,6 @@ import pickle
 
 import cv2
 
-class OverfitSampler(object):
-    """
-    Sample dataset to overfit.
-    """
-
-    def __init__(self, num_samples):
-        self.num_samples = num_samples
-
-    def __iter__(self):
-        return iter(range(self.num_samples))
-
-    def __len__(self):
-        return self.num_samples
-
-
 class SaliconData(data.Dataset):
 
     def __init__(self, X, y):
@@ -46,7 +31,7 @@ class SaliconData(data.Dataset):
 
     def __len__(self):
         return len(self.y)
-    
+
 class DirectSaliconData(data.Dataset):
     """ Salicon dataset, loaded from image files and dynamically resized as specified"""
     def __init__(self, root_dir, mean_image_name, section, img_size=(96, 128)):
@@ -163,16 +148,3 @@ def get_SALICON_datasets(dataset_folder='Dataset/Transformed/'):
             SaliconData(X_val, y_val),
             SaliconData(X_test, y_test),
             mean_image)
-
-def get_SALICON_subset(file_name, dataset_folder='Dataset/Transformed/'):
-    if not dataset_folder.endswith('/'):
-        dataset_folder += '/'
-
-    mean_image = np.load(dataset_folder + 'mean_image.npy').astype(np.float32)/255.
-
-    with open(dataset_folder + ''+file_name, 'rb') as f:
-        data = pickle.load(f)
-    X = [image.astype(np.float32)/255. - mean_image for image in data['images']]
-    y = [fix_map.astype(np.float32)/255. for fix_map in data['fix_maps']]
-            
-    return SaliconData(X, y)
