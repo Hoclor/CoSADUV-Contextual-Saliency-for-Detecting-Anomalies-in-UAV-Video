@@ -1,4 +1,3 @@
-# New design of BLSTMs - apply each LSTM to image as a whole, flattened by row or column for horizontal/vertical, with 128 hidden units
 """LocalFeaturesCNN"""
 import torch
 import torchvision
@@ -47,6 +46,9 @@ class DSCLRCN(nn.Module):
             self.local_feats = LocalFeatsCNN()
 
         self.context = PlacesCNN(input_dim=input_dim)
+        
+        self.context_fc_1 = nn.Linear(128, self.LSTMs_isz[0])
+        self.context_fc_rest = nn.Linear(128, self.LSTMs_isz[1])
 
         # Constructing LSTMs:
         self.blstm_h_1 = nn.LSTM(input_size=self.LSTMs_isz[0], hidden_size=self.LSTMs_hsz[0], num_layers=1, batch_first=True, bidirectional=True)
@@ -54,6 +56,16 @@ class DSCLRCN(nn.Module):
         self.blstm_h_2 = nn.LSTM(input_size=self.LSTMs_isz[2], hidden_size=self.LSTMs_hsz[2], num_layers=1, batch_first=True, bidirectional=True)
         self.blstm_v_2 = nn.LSTM(input_size=self.LSTMs_isz[3], hidden_size=self.LSTMs_hsz[3], num_layers=1, batch_first=True, bidirectional=True)
 
+        # Initialize the biases of the forget gates to 1 for all blstms
+        for blstm in [self.blstm_h_1, self.blstm_v_1, self.blstm_h_2, self.blstm_v_2]:
+            # Below code taken from https://discuss.pytorch.org/t/set-forget-gate-bias-of-lstm/1745/4
+            for names in blstm._all_weights:
+                for name in filter(lambda n: "bias" in n, names):
+                    bias = getattr(blstm, name)
+                    n = bias.size(0)
+                    start, end = n//4, n//2
+                    bias.data[start:end].fill_(1.)
+        
         # Last conv to move to one channel
         self.last_conv = nn.Conv2d(2*self.LSTMs_hsz[3], 1, 1)
 
@@ -79,53 +91,42 @@ class DSCLRCN(nn.Module):
 
         # Get scene feature information
         context = self.context(x)
-        # Create context input into BLSTM_1 by padding context from 128 channels to self.LSTM_isz[1]
-        context_1 = F.pad(context.contiguous().view(N, 1, 128), (0, self.LSTMs_isz[0] - 128), "constant", 0)
-        # Create context input into BLSTM_[2,3,4] by padding context from 128 channels to self.LSTM_isz[2,3,4]
-        context_rest = F.pad(context.contiguous().view(N, 1, 128), (0, self.LSTMs_isz[1] - 128), "constant", 0)
+        context_1 = self.context_fc_1(context) # Create context input into BLSTM_1
+        context_rest = self.context_fc_rest(context)# Create context input into BLSTM_[2,3,4]
 
         # Horizontal BLSTM_1
         context_h = context_1.contiguous().view(N, 1, self.LSTMs_isz[0]) # Reshape context
-        local_feats_h = local_feats.contiguous().view(N, W_lf*H_lf, self.LSTMs_isz[0]) # Reshape features
-        lstm_input_h = torch.cat((context_h, local_feats_h), dim=1) # Produce input tensor by appending features to context
+        local_feats_h = local_feats.contiguous().view(N, self.LSTMs_isz[0], H_lf*W_lf).transpose(1, 2) # Reshape features
+        lstm_input_h = torch.cat((context_h, local_feats_h, context_h), dim=1) # Produce input tensor by inserting context at the start and end of the features
         output_h, _ = self.blstm_h_1(lstm_input_h) # Apply LSTM
         # Remove the context from the output (this is included in the other values through cell memory)
-        output_h = output_h[:,1:,:]
-        # Resize the output to (C, H, W)
-#         output_h = output_h.contiguous().view(N, H_lf, W_lf, 2*self.LSTMs_hsz[0])
-#         output_h = output_h.transpose(1, 3).transpose(3, 2)
+        output_h = output_h[:,1:-1,:]
         
         # Vertical BLSTM_1
         context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[1]) # Reshape context
         output_h  = output_h.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[1]) # Reshape features
-        lstm_input_hv = torch.cat((context_v, output_h), dim=1) # Produce input tensor by appending features to context
+        lstm_input_hv = torch.cat((context_v, output_h, context_v), dim=1) # Produce input tensor by appending features to context
         output_hv, _ = self.blstm_v_1(lstm_input_hv) # Apply LSTM
         # Remove the context from the output (this is included in the other values through cell memory)
-        output_hv = output_hv[:,1:,:]
-        # Resize the output to (C, H, W)
-#         output_hv = output_hv.contiguous().view(N, H_lf, W_lf, 2*self.LSTMs_hsz[1])
-#         output_hv = output_hv.transpose(1, 3).transpose(3, 2)
+        output_hv = output_hv[:,1:-1,:]
 
         # Horizontal BLSTM_2
         context_h_2 = context_rest.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
         output_hv = output_hv.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[2]) # Reshape features
-        lstm_input_hvh = torch.cat((context_h_2, output_hv), dim=1) # Produce input tensor by appending features to context
+        lstm_input_hvh = torch.cat((context_h_2, output_hv, context_h_2), dim=1) # Produce input tensor by appending features to context
         output_hvh, _ = self.blstm_h_2(lstm_input_hvh) # Apply LSTM
         # Remove the context from the output (this is included in the other values through cell memory)
-        output_hvh = output_hvh[:,1:,:]
-        # Resize the output to (C, H, W)
-#         output_hvh = output_hvh.contiguous().view(N, H_lf, W_lf, 2*self.LSTMs_hsz[2])
-#         output_hvh = output_hvh.transpose(1, 3).transpose(3, 2)
+        output_hvh = output_hvh[:,1:-1,:]
 
         # Vertical BLSTM_2
         context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[3]) # Reshape context
         output_hvh = output_hvh.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[3]) # Reshape features
-        lstm_input_hvhv = torch.cat((context_v, output_hvh), dim=1) # Produce input tensor by appending features to context
+        lstm_input_hvhv = torch.cat((context_v, output_hvh, context_v), dim=1) # Produce input tensor by appending features to context
         output_hvhv, _ = self.blstm_v_2(lstm_input_hvhv) # Apply LSTM
         # Remove the context from the output (this is included in the other values through cell memory)
-        output_hvhv = output_hvhv[:,1:,:]
+        output_hvhv = output_hvhv[:,1:-1,:]
         # Resize the output from (N, H*W, C) to (N, C, H, W)
-        output_hvhv = output_hvhv.transpose(1, 2)
+        output_hvhv = output_hvhv.transpose(1, 2) # (N, C, H*W)
         output_hvhv = output_hvhv.contiguous().view(N, 2*self.LSTMs_hsz[3], H_lf, W_lf)
         
         # Reduce channel dimension to 1

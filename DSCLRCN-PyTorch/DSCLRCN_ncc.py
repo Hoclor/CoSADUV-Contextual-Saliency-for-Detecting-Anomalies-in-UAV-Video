@@ -27,39 +27,42 @@ def main():
     
     from util.loss_functions import NSS_loss
 
-    batchsize = 4 # Recommended: 20
+    batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
+    minibatchsize = 4 # Recommended: 4 for 480x640 for 12GB mem, 2 for 8GB mem. Determines how many images are processed in parallel on the GPU at once
     epoch_number = 20 # Recommended: 10 (epoch_number =~ batchsize/2)
-    net_type = 'Seg' # 'Seg' or 'CNN' Recommended: Seg
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
-    optim_args = {'lr': 1e-1} # 1e-2 if SGD, 1e-4 if Adam
+    optim_args = {'lr': 1e-2} # 1e-2 if SGD, 1e-4 if Adam
     loss_func = NSS_loss # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
+
+    if batchsize % minibatchsize:
+        print("Error, batchsize % minibatchsize must equal 0 ({} % {} != 0).".format(batchsize, minibatchsize))
+        exit()
+    num_minibatches = batchsize/minibatchsize
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
-    #num_train = 100
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
 
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
 
     # Attempt to train a model using the original image sizes
-    model = DSCLRCN(input_dim=img_size, local_feats_net=net_type)
+    model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
     # Set solver as torch.optim.SGD and lr as 1e-2, or torch.optim.Adam and lr 1e-4
-    solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func)
-    solver.train(model, train_loader, val_loader, num_epochs=epoch_number, log_nth=50, filename_args={
-        'batchsize' : batchsize,'epoch_number' : epoch_number,
-        'net_type' : net_type, 'optim' : optim_str}
+    solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func, location='ncc')
+    solver.train(model, train_loader, val_loader, num_epochs=epoch_number, num_minibatches=num_minibatches, log_nth=50, 
+        filename_args={'batchsize' : batchsize, 'epoch_number' : epoch_number, 'optim' : optim_str}
     )
 
     #Saving the model:
-    model.save('trained_models/model_{}_{}_lr2_batch{}_epoch{}'.format(net_type, optim_str, batchsize, epoch_number))
-    with open('trained_models/solver_{}_{}_lr2_batch{}_epoch{}.pkl'.format(net_type, optim_str, batchsize, epoch_number), 'wb') as outf:
+    model.save('trained_models/model_{}_lr2_batch{}_epoch{}'.format(optim_str, batchsize, epoch_number))
+    with open('trained_models/solver_{}_lr2_batch{}_epoch{}.pkl'.format(optim_str, batchsize, epoch_number), 'wb') as outf:
         pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)
     
     print_func("Testing model and best checkpoint on SALICON validation set")
     
     # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
     test_losses = []
-    test_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     
     looper=test_loader
     if location != 'ncc':
@@ -96,8 +99,7 @@ def main():
     
     # Delete the model to free up memory, load the best checkpoint of the model, and test this too
     del model
-    filename = 'trained_models/best_model_{}_{}_lr2_batch{}_epoch{}.pth'.format(
-                                net_type,
+    filename = 'trained_models/best_model_{}_lr2_batch{}_epoch{}.pth'.format(
                                 optim_str,
                                 batchsize,
                                 epoch_number)
@@ -111,7 +113,7 @@ def main():
     best_accuracy = checkpoint['best_accuracy']
     
     # Create the model
-    model = DSCLRCN(input_dim=img_size, local_feats_net=net_type)
+    model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
     model.load_state_dict(checkpoint['state_dict'])
     if torch.cuda.is_available():
         model = model.cuda()
@@ -120,7 +122,7 @@ def main():
     
     # Test the checkpoint
     test_losses_checkpoint = []
-    test_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     
     looper = test_loader
     if location != 'ncc':
