@@ -28,7 +28,7 @@ def main():
     from util.loss_functions import NSS_loss
 
     batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
-    minibatchsize = 4 # Recommended: 2 for 480x640. Determines how many images are processed in parallel on the GPU at once
+    minibatchsize = 4 # Recommended: 4 for 480x640 for 12GB mem, 2 for 8GB mem. Determines how many images are processed in parallel on the GPU at once
     epoch_number = 20 # Recommended: 10 (epoch_number =~ batchsize/2)
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {'lr': 1e-2} # 1e-2 if SGD, 1e-4 if Adam
@@ -38,8 +38,6 @@ def main():
         print("Error, batchsize % minibatchsize must equal 0 ({} % {} != 0).".format(batchsize, minibatchsize))
         exit()
     num_minibatches = batchsize/minibatchsize
-
-    optim_args['lr'] /= num_minibatches # Scale the lr down to account for the number of minibatches we run
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
@@ -64,7 +62,7 @@ def main():
     
     # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
     test_losses = []
-    test_loader = torch.utils.data.DataLoader(val_data, batch_size=batchsize, shuffle=True, num_workers=4, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     
     looper=test_loader
     if location != 'ncc':
@@ -124,7 +122,7 @@ def main():
     
     # Test the checkpoint
     test_losses_checkpoint = []
-    test_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     
     looper = test_loader
     if location != 'ncc':

@@ -39,7 +39,7 @@ class PlacesCNN(nn.Module):
         
         self.fc = nn.Linear(512*math.ceil(input_dim[0]/32)*math.ceil(input_dim[1]/32), 128) # (512*3*4, 128)
         
-        self.l2norm = L2Norm(128, scale=400)
+        self.l2norm = L2Norm(128, scale=9.0)
         
         self.relu = nn.ReLU(inplace=True)
 
