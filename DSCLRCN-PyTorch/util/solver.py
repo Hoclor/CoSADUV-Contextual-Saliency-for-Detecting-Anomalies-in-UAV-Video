@@ -184,6 +184,9 @@ class Solver(object):
                 outputs_val = outputs_val.transpose(1, 2)
 
                 val_loss += self.loss_func(outputs_val, labels_val).item()
+                
+                # Free up memory
+                del inputs_val, outputs_val, labels_val, inputs, labels
             
             val_loss /= len(val_loader)
             
@@ -204,10 +207,10 @@ class Solver(object):
                     'best_accuracy': val_loss
                 }, filename)
                 tqdm.write("Checkpoint created with loss: {:6f}".format(val_loss))
-
-                # Free up memory
-                del val_loss, inputs_val, outputs_val, labels_val
-                    
+            
+            # Free up memory
+            del val_loss
+            
             # Print the average Train loss for the last epoch (avg of the logged losses, as decided by log_nth value)
             tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, sum(self.train_loss_history[-train_loss_logs:])/train_loss_logs))
             tqdm.write('[Epoch %i/%i] VAL NSS Loss: %f' % (j, num_epochs, self.val_loss_history[-1]))
