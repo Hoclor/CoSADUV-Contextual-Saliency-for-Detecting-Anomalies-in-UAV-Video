@@ -15,21 +15,6 @@ import pickle
 
 import cv2
 
-class OverfitSampler(object):
-    """
-    Sample dataset to overfit.
-    """
-
-    def __init__(self, num_samples):
-        self.num_samples = num_samples
-
-    def __iter__(self):
-        return iter(range(self.num_samples))
-
-    def __len__(self):
-        return self.num_samples
-
-
 class SaliconData(data.Dataset):
 
     def __init__(self, X, y):
@@ -46,7 +31,7 @@ class SaliconData(data.Dataset):
 
     def __len__(self):
         return len(self.y)
-    
+
 class DirectSaliconData(data.Dataset):
     """ Salicon dataset, loaded from image files and dynamically resized as specified"""
     def __init__(self, root_dir, mean_image_name, section, img_size=(96, 128)):
@@ -73,14 +58,6 @@ class DirectSaliconData(data.Dataset):
         # Load the image of given index, and its fixation map (if section == Test, return fully black image as fixation map as they do not exist for test images)
         img_name = os.path.join(self.root_dir, 'images', self.image_list[index])
         
-        # OPENCV Pipeline
-#         image = cv2.imread(img_name)
-#         # Convert to RGB
-#         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-#         # Resize image to img_size
-#         image = cv2.resize(image, (self.img_size[1], self.img_size[0]))
-        
-        # IMAGEIO Pipeline
         image = imread(img_name)
         image = imresize(image, self.img_size)
         # If image is Grayscale convert it to RGB
@@ -96,12 +73,6 @@ class DirectSaliconData(data.Dataset):
         else:
             fix_map_name = os.path.join(self.root_dir, 'fixation maps', self.section, self.image_list[index][:-4]) + '.png' # Images are .jpg, fixation maps are .png
             
-            # OPENCV Pipeline
-#             fix_map = cv2.imread(fix_map_name, cv2.IMREAD_GRAYSCALE)
-#             # Resize image to img_size
-#             fix_map = cv2.resize(fix_map, (self.img_size[1], self.img_size[0]))
-            
-            # IMAGEIO Pipeline
             fix_map = imread(fix_map_name)
             fix_map = imresize(fix_map, self.img_size)
             
@@ -163,16 +134,3 @@ def get_SALICON_datasets(dataset_folder='Dataset/Transformed/'):
             SaliconData(X_val, y_val),
             SaliconData(X_test, y_test),
             mean_image)
-
-def get_SALICON_subset(file_name, dataset_folder='Dataset/Transformed/'):
-    if not dataset_folder.endswith('/'):
-        dataset_folder += '/'
-
-    mean_image = np.load(dataset_folder + 'mean_image.npy').astype(np.float32)/255.
-
-    with open(dataset_folder + ''+file_name, 'rb') as f:
-        data = pickle.load(f)
-    X = [image.astype(np.float32)/255. - mean_image for image in data['images']]
-    y = [fix_map.astype(np.float32)/255. for fix_map in data['fix_maps']]
-            
-    return SaliconData(X, y)

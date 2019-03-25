@@ -80,7 +80,7 @@ class Solver(object):
         iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
         
         # Create the scheduler to allow lr adjustment
-        scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=1/2.5)
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=0.4)
 
         tqdm.write('START TRAIN.')
         
@@ -108,13 +108,12 @@ class Solver(object):
             # Set the model to training mode
             model.train()
 
-            if self.location != 'ncc':
-                if self.location == 'jupyter':
-                    train_loop = enumerate(tqdm_notebook(train_loader), 0)
-                else:
-                    train_loop = enumerate(tqdm(train_loader), 0)
-            else:
+            if self.location == 'ncc':
                 train_loop = enumerate(train_loader, 0)
+            elif self.location == 'jupyter':
+                train_loop = enumerate(tqdm_notebook(train_loader), 0)
+            else:
+                train_loop = enumerate(tqdm(train_loader), 0)
                 
             counter = 0 # counter for minibatches
             it = j*iter_per_epoch
@@ -156,50 +155,62 @@ class Solver(object):
                     it += 1 # iteration (batch) number
                 
                 # Free up memory
-                del inputs, outputs, labels
+                del inputs, outputs, labels, loss
             
             model.eval()
             
-            rand_select = randint(0, len(val_loader)-1)
-            for ii, data in enumerate(val_loader, 0):
-                if rand_select == ii:
-                    inputs, labels = data
-                    # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
-                    labels = labels.unsqueeze(3)
-                    
-                    if torch.cuda.is_available():
-                        inputs, labels = inputs.cuda(), labels.cuda()
-                    inputs_val = Variable(inputs)
-                    labels_val = Variable(labels)
-                    
-                    outputs_val = model(inputs_val)
-                    # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
-                    outputs_val = outputs_val.transpose(1, 3)
-                    outputs_val = outputs_val.transpose(1, 2)
-                    
-                    val_loss = self.loss_func(outputs_val, labels_val)
-                    
-                    self.val_loss_history.append(val_loss.item())
-                    # Check if this is the best validation loss so far. If so, save the current model state
-                    if val_loss.item() < self.best_val_loss:
-                        if len(filename_args) < 3:
-                            filename = 'trained_models/model_state_dict_best_loss_{:6f}.pth'.format(val_loss.item())
-                        else:
-                            filename = 'trained_models/best_model_{}_lr2_batch{}_epoch{}.pth'.format(
-                                filename_args['optim'],
-                                filename_args['batchsize'],
-                                filename_args['epoch_number'])
-                        self.best_val_loss = val_loss.item()
-                        torch.save({
-                            'epoch': j + 1,
-                            'state_dict': model.state_dict(),
-                            'best_accuracy': val_loss.item()
-                        }, filename)
-                        tqdm.write("Checkpoint created with loss: {:6f}".format(val_loss.item()))
-                    
-                    # Free up memory
-                    del val_loss, inputs_val, outputs_val, labels_val
-                    
+            if self.location == 'ncc':
+                val_loop = enumerate(val_loader, 0)
+            elif self.location == 'jupyter':
+                val_loop = enumerate(tqdm_notebook(val_loader), 0)
+            else:
+                val_loop = enumerate(tqdm(val_loader), 0)
+            
+            # Validation
+            val_loss = 0
+            for ii, data in val_loop:
+                inputs, labels = data
+                # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
+                labels = labels.unsqueeze(3)
+
+                if torch.cuda.is_available():
+                    inputs, labels = inputs.cuda(), labels.cuda()
+                inputs_val = Variable(inputs)
+                labels_val = Variable(labels)
+
+                outputs_val = model(inputs_val)
+                # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
+                outputs_val = outputs_val.transpose(1, 3)
+                outputs_val = outputs_val.transpose(1, 2)
+
+                val_loss += self.loss_func(outputs_val, labels_val).item()
+                
+                # Free up memory
+                del inputs_val, outputs_val, labels_val, inputs, labels
+            
+            val_loss /= len(val_loader)
+            
+            self.val_loss_history.append(val_loss)
+            # Check if this is the best validation loss so far. If so, save the current model state
+            if val_loss < self.best_val_loss:
+                if len(filename_args) < 3:
+                    filename = 'trained_models/model_state_dict_best_loss_{:6f}.pth'.format(val_loss)
+                else:
+                    filename = 'trained_models/best_model_{}_lr2_batch{}_epoch{}.pth'.format(
+                        filename_args['optim'],
+                        filename_args['batchsize'],
+                        filename_args['epoch_number'])
+                self.best_val_loss = val_loss
+                torch.save({
+                    'epoch': j + 1,
+                    'state_dict': model.state_dict(),
+                    'best_accuracy': val_loss
+                }, filename)
+                tqdm.write("Checkpoint created with loss: {:6f}".format(val_loss))
+            
+            # Free up memory
+            del val_loss
+            
             # Print the average Train loss for the last epoch (avg of the logged losses, as decided by log_nth value)
             tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, sum(self.train_loss_history[-train_loss_logs:])/train_loss_logs))
             tqdm.write('[Epoch %i/%i] VAL NSS Loss: %f' % (j, num_epochs, self.val_loss_history[-1]))
