@@ -29,7 +29,7 @@ def main():
 
     batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
     minibatchsize = 4 # Recommended: 4 for 480x640 for 12GB mem, 2 for 8GB mem. Determines how many images are processed in parallel on the GPU at once
-    epoch_number = 20 # Recommended: 10 (epoch_number =~ batchsize/2)
+    epoch_number = 10 # Recommended: 10 (epoch_number =~ batchsize/2)
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {'lr': 1e-2} # 1e-2 if SGD, 1e-4 if Adam
     loss_func = NSS_loss # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
@@ -43,9 +43,9 @@ def main():
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
 
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
 
     # Attempt to train a model using the original image sizes
     model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
