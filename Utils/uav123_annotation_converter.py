@@ -38,7 +38,7 @@ def draw_annotations(dataset_folder, sequence_name, display=False):
         ret = list(map(lambda n : int(n) if n != 'NaN' else -1, ret))
         return ret
     annotations = list(map(process_line, annotations))
-
+    
 
     # Define the codec and create VideoWriter object
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
@@ -64,7 +64,7 @@ def draw_annotations(dataset_folder, sequence_name, display=False):
             y_br = y_tl + annotation[3]
             cv2.rectangle(frame, (x_tl, y_tl), (x_br, y_br), [0, 0, 255], 2, -1)
         
-        # Write the frame with boxes 
+        # Write the frame with boxes
         out.write(frame)
         # Also save the frame individually
         cv2.imwrite(os.path.join(target_folder, frame_name[:-4] + '.png'), frame)
@@ -77,7 +77,7 @@ def draw_annotations(dataset_folder, sequence_name, display=False):
             cv2.imshow('frame',frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        
+
 def draw_groundtruth(dataset_folder, sequence_name, display=False):
     # Get the sequnce folder and annotations folder
     sequence_folder = os.path.join(dataset_folder, 'data_seq', 'UAV123', sequence_name)
@@ -124,7 +124,7 @@ def draw_groundtruth(dataset_folder, sequence_name, display=False):
 
         # Get the corresponding annotation
         annotation = annotations[frame_count]
-        
+
         # Only draw an annotiation if it exists - i.e. annotation is not -1
         if all(a != -1 for a in annotation):
             # Draw the rectangle as a filled in white box
@@ -132,9 +132,9 @@ def draw_groundtruth(dataset_folder, sequence_name, display=False):
             y_tl = annotation[1]
             x_br = x_tl + annotation[2]
             y_br = y_tl + annotation[3]
-                    cv2.rectangle(frame, (x_tl, y_tl), (x_br, y_br), 255, cv2.FILLED)
+            cv2.rectangle(frame, (x_tl, y_tl), (x_br, y_br), 255, cv2.FILLED)
         
-        # Write the frame with boxes 
+        # Write the frame with boxes
         out.write(frame)
         # Also save the frame individually
         cv2.imwrite(os.path.join(target_folder, frame_name[:-4] + '.png'), frame)
@@ -147,7 +147,7 @@ def draw_groundtruth(dataset_folder, sequence_name, display=False):
             cv2.imshow('frame',frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        
+
 
 
     # Release everything
@@ -158,22 +158,16 @@ def draw_groundtruth(dataset_folder, sequence_name, display=False):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Draw annotations, either on original videos or as ground-truth saliency maps')
-    parser.add_argument('--folder', '-f', dest='folder', help='Folder containing input files. Video and annotation file names must match exactly, with videos as .mp4 or .avi, and annotations as .xml', required = False)
-    parser.add_argument('--video', '-vid', dest='video', help='Input video file', required=False)
-    parser.add_argument('--annotation', '-ann', dest='ann', help='Dense annotation file', required=False)
+    parser.add_argument('--dataset', '-d', dest='dataset', help='Folder containing the UAV123 dataset', required = True)
+    parser.add_argument('--sequence', '-seq', dest='name', help='Name of sequence to be processed', required=False)
     parser.add_argument('--bounding_boxes', '-bb', dest='drawing_function', action='store_const', const=draw_annotations, default=draw_groundtruth)
     parser.add_argument('--verbose', '-v', dest='verbose', action='store_true')
     args = parser.parse_args()
 
-
-    # Check that either folder was given, or if not then both video and ann was given
-    if args.folder == None and (args.video == None or args.ann == None):
-        print("Error: invalid inputs given. Either -folder, or both -video and -ann must be specified.")
-
-    if args.folder != None:
+    if args.name == None:
         # Read all files in the folder and call the appropriate function on each video/annotation pair found
         #TODO: implement
         pass
     else:
         # Draw bounding boxes on the original video, or ground-truth saliency maps, depending on if -bb was specified
-        args.drawing_function(args.video, args.ann, args.verbose)
+        args.drawing_function(args.dataset, args.name, args.verbose)
