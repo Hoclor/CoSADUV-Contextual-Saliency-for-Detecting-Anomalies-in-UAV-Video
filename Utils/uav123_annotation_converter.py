@@ -44,8 +44,7 @@ def draw_annotations(dataset_folder, sequence_name, display=False):
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
     framerate = 30
     (width, height) = (1280, 720)
-    out = cv2.VideoWriter(os.path.join(target_folder, sequence_name + '.avi'), fourcc, framerate, (width, height), 0)
-    print(os.path.join(target_folder, sequence_name + '.avi'))
+    out = cv2.VideoWriter(os.path.join(target_folder, sequence_name + '.avi'), fourcc, framerate, (width, height), 1)
 
     last_time = time.time()
     for frame_count, frame_name in enumerate(tqdm(frames)):
@@ -77,6 +76,10 @@ def draw_annotations(dataset_folder, sequence_name, display=False):
             cv2.imshow('frame',frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+    
+    # Release everything
+    out.release()
+    cv2.destroyAllWindows()
 
 def draw_groundtruth(dataset_folder, sequence_name, display=False):
     # Get the sequnce folder and annotations folder
@@ -147,9 +150,7 @@ def draw_groundtruth(dataset_folder, sequence_name, display=False):
             cv2.imshow('frame',frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-
-
-
+    
     # Release everything
     out.release()
     cv2.destroyAllWindows()
