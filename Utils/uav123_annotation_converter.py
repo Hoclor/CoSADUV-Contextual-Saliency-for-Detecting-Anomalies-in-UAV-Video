@@ -4,76 +4,76 @@ Based off the same code as `cvat_annotation_converter.py'.
 """
 
 import os
+import time
 import cv2
 import numpy as np
 from tqdm import tqdm
 
-# Create a list of BGR colours stored as 3-tuples of uint_8s
-colours = [
-    [255, 0, 0], # Blue
-    [0, 255, 0], # Green
-    [0, 0, 255], # Red
-    [0, 255, 255], # Yellow
-    [255, 255, 0], # Cyan
-    [255, 0, 255], # Magenta
-    [192, 192, 192], # Silver
-    [0, 0, 128], # Maroon
-    [0, 128, 128], # Olive
-    [0, 165, 255] # Orange
-]
+def draw_annotations(dataset_folder, sequence_name, display=False):
+    # Get the sequnce folder and annotations folder
+    sequence_folder = os.path.join(dataset_folder, 'data_seq', 'UAV123', sequence_name)
+    annotation_file = os.path.join(dataset_folder, 'anno', 'UAV123', sequence_name + '.txt')
+    target_folder   = os.path.join(dataset_folder, 'bounding_boxes', 'UAV123', sequence_name)
+    # Check if the target_folder exists
+    if not os.path.exists(target_folder):
+        # Create the target_folder
+        os.makedirs(target_folder)
 
-def draw_annotations(video, annotations, display=False):
-    tree = ET.parse(args.ann)
-    root = tree.getroot()
-    # Create a list of 'track' nodes that are children of the root
-    tracks = [child for child in root if child.tag == 'track']
+    # Get a list of frames in sequence_folder
+    if os.name == 'posix':
+        # Unix
+        frames = os.listdir(sequence_folder)
+    else:
+        # Windows (os.name == 'nt')
+        with os.scandir(sequence_folder) as file_iterator:
+            frames = [file_object.name for file_object in list(file_iterator)]
 
-    # Read the video in as a video object
-    cap = cv2.VideoCapture(args.video)
-    # Get a rough count of the number of frames in the video
-    rough_frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    # Find the name/path of the video, without file type
-    name_index = -1
-    while(args.video[name_index] != '.'):
-        name_index -= 1
+    # Extract the annotations from the annotation_file
+    with open(annotation_file, 'r') as f:
+        annotations = f.readlines()
+    # Convert each line from a string to a list with 4 numbers
+    def process_line(line):
+        ret = line.strip().split(',')
+        ret = list(map(lambda n : int(n) if n != 'NaN' else -1, ret))
+        return ret
+    annotations = list(map(process_line, annotations))
+
 
     # Define the codec and create VideoWriter object
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-    framerate = cap.get(cv2.CAP_PROP_FPS)
-    (width, height) = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    out = cv2.VideoWriter(args.video[:name_index] + '_annotated.avi', fourcc, framerate, (width, height))
+    framerate = 30
+    (width, height) = (1280, 720)
+    out = cv2.VideoWriter(os.path.join(target_folder, sequence_name + '.avi'), fourcc, framerate, (width, height), 0)
+    print(os.path.join(target_folder, sequence_name + '.avi'))
 
+    last_time = time.time()
+    for frame_count, frame_name in enumerate(tqdm(frames)):
+        # Read this frame
+        frame = cv2.imread(os.path.join(sequence_folder, frame_name))
 
-    for frame_count in tqdm(range(rough_frame_count)):
-        # Read the next frame of the video
-        ret, frame = cap.read()
-        if not ret:
-            # Video is done, so break out of the loop
-            break
+        # Get the corresponding annotation
+        annotation = annotations[frame_count]
 
-        # Loop over the track objects. For all that have an annotation for this frame, draw a corresponding rectangle with a colour from the colours list
-        for track in tracks:
-            # Check that this track has any box nodes left
-            if(len(track) > 0):
-                # Since the nodes are sorted by frame number, we only have to check the first one
-                box = track[0]
-                if(int(box.attrib['frame']) == frame_count):
-                    # Draw the rectangle described by this 'box' node on this frame
-                    # Cast the coordinates to floats, then to ints, as the cv2.rectangle function cannot handle float pixel values
-                    # And int(str) cannot handle float strings
-                    x_tl = int(float(box.attrib['xtl']))
-                    y_tl = int(float(box.attrib['ytl']))
-                    x_br = int(float(box.attrib['xbr']))
-                    y_br = int(float(box.attrib['ybr']))
-                    cv2.rectangle(frame, (x_tl, y_tl), (x_br, y_br), colours[int(track.attrib['id']) % len(colours)], 2, -1)
-                    # delete this box from the track, so we can keep only checking the first box in the future
-                    track.remove(box)
+        # Only draw an annotiation if it exists - i.e. annotation is not -1
+        if all(a != -1 for a in annotation):
+            # Draw the rectangle as a red bounding box
+            x_tl = annotation[0]
+            y_tl = annotation[1]
+            x_br = x_tl + annotation[2]
+            y_br = y_tl + annotation[3]
+            cv2.rectangle(frame, (x_tl, y_tl), (x_br, y_br), [0, 0, 255], 2, -1)
         
         # Write the frame with boxes 
         out.write(frame)
+        # Also save the frame individually
+        cv2.imwrite(os.path.join(target_folder, frame_name[:-4] + '.png'), frame)
         # Display the resulting frame
         if display:
+            # Force the function to run at the framerate of the video
+            while time.time() - last_time < ((1/framerate)/1.025): # Enforce time passed as slightly less than 1/framerate, as displaying the output takes some time as well
+                pass
+            last_time = time.time()
             cv2.imshow('frame',frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
