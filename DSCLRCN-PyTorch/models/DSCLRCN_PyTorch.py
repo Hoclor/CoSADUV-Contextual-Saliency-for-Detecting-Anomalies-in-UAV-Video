@@ -86,7 +86,7 @@ class DSCLRCN(nn.Module):
         H,W = self.input_dim
         
         # Get local feature map
-        local_feats = self.local_feats(x)
+        local_feats = self.local_feats(x) # Shape (N, C, H, W)
         H_lf, W_lf = local_feats.size()[2:]
 
         # Get scene feature information
@@ -95,39 +95,53 @@ class DSCLRCN(nn.Module):
         context_rest = self.context_fc_rest(context)# Create context input into BLSTM_[2,3,4]
 
         # Horizontal BLSTM_1
-        context_h = context_1.contiguous().view(N, 1, self.LSTMs_isz[0]) # Reshape context
-        local_feats_h = local_feats.contiguous().view(N, self.LSTMs_isz[0], H_lf*W_lf).transpose(1, 2) # Reshape features
+        local_feats_h = local_feats.contiguous().view(N, self.LSTMs_isz[0], H_lf*W_lf).transpose(1, 2) # Shape (N, H*W, C)
+        
+        context_h = context_1.contiguous().view(N, 1, self.LSTMs_isz[0]) # Context shape (N, 1, C)
         lstm_input_h = torch.cat((context_h, local_feats_h, context_h), dim=1) # Produce input tensor by inserting context at the start and end of the features
-        output_h, _ = self.blstm_h_1(lstm_input_h) # Apply LSTM
-        # Remove the context from the output (this is included in the other values through cell memory)
-        output_h = output_h[:,1:-1,:]
+        output_h, _ = self.blstm_h_1(lstm_input_h) # Apply LSTM, Shape (N, H*W, C)
+        output_h = output_h[:,1:-1,:] # Remove the context from the output (this is included in the other values through cell memory)
         
         # Vertical BLSTM_1
+        # Reshape output_h to column-wise instead of row-wise, to apply the vertical BLSTM
+        output_h = output_h.view(N, H_lf, W_lf, self.LSTMs_isz[1]) # Shape (N, H, W, C)
+        output_h = output_h.transpose(1, 2) # Shape (N, W, H, C)
+        output_h  = output_h.contiguous().view(N, W_lf*H_lf, self.LSTMs_isz[1]) # Shape (N, W*H, C)
+        
         context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[1]) # Reshape context
-        output_h  = output_h.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[1]) # Reshape features
         lstm_input_hv = torch.cat((context_v, output_h, context_v), dim=1) # Produce input tensor by appending features to context
-        output_hv, _ = self.blstm_v_1(lstm_input_hv) # Apply LSTM
+        output_hv, _ = self.blstm_v_1(lstm_input_hv) # Apply LSTM, Shape (N, W*H, C)
         # Remove the context from the output (this is included in the other values through cell memory)
-        output_hv = output_hv[:,1:-1,:]
+        output_hv = output_hv[:,
+output_hvhv, _ = lstm_input_hvhv1:-1,:]
 
         # Horizontal BLSTM_2
+        # Reshape output_hv to row-wise instead of column-wise, to apply the horizontal BLSTM
+        output_hv = output_hv.view(N, W_lf, H_lf, self.LSTMs_isz[2]) # Shape (N, W, H, C)
+        output_hv = output_hv.transpose(1, 2) # Shape (N, H, W, C)
+        output_hv = output_hv.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[2]) # Shape (N, H*W, C)
+        
         context_h_2 = context_rest.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
         output_hv = output_hv.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[2]) # Reshape features
         lstm_input_hvh = torch.cat((context_h_2, output_hv, context_h_2), dim=1) # Produce input tensor by appending features to context
-        output_hvh, _ = self.blstm_h_2(lstm_input_hvh) # Apply LSTM
+        output_hvh, _ = self.blstm_h_2(lstm_input_hvh) # Apply LSTM, Shape (N, H*W, C)
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvh = output_hvh[:,1:-1,:]
 
         # Vertical BLSTM_2
+        # Reshape output_hvh to column-wise instead of row-wise, to apply the vertical BLSTM
+        output_hvh = output_hvh.view(N, H_lf, W_lf, self.LSTMs_isz[3]) # Shape (N, H, W, C)
+        output_hvh = output_hvh.transpose(1, 2) # Shape (N, W, H, C)
+        output_hvh  = output_hvh.contiguous().view(N, W_lf*H_lf, self.LSTMs_isz[3]) # Shape (N, W*H, C)
+        
         context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[3]) # Reshape context
-        output_hvh = output_hvh.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[3]) # Reshape features
         lstm_input_hvhv = torch.cat((context_v, output_hvh, context_v), dim=1) # Produce input tensor by appending features to context
-        output_hvhv, _ = self.blstm_v_2(lstm_input_hvhv) # Apply LSTM
+        output_hvhv, _ = self.blstm_v_2(lstm_input_hvhv) # Apply LSTM, Shape (N, W*H, C)
         # Remove the context from the output (this is included in the other values through cell memory)
         output_hvhv = output_hvhv[:,1:-1,:]
-        # Resize the output from (N, H*W, C) to (N, C, H, W)
-        output_hvhv = output_hvhv.transpose(1, 2) # (N, C, H*W)
-        output_hvhv = output_hvhv.contiguous().view(N, 2*self.LSTMs_hsz[3], H_lf, W_lf)
+        # Reshape the output from (N, W*H, C) to (N, C, H, W)
+        output_hvhv = output_hvhv.view(N, W_lf, H_lf, 2*self.LSTMs_hsz[3]) # Shape (N, W, H, C)
+        output_hvhv = output_hvhv.transpose(1, 3) # Shape (N, C, H, W)
         
         # Reduce channel dimension to 1
         output_conv = self.last_conv(output_hvhv)
