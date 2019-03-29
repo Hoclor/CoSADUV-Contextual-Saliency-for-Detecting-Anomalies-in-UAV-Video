@@ -112,8 +112,7 @@ class DSCLRCN(nn.Module):
         lstm_input_hv = torch.cat((context_v, output_h, context_v), dim=1) # Produce input tensor by appending features to context
         output_hv, _ = self.blstm_v_1(lstm_input_hv) # Apply LSTM, Shape (N, W*H, C)
         # Remove the context from the output (this is included in the other values through cell memory)
-        output_hv = output_hv[:,
-output_hvhv, _ = lstm_input_hvhv1:-1,:]
+        output_hv = output_hv[:,1:-1,:]
 
         # Horizontal BLSTM_2
         # Reshape output_hv to row-wise instead of column-wise, to apply the horizontal BLSTM
