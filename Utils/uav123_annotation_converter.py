@@ -10,6 +10,7 @@ import numpy as np
 from tqdm import tqdm
 
 def draw_annotations(dataset_folder, sequence_name, display=False):
+    tqdm.write(sequence_name)
     # Get the sequnce folder and annotations folder
     sequence_folder = os.path.join(dataset_folder, 'data_seq', 'UAV123', sequence_name)
     annotation_file = os.path.join(dataset_folder, 'anno', 'UAV123', sequence_name + '.txt')
@@ -30,8 +31,13 @@ def draw_annotations(dataset_folder, sequence_name, display=False):
 
 
     # Extract the annotations from the annotation_file
-    with open(annotation_file, 'r') as f:
-        annotations = f.readlines()
+    try:
+        with open(annotation_file, 'r') as f:
+            annotations = f.readlines()
+    except FileNotFoundError:
+        # Skip this sequence as it doesn't have a single annotation file - simplifies processing, but loses out on some data
+        return 0
+    
     # Convert each line from a string to a list with 4 numbers
     def process_line(line):
         ret = line.strip().split(',')
@@ -47,12 +53,13 @@ def draw_annotations(dataset_folder, sequence_name, display=False):
     out = cv2.VideoWriter(os.path.join(target_folder, sequence_name + '.avi'), fourcc, framerate, (width, height), 1)
 
     last_time = time.time()
-    for frame_count, frame_name in enumerate(tqdm(frames)):
+    for frame_count, annotation in enumerate(tqdm(annotations)):
+        # Get the corresponding frame name
+        frame_name = frames[frame_count]
+
         # Read this frame
         frame = cv2.imread(os.path.join(sequence_folder, frame_name))
 
-        # Get the corresponding annotation
-        annotation = annotations[frame_count]
 
         # Only draw an annotiation if it exists - i.e. annotation is not -1
         if all(a != -1 for a in annotation):
@@ -82,6 +89,7 @@ def draw_annotations(dataset_folder, sequence_name, display=False):
     cv2.destroyAllWindows()
 
 def draw_groundtruth(dataset_folder, sequence_name, display=False):
+    tqdm.write(sequence_name)
     # Get the sequnce folder and annotations folder
     sequence_folder = os.path.join(dataset_folder, 'data_seq', 'UAV123', sequence_name)
     annotation_file = os.path.join(dataset_folder, 'anno', 'UAV123', sequence_name + '.txt')
@@ -102,8 +110,13 @@ def draw_groundtruth(dataset_folder, sequence_name, display=False):
 
 
     # Extract the annotations from the annotation_file
-    with open(annotation_file, 'r') as f:
-        annotations = f.readlines()
+    try:
+        with open(annotation_file, 'r') as f:
+            annotations = f.readlines()
+    except FileNotFoundError:
+        # Skip this sequence as it doesn't have a single annotation file - simplifies processing, but loses out on some data
+        return 0
+    
     # Convert each line from a string to a list with 4 numbers
     def process_line(line):
         ret = line.strip().split(',')
@@ -121,12 +134,12 @@ def draw_groundtruth(dataset_folder, sequence_name, display=False):
     blank_frame = np.zeros((height, width), dtype=np.uint8)
 
     last_time = time.time()
-    for frame_count, frame_name in enumerate(tqdm(frames)):
+    for frame_count, annotation in enumerate(tqdm(annotations)):
         # Copy a new blank frame
         frame = np.copy(blank_frame)
 
-        # Get the corresponding annotation
-        annotation = annotations[frame_count]
+        # Get the corresponding frame name
+        frame_name = frames[frame_count]
 
         # Only draw an annotiation if it exists - i.e. annotation is not -1
         if all(a != -1 for a in annotation):
@@ -167,8 +180,17 @@ if __name__ == '__main__':
 
     if args.name == None:
         # Read all files in the folder and call the appropriate function on each video/annotation pair found
-        #TODO: implement
-        pass
+        # Get a list of frames in sequence_folder
+        if os.name == 'posix':
+            # Unix
+            sequences = os.listdir(os.path.join(args.dataset, 'data_seq', 'UAV123'))
+        else:
+            # Windows (os.name == 'nt')
+            with os.scandir(os.path.join(args.dataset, 'data_seq', 'UAV123')) as folder_iterator:
+                sequences = [folder_object.name for folder_object in list(folder_iterator)]
+        # Call the drawing function with each sequence name in sequences
+        for seq_name in tqdm(sequences):
+            args.drawing_function(args.dataset, seq_name, args.verbose)
     else:
         # Draw bounding boxes on the original video, or ground-truth saliency maps, depending on if -bb was specified
         args.drawing_function(args.dataset, args.name, args.verbose)
