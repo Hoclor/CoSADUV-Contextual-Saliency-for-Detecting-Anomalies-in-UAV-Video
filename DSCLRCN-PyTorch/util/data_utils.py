@@ -86,7 +86,7 @@ class ToTensor(object):
 
 class SaliconData(data.Dataset):
     """ Salicon dataset, loaded from image files and dynamically resized as specified"""
-    def __init__(self, root_dir, mean_image_name, section, img_size=(96, 128)):
+    def __init__(self, root_dir, mean_image_name, section, img_size=(480, 640)):
         self.root_dir = root_dir
         self.section = section.lower()
         self.img_size = img_size # Height, Width
@@ -144,7 +144,10 @@ class SaliconData(data.Dataset):
 
 ##### External functions #####
 
-def get_SALICON_datasets(root_dir, mean_image_name, img_size=(96, 128)):
+##### External retrieval functions #####
+
+def get_SALICON_datasets(root_dir, mean_image_name, img_size=(480, 640)):
+    """ Returns a SALICON dataset, split into training, validation, and test sets."""
     train_data = SaliconData(root_dir, mean_image_name, 'train', img_size)
     val_data = SaliconData(root_dir, mean_image_name, 'val', img_size)
     test_data = SaliconData(root_dir, mean_image_name, 'test', img_size)
