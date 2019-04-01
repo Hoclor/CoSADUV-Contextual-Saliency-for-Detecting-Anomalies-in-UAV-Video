@@ -15,6 +15,11 @@ import pickle
 
 import cv2
 
+##### Transformation classes #####
+
+
+##### Dataset classes #####
+
 class SaliconData(data.Dataset):
     """ Salicon dataset, loaded from image files and dynamically resized as specified"""
     def __init__(self, root_dir, mean_image_name, section, img_size=(96, 128)):
@@ -71,6 +76,9 @@ class SaliconData(data.Dataset):
         
     def __len__(self):
         return len(self.image_list)
+
+
+##### External functions #####
 
 def get_SALICON_datasets(root_dir, mean_image_name, img_size=(96, 128)):
     train_data = SaliconData(root_dir, mean_image_name, 'train', img_size)
