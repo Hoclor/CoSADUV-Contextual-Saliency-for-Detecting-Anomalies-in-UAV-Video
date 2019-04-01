@@ -17,6 +17,70 @@ import cv2
 
 ##### Transformation classes #####
 
+class Rescale(object):
+    """Rescale the image and target in a sample to a given size.
+    Source: https://pytorch.org/tutorials/beginner/data_loading_tutorial.html
+
+    Args:
+        output_size (tuple or int): Desired output size. If tuple, output is
+            matched to output_size. If int, smaller of image edges is matched
+            to output_size keeping aspect ratio the same.
+    """
+
+    def __init__(self, output_size):
+        assert isinstance(output_size, (int, tuple))
+        self.output_size = output_size
+
+    def __call__(self, sample):
+        image, target = sample
+
+        h, w = image.shape[:2]
+        if isinstance(self.output_size, int):
+            if h > w:
+                new_h, new_w = self.output_size * h / w, self.output_size
+            else:
+                new_h, new_w = self.output_size, self.output_size * w / h
+        else:
+            new_h, new_w = self.output_size
+
+        new_h, new_w = int(new_h), int(new_w)
+
+        img = transform.resize(image, (new_h, new_w))
+
+        tar = transform.resize(target, (new_h, new_w))
+
+        return img, tar
+    
+class Normalize(object):
+    """Normalize the image in a sample by subtracting a mean image."""
+
+    def __init__(self, mean_image):
+        self.mean_image = mean_image
+
+    def __call__(self, sample):
+        image, target = sample
+
+        if image.shape[:2] != self.mean_image.shape[:2]:
+            self.mean_image = transform.resize(self.mean_image, image.shape[:2])
+        
+        image = image - self.mean_image
+
+        return image, target
+
+class ToTensor(object):
+    """Convert ndarrays in sample to Tensors.
+    Source: https://pytorch.org/tutorials/beginner/data_loading_tutorial.html
+    """
+
+    def __call__(self, sample):
+        image, target = sample
+
+        # swap color axis because
+        # numpy image: H x W x C
+        # torch image: C X H X W
+        image = image.transpose((2, 0, 1))
+        tar = target.transpose((2, 0, 1))
+        return image, tar
 
 ##### Dataset classes #####
 
