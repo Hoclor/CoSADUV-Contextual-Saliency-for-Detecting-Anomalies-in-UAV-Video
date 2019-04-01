@@ -16,23 +16,6 @@ import pickle
 import cv2
 
 class SaliconData(data.Dataset):
-
-    def __init__(self, X, y):
-        self.X = X
-        self.y = y
-
-    def __getitem__(self, index):
-        img = self.X[index]
-        fix_map = self.y[index]
-
-        img = torch.from_numpy(img)
-        fix_map = torch.from_numpy(fix_map)
-        return img, fix_map
-
-    def __len__(self):
-        return len(self.y)
-
-class DirectSaliconData(data.Dataset):
     """ Salicon dataset, loaded from image files and dynamically resized as specified"""
     def __init__(self, root_dir, mean_image_name, section, img_size=(96, 128)):
         self.root_dir = root_dir
@@ -89,9 +72,9 @@ class DirectSaliconData(data.Dataset):
     def __len__(self):
         return len(self.image_list)
 
-def get_direct_datasets(root_dir, mean_image_name, img_size=(96, 128)):
-    train_data = DirectSaliconData(root_dir, mean_image_name, 'train', img_size)
-    val_data = DirectSaliconData(root_dir, mean_image_name, 'val', img_size)
-    test_data = DirectSaliconData(root_dir, mean_image_name, 'test', img_size)
+def get_SALICON_datasets(root_dir, mean_image_name, img_size=(96, 128)):
+    train_data = SaliconData(root_dir, mean_image_name, 'train', img_size)
+    val_data = SaliconData(root_dir, mean_image_name, 'val', img_size)
+    test_data = SaliconData(root_dir, mean_image_name, 'test', img_size)
     
     return (train_data, val_data, test_data)

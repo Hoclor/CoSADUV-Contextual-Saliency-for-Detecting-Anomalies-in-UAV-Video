@@ -9,7 +9,6 @@ def main():
 
 
     from util.data_utils import get_SALICON_datasets
-    from util.data_utils import get_direct_datasets
     from tqdm import tqdm
     from torch.autograd import Variable
     import numpy as np
@@ -20,7 +19,7 @@ def main():
     dataset_root_dir = 'Dataset/Raw_Dataset'
     mean_image_name = 'mean_image.npy'
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
-    train_data, val_data, test_data = get_direct_datasets(dataset_root_dir, mean_image_name, img_size)
+    train_data, val_data, test_data = get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
     
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
