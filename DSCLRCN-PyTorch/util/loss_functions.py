@@ -12,7 +12,9 @@ def NSS(x, y):
     # Compute the element-wise multiplication of x and y
     scanpath = x * y
     # Compute the sum of the scanpath divided by the sum of values in y as NSS
-    nss = scanpath.sum()/y.sum()
+    nss = scanpath.sum()/y.sum() if y.sum() > 0 else scanpath.sum()
+    if y.sum() <= 0:
+        print("Error: unexpected sum of ground truth: {}".format(y.sum()))
     return nss
 
 
