@@ -94,53 +94,59 @@ class DSCLRCN(nn.Module):
         context_1 = self.context_fc_1(context) # Create context input into BLSTM_1
         context_rest = self.context_fc_rest(context)# Create context input into BLSTM_[2,3,4]
 
+
         # Horizontal BLSTM_1
-        local_feats_h = local_feats.contiguous().view(N, self.LSTMs_isz[0], H_lf*W_lf).transpose(1, 2) # Shape (N, H*W, C)
-        
+        local_feats_h = local_feats.transpose(1,2).transpose(2, 3).contiguous() # Shape (N, H, W, C)
         context_h = context_1.contiguous().view(N, 1, self.LSTMs_isz[0]) # Context shape (N, 1, C)
-        lstm_input_h = torch.cat((context_h, local_feats_h, context_h), dim=1) # Produce input tensor by inserting context at the start and end of the features
-        output_h, _ = self.blstm_h_1(lstm_input_h) # Apply LSTM, Shape (N, H*W, C)
-        output_h = output_h[:,1:-1,:] # Remove the context from the output (this is included in the other values through cell memory)
-        
+        # Loop over local_feats one row at a time: split(1,1) splits it into individual rows, squeeze removes the row dimension
+        rows = []
+        for row in local_feats_h.split(1, 1): # row shape (N, 1, W, C)
+            # Add context to the start and end of the row
+            row = torch.cat((context_h, row.squeeze(), context_h), dim=1)
+            result, _ = self.blstm_h_1(row)
+            rows.append(result[:,1:-1,:])
+        # Reconstruct the image by stacking the rows
+        output_h = torch.stack(rows, dim=1) # Shape (N, H, W, C)
+
+
         # Vertical BLSTM_1
-        # Reshape output_h to column-wise instead of row-wise, to apply the vertical BLSTM
-        output_h = output_h.view(N, H_lf, W_lf, self.LSTMs_isz[1]) # Shape (N, H, W, C)
-        output_h = output_h.transpose(1, 2) # Shape (N, W, H, C)
-        output_h  = output_h.contiguous().view(N, W_lf*H_lf, self.LSTMs_isz[1]) # Shape (N, W*H, C)
-        
-        context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[1]) # Reshape context
-        lstm_input_hv = torch.cat((context_v, output_h, context_v), dim=1) # Produce input tensor by appending features to context
-        output_hv, _ = self.blstm_v_1(lstm_input_hv) # Apply LSTM, Shape (N, W*H, C)
-        # Remove the context from the output (this is included in the other values through cell memory)
-        output_hv = output_hv[:,1:-1,:]
+        context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[1]) # Context shape (N, 1, C)
+        # Loop over local_feats one column at a time: split(1,2) splits it into individual columns, squeeze removes the column dimension
+        cols = []
+        for col in output_h.split(1, 2): # col shape (N, H, 1, C)
+            # Add context to the start and end of the col
+            col = torch.cat((context_v, col.squeeze(), context_v), dim=1)
+            result, _ = self.blstm_v_1(col)
+            cols.append(result[:,1:-1,:])
+        # Reconstruct the image by stacking the columns
+        output_hv = torch.stack(cols, dim=2) # Shape (N, H, W, C)
+
 
         # Horizontal BLSTM_2
-        # Reshape output_hv to row-wise instead of column-wise, to apply the horizontal BLSTM
-        output_hv = output_hv.view(N, W_lf, H_lf, self.LSTMs_isz[2]) # Shape (N, W, H, C)
-        output_hv = output_hv.transpose(1, 2) # Shape (N, H, W, C)
-        output_hv = output_hv.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[2]) # Shape (N, H*W, C)
-        
-        context_h_2 = context_rest.contiguous().view(N, 1, self.LSTMs_isz[2]) # Reshape context
-        output_hv = output_hv.contiguous().view(N, H_lf*W_lf, self.LSTMs_isz[2]) # Reshape features
-        lstm_input_hvh = torch.cat((context_h_2, output_hv, context_h_2), dim=1) # Produce input tensor by appending features to context
-        output_hvh, _ = self.blstm_h_2(lstm_input_hvh) # Apply LSTM, Shape (N, H*W, C)
-        # Remove the context from the output (this is included in the other values through cell memory)
-        output_hvh = output_hvh[:,1:-1,:]
+        context_h_2 = context_rest.contiguous().view(N, 1, self.LSTMs_isz[2]) # Context shape (N, 1, C)
+        # Loop over local_feats one row at a time: split(1,1) splits it into individual rows, squeeze removes the row dimension
+        rows = []
+        for row in output_hv.split(1, 1): # row shape (N, 1, W, C)
+            # Add context to the start and end of the row
+            row = torch.cat((context_h_2, row.squeeze(), context_h_2), dim=1)
+            result, _ = self.blstm_h_2(row)
+            rows.append(result[:,1:-1,:])
+        # Reconstruct the image by stacking the rows
+        output_hvh = torch.stack(rows, dim=1) # Shape (N, H, W, C)
+
 
         # Vertical BLSTM_2
-        # Reshape output_hvh to column-wise instead of row-wise, to apply the vertical BLSTM
-        output_hvh = output_hvh.view(N, H_lf, W_lf, self.LSTMs_isz[3]) # Shape (N, H, W, C)
-        output_hvh = output_hvh.transpose(1, 2) # Shape (N, W, H, C)
-        output_hvh  = output_hvh.contiguous().view(N, W_lf*H_lf, self.LSTMs_isz[3]) # Shape (N, W*H, C)
-        
-        context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[3]) # Reshape context
-        lstm_input_hvhv = torch.cat((context_v, output_hvh, context_v), dim=1) # Produce input tensor by appending features to context
-        output_hvhv, _ = self.blstm_v_2(lstm_input_hvhv) # Apply LSTM, Shape (N, W*H, C)
-        # Remove the context from the output (this is included in the other values through cell memory)
-        output_hvhv = output_hvhv[:,1:-1,:]
-        # Reshape the output from (N, W*H, C) to (N, C, H, W)
-        output_hvhv = output_hvhv.view(N, W_lf, H_lf, 2*self.LSTMs_hsz[3]) # Shape (N, W, H, C)
-        output_hvhv = output_hvhv.transpose(1, 3) # Shape (N, C, H, W)
+        context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[3]) # Context shape (N, 1, C)
+        # Loop over local_feats one column at a time: split(1,2) splits it into individual columns, squeeze removes the column dimension
+        cols = []
+        for col in output_hvh.split(1, 2): # col shape (N, H, 1, C)
+            # Add context to the start and end of the col
+            col = torch.cat((context_v, col.squeeze(), context_v), dim=1)
+            result, _ = self.blstm_v_2(col)
+            cols.append(result[:,1:-1,:])
+        # Reconstruct the image by stacking the columns
+        output_hvhv = torch.stack(cols, dim=2) # Shape (N, H, W, C)
+        output_hvhv = output_hvhv.transpose(1, 3).transpose(2, 3) # Shape (N, C, H, W)
         
         # Reduce channel dimension to 1
         output_conv = self.last_conv(output_hvhv)
@@ -149,9 +155,9 @@ class DSCLRCN(nn.Module):
         
         # Upsampling - nn.functional.interpolate does not exist in < 0.4.1, but upsample is deprecated in > 0.4.0, so use this switch
         if torch.__version__ == '0.4.0':
-            output_upsampled = nn.functional.upsample(output_conv, size=self.input_dim, mode='bilinear', align_corners=False)
+            output_upsampled = nn.functional.upsample(output_conv, size=self.input_dim, mode='bilinear', align_corners=True)
         else:
-            output_upsampled = nn.functional.interpolate(output_conv, size=self.input_dim, mode='bilinear', align_corners=False) # align_corners=False assumed, default behaviour was changed from True to False from pytorch 0.3.1 to 0.4
+            output_upsampled = nn.functional.interpolate(output_conv, size=self.input_dim, mode='bilinear', align_corners=True) # align_corners=False assumed, default behaviour was changed from True to False from pytorch 0.3.1 to 0.4
         
         # Softmax scoring
         output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
