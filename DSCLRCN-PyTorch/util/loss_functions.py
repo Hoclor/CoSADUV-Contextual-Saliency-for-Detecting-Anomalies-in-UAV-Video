@@ -17,7 +17,6 @@ def NSS(x, y):
         print("Error: unexpected sum of ground truth: {}".format(y.sum()))
     return nss
 
-
 def NSS_loss(x, y):
         """
         Computes the Normalized Scanpath Saliency loss between x (output of a model) and y (label).
@@ -30,6 +29,28 @@ def NSS_loss(x, y):
             batch_sum = 0
             for i in range(x.shape[0]):
                 batch_sum += -NSS(x[i, :, :], y[i, :, :])
+            return batch_sum/x.shape[0]
+        
+def NSS_2(x, y):
+    # normalize saliency map
+    sal_map = (x - torch.mean(x))/torch.std(x)
+    # mean value at fixation locations
+    sal_map = sal_map.masked_select(y > 0)
+    score = torch.mean(sal_map)
+    return score
+
+def NSS_loss_2(x, y):
+        """
+        Computes the Normalized Scanpath Saliency loss between x (output of a model) and y (label).
+        x and y are assumed to be torch tensors, either individual images or batches.
+        """
+        # Check if dimensionality of x is 3. If so, apply NSS loss on each individual set in the batch, and return avg loss
+        if len(x.shape) == 2:
+            return -NSS_2(x, y)
+        else:
+            batch_sum = 0
+            for i in range(x.shape[0]):
+                batch_sum += -NSS_2(x[i, :, :], y[i, :, :])
             return batch_sum/x.shape[0]
 
 # Pearson Cross Correlation
