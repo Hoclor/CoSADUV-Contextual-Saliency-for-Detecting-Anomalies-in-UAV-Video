@@ -33,10 +33,10 @@ def NSS_loss(x, y):
         
 def NSS_2(x, y):
     # normalize saliency map
-    sal_map = (x - torch.mean(x))/torch.std(x)
+    sal_map = (x - x.mean())/x.std()
     # mean value at fixation locations
     sal_map = sal_map.masked_select(y > 0)
-    score = torch.mean(sal_map)
+    score = sal_map.mean()
     return score
 
 def NSS_loss_2(x, y):
