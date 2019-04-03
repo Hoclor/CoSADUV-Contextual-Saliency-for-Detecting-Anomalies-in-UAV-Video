@@ -25,7 +25,7 @@ def main():
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
     
-    from util.loss_functions import NSS_loss
+    from util.loss_functions import NSS_loss_2 as NSS_loss
 
     batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
     minibatchsize = 4 # Recommended: 4 for 480x640 for 12GB mem, 2 for 8GB mem. Determines how many images are processed in parallel on the GPU at once
@@ -38,6 +38,7 @@ def main():
         print("Error, batchsize % minibatchsize must equal 0 ({} % {} != 0).".format(batchsize, minibatchsize))
         exit()
     num_minibatches = batchsize/minibatchsize
+    optim_args['lr'] /= num_minibatches # Scale the lr down as smaller minibatches are used
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
