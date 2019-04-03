@@ -23,10 +23,10 @@ class DSCLRCN(nn.Module):
         # LSTM_2 hidden size: 128
         # LSTM_3 hidden size: 128
         # LSTM_4 hidden size: 128
-        self.LSTMs_hsz = (128,
-                          128,
-                          128,
-                          128)
+        self.LSTMs_hsz = (512,
+                          512,
+                          512,
+                          512)
         
         # Input size of the LSTMs
         # LSTM_1 input size: channel of local_feats output (512)
@@ -102,9 +102,11 @@ class DSCLRCN(nn.Module):
         rows = []
         for row in local_feats_h.split(1, 1): # row shape (N, 1, W, C)
             # Add context to the start and end of the row
-            row = torch.cat((context_h, row.squeeze(), context_h), dim=1)
+            row = row.squeeze(1)
+            row = torch.cat((context_h, row, context_h), dim=1)
             result, _ = self.blstm_h_1(row)
-            rows.append(result[:,1:-1,:])
+            result = result[:,1:-1,:]
+            rows.append(result)
         # Reconstruct the image by stacking the rows
         output_h = torch.stack(rows, dim=1) # Shape (N, H, W, C)
 
@@ -115,9 +117,11 @@ class DSCLRCN(nn.Module):
         cols = []
         for col in output_h.split(1, 2): # col shape (N, H, 1, C)
             # Add context to the start and end of the col
-            col = torch.cat((context_v, col.squeeze(), context_v), dim=1)
+            col = col.squeeze(2)
+            col = torch.cat((context_v, col, context_v), dim=1)
             result, _ = self.blstm_v_1(col)
-            cols.append(result[:,1:-1,:])
+            result = result[:,1:-1,:]
+            cols.append(result)
         # Reconstruct the image by stacking the columns
         output_hv = torch.stack(cols, dim=2) # Shape (N, H, W, C)
 
@@ -128,9 +132,11 @@ class DSCLRCN(nn.Module):
         rows = []
         for row in output_hv.split(1, 1): # row shape (N, 1, W, C)
             # Add context to the start and end of the row
-            row = torch.cat((context_h_2, row.squeeze(), context_h_2), dim=1)
+            row = row.squeeze(1)
+            row = torch.cat((context_h_2, row, context_h_2), dim=1)
             result, _ = self.blstm_h_2(row)
-            rows.append(result[:,1:-1,:])
+            result = result[:,1:-1,:]
+            rows.append(result)
         # Reconstruct the image by stacking the rows
         output_hvh = torch.stack(rows, dim=1) # Shape (N, H, W, C)
 
@@ -141,9 +147,11 @@ class DSCLRCN(nn.Module):
         cols = []
         for col in output_hvh.split(1, 2): # col shape (N, H, 1, C)
             # Add context to the start and end of the col
-            col = torch.cat((context_v, col.squeeze(), context_v), dim=1)
+            col = col.squeeze(2)
+            col = torch.cat((context_v, col, context_v), dim=1)
             result, _ = self.blstm_v_2(col)
-            cols.append(result[:,1:-1,:])
+            result = result[:,1:-1,:]
+            cols.append(result)
         # Reconstruct the image by stacking the columns
         output_hvhv = torch.stack(cols, dim=2) # Shape (N, H, W, C)
         output_hvhv = output_hvhv.transpose(1, 3).transpose(2, 3) # Shape (N, C, H, W)
