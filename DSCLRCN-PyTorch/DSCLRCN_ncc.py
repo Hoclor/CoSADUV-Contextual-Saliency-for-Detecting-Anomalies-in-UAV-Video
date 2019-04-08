@@ -64,6 +64,7 @@ def main():
     # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
     test_losses = []
     test_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+    test_loss_func = NSS_loss
     
     looper=test_loader
     if location != 'ncc':
@@ -72,14 +73,11 @@ def main():
     for data in looper:
         inputs, labels = data
         if torch.cuda.is_available():
-            inputs = Variable(inputs.cuda())
-            labels = Variable(labels.cuda())
-        else:
-            inputs = Variable(inputs)
-            labels = Variable(labels)
+            inputs = inputs.cuda()
+            labels = labels.cuda()
 
         # Produce the output
-        outputs = model(inputs).squeeze()
+        outputs = model(inputs).squeeze(1)
         # Move the output to the CPU so we can process it using numpy
         outputs = outputs.cpu().data.numpy()
 
@@ -93,10 +91,14 @@ def main():
         kernel_size += 1 if kernel_size % 2 == 0 else 0
         
         outputs = np.array([cv2.GaussianBlur(output, (kernel_size, kernel_size), sigma) for output in outputs])
-
-        # Compute the loss and append it to the list
-        labels = labels.cpu().numpy()
-        test_losses.append(NSS_loss(outputs, labels).item())
+        
+        outputs = torch.from_numpy(outputs)
+        
+        if torch.cuda.is_available():
+            outputs = outputs.cuda()
+            labels  = labels.cuda()
+        
+        testLosses.append(test_loss_func(outputs, labels).item())
     
     # Delete the model to free up memory, load the best checkpoint of the model, and test this too
     del model
@@ -132,14 +134,11 @@ def main():
     for data in looper:
         inputs, labels = data
         if torch.cuda.is_available():
-            inputs = Variable(inputs.cuda())
-            labels = Variable(labels.cuda())
-        else:
-            inputs = Variable(inputs)
-            labels = Variable(labels)
+            inputs = inputs.cuda()
+            labels = labels.cuda()
 
         # Produce the output
-        outputs = model(inputs).squeeze()
+        outputs = model(inputs).squeeze(1)
         # Move the output to the CPU so we can process it using numpy
         outputs = outputs.cpu().data.numpy()
 
@@ -154,9 +153,13 @@ def main():
         
         outputs = np.array([cv2.GaussianBlur(output, (kernel_size, kernel_size), sigma) for output in outputs])
         
-        # Compute the loss and append it to the list
-        labels = labels.cpu().numpy()
-        test_losses_checkpoint.append(NSS_loss(outputs, labels).item())
+        outputs = torch.from_numpy(outputs)
+        
+        if torch.cuda.is_available():
+            outputs = outputs.cuda()
+            labels  = labels.cuda()
+        
+        testLosses_checkpoint.append(test_loss_func(outputs, labels).item())
 
     # Print out the result
     print()
