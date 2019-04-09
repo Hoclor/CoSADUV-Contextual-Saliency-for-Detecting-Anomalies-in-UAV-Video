@@ -28,7 +28,7 @@ def main():
     from util.loss_functions import NSS_loss, NSS_loss_2
 
     batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
-    minibatchsize = 2 # Recommended: 4 for 480x640 for 12GB mem, 2 for 8GB mem. Determines how many images are processed in parallel on the GPU at once
+    minibatchsize = 4 # Recommended: 4 for 480x640 for 12GB mem, 2 for 8GB mem. Determines how many images are processed in parallel on the GPU at once
     epoch_number = 20 # Recommended: 10 (epoch_number =~ batchsize/2)
     optim_str = 'SGD' # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {'lr': 1e-2} # 1e-2 if SGD, 1e-4 if Adam
