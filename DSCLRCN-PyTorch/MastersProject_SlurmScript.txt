@@ -3,10 +3,11 @@
 #SBATCH -N 1
 #SBATCH -c 1
 # 12GB RAM
-#SBATCH --mem=12G
+#SBATCH --mem=14G
 
 # GPU selection, job type, QOS
 #SBATCH --gres=gpu:1
+## SBATCH --nodelist=gpu3
 #SBATCH -p "ug-gpu-small"
 #SBATCH --qos="short"
 # Time limit
@@ -21,9 +22,9 @@
 # (required to use the module command)
 source /etc/profile
 # use cuda 9
-module load cuda/10.0
+module load cuda/9.2
 # Use virtualenv
-source ~/envs/MastersProject3.7/bin/activate
+source ~/envs/MastersProject_0.4torch/bin/activate
 
 # Run your program
 #stdbuf -oL python3 DSCLRCN_ncc.py
