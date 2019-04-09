@@ -1,6 +1,7 @@
 """Data utility functions."""
 import os
 import sys
+import random
 
 import numpy as np
 import torch
@@ -85,7 +86,7 @@ class ToTensor(object):
 ##### Dataset classes #####
 
 class SaliconData(data.Dataset):
-    """ Salicon dataset, loaded from image files and dynamically resized as specified"""
+    """Salicon dataset, loaded from image files and dynamically resized as specified"""
     def __init__(self, root_dir, mean_image_name, section, img_size=(480, 640)):
         self.root_dir = root_dir
         self.section = section.lower()
@@ -141,15 +142,112 @@ class SaliconData(data.Dataset):
     def __len__(self):
         return len(self.image_list)
 
-
-##### External functions #####
+#TODO implement this class
+class _UAV123Data(data.Dataset):
+    """NotImpleneted: UAV123 dataset, loaded from image files and dynamically resized as specified"""
+    def __init__(self, root_dir, mean_image_name, segments, img_size=(480, 640)):
+        return NotImplemented
+        self.root_dir = root_dir
+        self.segments = segments
+        self.img_size = img_size # Height, Width
+        self.mean_image = np.load(os.path.join(self.root_dir, mean_image_name))
+        self.mean_image = cv2.resize(self.mean_image, (self.img_size[1], self.img_size[0])) # Resize the mean_image to the correct size
+        self.mean_image = self.mean_image.astype(np.float32)/255. # Convert to [0, 1] (float)
+        
+        # Create the list of images in this section in root_dir
+        if os.name == 'posix':
+            # Unix
+            file_names = os.listdir(os.path.join(self.root_dir, 'images'))
+            # Filter the file_names so we only get the files in this section
+            file_names = [name for name in file_names if section in name]
+        else:
+            # Windows (os.name == 'nt')
+            with os.scandir(os.path.join(self.root_dir, 'images')) as file_iterator:
+                file_names = [file_object.name for file_object in list(file_iterator) if section in file_object.name]
+        self.image_list = sorted(file_names)
+    
+    def __getitem__(self, index):
+        # Load the image of given index, and its fixation map (if section == Test, return fully black image as fixation map as they do not exist for test images)
+        img_name = os.path.join(self.root_dir, 'images', self.image_list[index])
+        
+        image = imread(img_name)
+        image = imresize(image, self.img_size)
+        # If image is Grayscale convert it to RGB
+        if len(image.shape) == 2:
+            image = np.repeat(np.expand_dims(image, 2), 3, 2)
+        
+        # Normalize image by subtracting mean_image, convert from [0, 255] (int) to [0, 1] (float), and from [H, W, C] to [C, H, W]
+        image = (image.astype(np.float32)/255. - self.mean_image).transpose(2, 0, 1)
+        
+        if self.section == 'test':
+            fix_map_name = 'None'
+            fix_map = np.zeros(self.img_size, dtype=np.float32)
+        else:
+            fix_map_name = os.path.join(self.root_dir, 'fixation maps', self.section, self.image_list[index][:-4]) + '.png' # Images are .jpg, fixation maps are .png
+            
+            fix_map = imread(fix_map_name)
+            fix_map = imresize(fix_map, self.img_size)
+            
+            # Normalize fixation map by converting from [0, 255] (int) to [0, 1] (float), and from [H, W, C] to [C, H, W]
+            fix_map = (fix_map.astype(np.float32)/255.)
+        
+        # Convert image and fix_map to torch tensors
+        image = torch.from_numpy(image)
+        fix_map = torch.from_numpy(fix_map)
+        
+        # Return the image and the fix_map
+        return image, fix_map
+        
+    def __len__(self):
+        return len(self.image_list)
 
 ##### External retrieval functions #####
 
 def get_SALICON_datasets(root_dir, mean_image_name, img_size=(480, 640)):
-    """ Returns a SALICON dataset, split into training, validation, and test sets."""
+    """Returns a SALICON dataset, split into training, validation, and test sets."""
     train_data = SaliconData(root_dir, mean_image_name, 'train', img_size)
     val_data = SaliconData(root_dir, mean_image_name, 'val', img_size)
     test_data = SaliconData(root_dir, mean_image_name, 'test', img_size)
+    
+    return (train_data, val_data, test_data)
+
+def _get_UAV123_datasets(root_dir, mean_image_name, splits=[0.6, 0.2, 0.2], sequence_lengths = 300, img_size=(480, 640)):
+    """NotImplemented: Returns a UAV123 dataset, split into training, validation, and test sets
+    as specified by 'segments' dictionary in this function.
+    """
+    return NotImplemented
+    segments = {
+        'train': [],
+        'val': [],
+        'test': []
+    }
+
+    # Proportions of train/val/test split must sum to 1
+    assert(sum(splits) == 1)
+
+    # Randomly create the train/val/test split
+
+    # List of all segments
+    if os.name == 'posix':
+        # Unix
+        segment_list = os.listdir(os.path.join(root_dir, 'ground_truth', 'UAV123'))
+    else:
+        # Windows (os.name == 'nt')
+        with os.scandir(os.path.join(root_dir, 'ground_truth', 'UAV123')) as folder_iterator:
+            segment_list = [folder_object.name for folder_object in list(folder_iterator)]
+    
+    # Randomly split this list into train/val/test sets
+    random.shuffle(segment_list)
+    index_one = int(splits[0] * len(segment_list))
+    index_two = int(index_one + splits[1] * len(segment_list))
+
+    # Assign the segments
+    segments['train'] = segment_list[:index_one]
+    segments['val'] = segment_list[index_one:index_two]
+    segments['test'] = segment_list[index_two:]
+
+    train_data = SaliconData(root_dir, mean_image_name, segments['train'], img_size)
+    val_data   = SaliconData(root_dir, mean_image_name, segments['val'], img_size)
+    test_data  = SaliconData(root_dir, mean_image_name, segments['test'], img_size)
     
     return (train_data, val_data, test_data)
