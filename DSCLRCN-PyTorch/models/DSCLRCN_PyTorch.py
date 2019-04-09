@@ -23,10 +23,10 @@ class DSCLRCN(nn.Module):
         # LSTM_2 hidden size: 128
         # LSTM_3 hidden size: 128
         # LSTM_4 hidden size: 128
-        self.LSTMs_hsz = (512,
-                          512,
-                          512,
-                          512)
+        self.LSTMs_hsz = (128,
+                          128,
+                          128,
+                          128)
         
         # Input size of the LSTMs
         # LSTM_1 input size: channel of local_feats output (512)
@@ -104,6 +104,7 @@ class DSCLRCN(nn.Module):
             # Add context to the start and end of the row
             row = row.squeeze(1)
             row = torch.cat((context_h, row, context_h), dim=1)
+            #FIXME: Error here if using PyTorch version >=1.0, BLSTM returns nan for all values corresponding to row (but not to context_h)
             result, _ = self.blstm_h_1(row)
             result = result[:,1:-1,:]
             rows.append(result)
