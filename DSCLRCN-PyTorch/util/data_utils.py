@@ -246,8 +246,8 @@ def _get_UAV123_datasets(root_dir, mean_image_name, splits=[0.6, 0.2, 0.2], sequ
     segments['val'] = segment_list[index_one:index_two]
     segments['test'] = segment_list[index_two:]
 
-    train_data = SaliconData(root_dir, mean_image_name, segments['train'], img_size)
-    val_data   = SaliconData(root_dir, mean_image_name, segments['val'], img_size)
-    test_data  = SaliconData(root_dir, mean_image_name, segments['test'], img_size)
+    train_data = _UAV123Data(root_dir, mean_image_name, segments['train'], img_size)
+    val_data   = _UAV123Data(root_dir, mean_image_name, segments['val'], img_size)
+    test_data  = _UAV123Data(root_dir, mean_image_name, segments['test'], img_size)
     
     return (train_data, val_data, test_data)
