@@ -307,7 +307,7 @@ def get_nvvl_UAV123_datasets(root_dir, shuffle=False, sequence_length = 150, img
     val_data, val_targets   = prepare_nvvl_UAV123_Dataset(root_dir, 'val', shuffle=shuffle, sequence_length, img_size)
     test_data, test_targets  = prepare_nvvl_UAV123_Dataset(root_dir, 'test', shuffle=shuffle, sequence_length, img_size)
     
-    return (train_data, train_targets, val_data, val_targets, test_data, test_targets)
+    return (train_data, train_targets), (val_data, val_targets), (test_data, test_targets)
 
 
 ##### Dataloader preparation functions #####
