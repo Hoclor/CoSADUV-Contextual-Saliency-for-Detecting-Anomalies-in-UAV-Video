@@ -2,12 +2,14 @@
 
 Based off the same code as `cvat_annotation_converter.py' (https://gist.github.com/cheind/9850e35bb08cfe12500942fb8b55531f).
 """
-
 import os
 import time
-import cv2
+
 import numpy as np
 from tqdm import tqdm
+
+import cv2
+
 
 def draw_annotations(dataset_folder, sequence_name, display=False):
     tqdm.write(sequence_name)
@@ -87,6 +89,7 @@ def draw_annotations(dataset_folder, sequence_name, display=False):
     # Release everything
     out.release()
     cv2.destroyAllWindows()
+
 
 def draw_groundtruth(dataset_folder, sequence_name, display=False):
     tqdm.write(sequence_name)
@@ -168,8 +171,7 @@ def draw_groundtruth(dataset_folder, sequence_name, display=False):
     out.release()
     cv2.destroyAllWindows()
 
-def draw_nvvl_groundtruth(dataset_folder, sequence_name, display=False):
-    """ Creates a video of the specified sequence consisting of the original image sequence followed by the ground truth sequence."""
+
     tqdm.write(sequence_name)
     # Get the sequnce folder and annotations folder
     sequence_folder = os.path.join(dataset_folder, 'data_seq', 'UAV123', sequence_name)
