@@ -296,7 +296,7 @@ if __name__ == '__main__':
         for seq_name in tqdm(sequences):
             drawing_function(args.dataset, seq_name, target_folder=args.target_folder, display=args.verbose)
     elif len(args.name.strip().split(',')) > 1:
-        for seq_name in args.name.strip().split(','):
+        for seq_name in tqdm(args.name.strip().split(',')):
             drawing_function(args.dataset, seq_name.strip(), target_folder=args.target_folder, display=args.verbose)
     else:
         # Draw bounding boxes on the original video, or ground-truth saliency maps, depending on if -bb was specified
