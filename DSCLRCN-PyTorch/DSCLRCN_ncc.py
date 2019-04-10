@@ -16,10 +16,17 @@ def main():
     import pickle
 
 #     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
-    dataset_root_dir = 'Dataset/Raw_Dataset'
+    dataset_root_dir = 'Dataset/SALICON'
     mean_image_name = 'mean_image.npy'
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
+
+    if 'SALICON' in dataset_root_dir:
+        dataset_type = 'SALICON'
     train_data, val_data, test_data = get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
+    elif 'UAV123' in dataset_root_dir:
+        dataset_type = 'UAV123'
+        train_data, train_targets, val_data, val_targets, test_data, test_targets = get_nvvl_UAV123_datasets(dataset_root_dir, shuffle=True, sequence_length=150, img_size=img_size)
+
     
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
@@ -40,9 +47,8 @@ def main():
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
-
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
+    train_loader = get_dataloader(dataset_type, train_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = get_dataloader(dataset_type, val_data, batch_size=minibatchsize, shuffle=True, num_workers=4, pin_memory=True)
 
     # Attempt to train a model using the original image sizes
     model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
@@ -59,9 +65,12 @@ def main():
     
     print_func("Testing model and best checkpoint on SALICON validation set")
     
-    # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
     test_losses = []
-    test_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+    if dataset_type == 'SALICON':
+        # SALICON does not provide GT for test set, so test on val set instead
+        test_loader = get_dataloader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+    else:
+        test_loader = get_dataloader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     
     looper=test_loader
     if location != 'ncc':
@@ -121,7 +130,11 @@ def main():
     
     # Test the checkpoint
     test_losses_checkpoint = []
-    test_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+    if dataset_type == 'SALICON':
+        # SALICON does not provide GT for test set, so test on val set instead
+        test_loader = get_dataloader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+    else:
+        test_loader = get_dataloader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     
     looper = test_loader
     if location != 'ncc':
