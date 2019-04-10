@@ -1,18 +1,15 @@
 """Data utility functions."""
 import os
-import sys
+import pickle
 import random
+import sys
 
 import numpy as np
 import torch
 import torch.utils.data as data
-
-from scipy.ndimage import imread
 from scipy.misc import imresize
-
+from scipy.ndimage import imread
 from skimage import io, transform
-
-import pickle
 
 import cv2
 
@@ -24,6 +21,7 @@ except ImportError:
 
 
 ##### Transformation classes #####
+
 
 class Rescale(object):
     """Rescale the image and target in a sample to a given size.
@@ -90,7 +88,9 @@ class ToTensor(object):
         tar = target.transpose((2, 0, 1))
         return image, tar
 
+
 ##### Dataset classes #####
+
 
 class SaliconData(data.Dataset):
     """Salicon dataset, loaded from image files and dynamically resized as specified"""
@@ -151,9 +151,9 @@ class SaliconData(data.Dataset):
 
 #TODO implement this class
 class _UAV123Data(data.Dataset):
-    """NotImpleneted: UAV123 dataset, loaded from image files and dynamically resized as specified"""
+    """NotImplemented: UAV123 dataset, loaded from image files and dynamically resized as specified"""
     def __init__(self, root_dir, mean_image_name, segments, img_size=(480, 640)):
-        return NotImplemented
+        return NotImplementedError
         self.root_dir = root_dir
         self.segments = segments
         self.img_size = img_size # Height, Width
@@ -246,7 +246,9 @@ def prepare_nvvl_UAV123_Dataset(root_dir, section, shuffle=False, sequence_lengt
 
     return input_data, targets
 
+
 ##### External retrieval functions #####
+
 
 def get_SALICON_datasets(root_dir, mean_image_name, img_size=(480, 640)):
     """Returns a SALICON dataset, split into training, validation, and test sets."""
@@ -260,7 +262,7 @@ def _get_UAV123_datasets(root_dir, mean_image_name, splits=[0.6, 0.2, 0.2], sequ
     """NotImplemented: Returns a UAV123 dataset, split into training, validation, and test sets
     as specified by 'segments' dictionary in this function.
     """
-    return NotImplemented
+    return NotImplementedError
     segments = {
         'train': [],
         'val': [],
