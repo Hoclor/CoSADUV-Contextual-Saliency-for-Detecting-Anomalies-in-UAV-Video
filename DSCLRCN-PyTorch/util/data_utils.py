@@ -16,6 +16,13 @@ import pickle
 
 import cv2
 
+try:
+    import nvvl
+    nvvl_is_available = True
+except ImportError:
+    nvvl_is_available = False
+
+
 ##### Transformation classes #####
 
 class Rescale(object):
@@ -201,6 +208,44 @@ class _UAV123Data(data.Dataset):
     def __len__(self):
         return len(self.image_list)
 
+def prepare_nvvl_UAV123_Dataset(root_dir, section, shuffle=False, sequence_length=150, img_size=(480, 640)):
+    if not nvvl_is_available:
+        return ModuleNotFoundError("nvvl is not available.")
+    # Get a list of videos for this section
+    if os.name == 'posix':
+        # Unix
+        videos = os.listdir(os.path.join(root_dir, 'UAV123', section))
+        videos.remove('targets') # Remove the targets folder
+    else:
+        # Windows (os.name == 'nt')
+        with os.scandir(os.path.join(root_dir, 'UAV123', section)) as folder_iterator:
+            videos = [folder_object.name for folder_object in list(folder_iterator)]
+            videos.remove('targets') # Remove the targets folder
+
+    if shuffle:
+        # Shuffle the order of videos (so input_videos and target_videos are ordered in the same way)
+        random.shuffle(videos)
+    
+    # List of input videos
+    input_videos = [os.path.join(root_dir, 'UAV123', section, name) for name in videos]
+    # List of target videos
+    target_videos = [os.path.join(root_dir, 'UAV123', section, 'targets', name) for name in videos]
+
+    # Define the processing to be applied to the data
+    processing = {
+        "input": nvvl.ProcessDesc(
+            width=img_size[1], # Scale image to the given width
+            height=img_size[0], # Scale image to the given height
+            normalized=True # Normalize image values from [0, 255] to [0, 1]
+        )
+    }
+    # Create the NVVL Dataset for the input data
+    input_data = nvvl.VideoDataset(filenames=input_videos, sequence_length=sequence_length, processing=processing)
+    # Create the NVVL Dataset for the targets
+    targets = nvvl.VideoDataset(filenames=target_videos, sequence_length=sequence_length, processing=processing)
+
+    return input_data, targets
+
 ##### External retrieval functions #####
 
 def get_SALICON_datasets(root_dir, mean_image_name, img_size=(480, 640)):
@@ -251,3 +296,13 @@ def _get_UAV123_datasets(root_dir, mean_image_name, splits=[0.6, 0.2, 0.2], sequ
     test_data  = _UAV123Data(root_dir, mean_image_name, segments['test'], img_size)
     
     return (train_data, val_data, test_data)
+
+def get_nvvl_UAV123_datasets(root_dir, shuffle=False, sequence_length = 150, img_size=(480, 640)):
+    """Returns a UAV123 dataset using the NVVL dataset class."""
+    if not nvvl_is_available:
+        return ModuleNotFoundError("nvvl is not available.")
+    train_data, train_targets = prepare_nvvl_UAV123_Dataset(root_dir, 'train', shuffle=shuffle, sequence_length, img_size)
+    val_data, val_targets   = prepare_nvvl_UAV123_Dataset(root_dir, 'val', shuffle=shuffle, sequence_length, img_size)
+    test_data, test_targets  = prepare_nvvl_UAV123_Dataset(root_dir, 'test', shuffle=shuffle, sequence_length, img_size)
+    
+    return (train_data, train_targets, val_data, val_targets, test_data, test_targets)
