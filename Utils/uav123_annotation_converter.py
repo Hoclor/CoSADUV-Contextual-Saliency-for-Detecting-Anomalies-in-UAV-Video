@@ -223,7 +223,7 @@ def prepare_for_nvvl(dataset_folder, sequence_name, target_folder=None, display=
     out_data = cv2.VideoWriter(os.path.join(target_folder, sequence_name + '.avi'), fourcc, framerate, (width, height), 1)
     out_target = cv2.VideoWriter(os.path.join(target_folder, 'targets', sequence_name + '.avi'), fourcc, framerate, (width, height), 0)
 
-    blank_frame = np.zeros((height, width, 3), dtype=np.uint8)
+    blank_frame = np.zeros((height, width), dtype=np.uint8)
 
     last_time = time.time()
     for frame_count, annotation in enumerate(tqdm(annotations)):
@@ -243,7 +243,7 @@ def prepare_for_nvvl(dataset_folder, sequence_name, target_folder=None, display=
             y_tl = annotation[1]
             x_br = x_tl + annotation[2]
             y_br = y_tl + annotation[3]
-            cv2.rectangle(frame, (x_tl, y_tl), (x_br, y_br), (255, 255, 255), cv2.FILLED)
+            cv2.rectangle(frame, (x_tl, y_tl), (x_br, y_br), 255, cv2.FILLED)
         
         # Write the frame with boxes
         out_target.write(frame)
