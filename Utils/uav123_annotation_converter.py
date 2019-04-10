@@ -269,8 +269,8 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Draw annotations, either on original videos or as ground-truth saliency maps')
     parser.add_argument('--dataset', '-d', dest='dataset', help='Folder containing the UAV123 dataset', required=False, default='C:\\Users\\simon\\Downloads\\Project Datasets\\UAV123\\UAV123')
-    parser.add_argument('--sequence', '-seq', dest='name', help='Name of sequence to be processed', required=False)
-    parser.add_argument('--target', '-tar', dest='target_folder', help='Name of folder to write results to', required=False)
+    parser.add_argument('--sequence', '-s', dest='name', help='Name of sequence to be processed', required=False)
+    parser.add_argument('--target', '-t', dest='target_folder', help='Name of folder to write results to', required=False)
     parser.add_argument('--function', '-f', dest='drawing_function', help='Function to use: \'bounding_boxes\', \'groundtruth\', or \'nvvl\'', required = True)
     parser.add_argument('--verbose', '-v', dest='verbose', action='store_true')
     args = parser.parse_args()
