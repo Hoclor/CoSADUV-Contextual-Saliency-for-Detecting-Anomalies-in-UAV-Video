@@ -6,8 +6,11 @@ def main():
     from tqdm import tqdm
 
     import cv2
+    from models.DSCLRCN_PyTorch import DSCLRCN
     from util.data_utils import (get_dataloader, get_nvvl_UAV123_datasets,
                                 get_SALICON_datasets)
+    from util.loss_functions import NSS_loss
+    from util.solver import Solver
 
     location = 'ncc' # ncc or '', where the code is to be run (affects output)
     if location == 'ncc':
@@ -25,12 +28,6 @@ def main():
     elif 'UAV123' in dataset_root_dir:
         dataset_type = 'UAV123'
         train_data, train_targets, val_data, val_targets, test_data, test_targets = get_nvvl_UAV123_datasets(dataset_root_dir, shuffle=True, sequence_length=150, img_size=img_size)
-
-    
-    from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
-    from util.solver import Solver
-    
-    from util.loss_functions import NSS_loss
 
     batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
     minibatchsize = 4 # Recommended: 4 for 480x640 for 12GB mem, 2 for 8GB mem. Determines how many images are processed in parallel on the GPU at once
