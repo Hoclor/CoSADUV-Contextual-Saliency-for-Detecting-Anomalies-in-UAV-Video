@@ -1,19 +1,19 @@
-#import torch
-
 def main():
+    import pickle
+
+    import numpy as np
+    from torch.autograd import Variable
+    from tqdm import tqdm
+
+    import cv2
+    from util.data_utils import (get_dataloader, get_nvvl_UAV123_datasets,
+                                get_SALICON_datasets)
+
     location = 'ncc' # ncc or '', where the code is to be run (affects output)
     if location == 'ncc':
         print_func = print
     else:
         print_func = tqdm.write
-
-
-    from util.data_utils import get_SALICON_datasets
-    from tqdm import tqdm
-    from torch.autograd import Variable
-    import numpy as np
-    import cv2
-    import pickle
 
 #     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
     dataset_root_dir = 'Dataset/SALICON'
@@ -22,7 +22,7 @@ def main():
 
     if 'SALICON' in dataset_root_dir:
         dataset_type = 'SALICON'
-    train_data, val_data, test_data = get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
+        train_data, val_data, test_data = get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
     elif 'UAV123' in dataset_root_dir:
         dataset_type = 'UAV123'
         train_data, train_targets, val_data, val_targets, test_data, test_targets = get_nvvl_UAV123_datasets(dataset_root_dir, shuffle=True, sequence_length=150, img_size=img_size)
@@ -71,7 +71,7 @@ def main():
         test_loader = get_dataloader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     else:
         test_loader = get_dataloader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
-    
+
     looper=test_loader
     if location != 'ncc':
         looper=tqdm(looper)
@@ -186,8 +186,8 @@ if __name__ == '__main__':
     torch.multiprocessing.set_start_method('forkserver') # spawn, forkserver, or fork
     
     # Use CuDNN with benchmarking for performance improvement - from 1.05 batch20/s to 1.55 batch20/s on Quadro P4000
-    #torch.backends.cudnn.enabled = True
-    #torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True
     
     print("Using multiprocessing start method:", torch.multiprocessing.get_start_method())
     
