@@ -306,3 +306,32 @@ def get_nvvl_UAV123_datasets(root_dir, shuffle=False, sequence_length = 150, img
     test_data, test_targets  = prepare_nvvl_UAV123_Dataset(root_dir, 'test', shuffle=shuffle, sequence_length, img_size)
     
     return (train_data, train_targets, val_data, val_targets, test_data, test_targets)
+
+
+##### Dataloader preparation functions #####
+
+
+def get_dataloader(dataset_type, dataset, batch_size, shuffle=True, num_workers=8, pin_memory=True):
+    if dataset_type.upper() == 'SALICON':
+        return get_torch_dataloader(dataset, batch_size, shuffle, num_workers, pin_memory)
+    elif dataset_type.upper() == 'UAV123':
+        if type(dataset) != tuple and type(dataset) != list:
+            return TypeError("dataset variable must be a tuple or list of two nvvl.VideoDataset if dataset type is UAV123")
+        # Ignore shuffle, num_workers, pin_memory settings as they are not applicable (shuffle is handled in the get_dataset function)
+        return get_nvvl_dataloader(dataset[0], dataset[1], batch_size)
+    else:
+        return NotImplementedError
+
+def get_nvvl_dataloader(input_dataset, target_dataset, batch_size):
+    if not nvvl_is_available:
+        return ModuleNotFoundError("nvvl is not available.")
+    # Prepare the nvvl loaders
+    input_loader = nvvl.VideoLoader(input_dataset, batch_size=batch_size, shuffle=False)
+    target_loader = nvvl.VideoLoader(target_dataset, batch_size=batch_size, shuffle=False)
+
+    # Zip the loaders so they produce output as (input, target)
+    data_loader = zip(input_loader, target_loader)
+    return data_loader
+
+def get_torch_dataloader(dataset, batch_size, shuffle, num_workers, pin_memory):
+    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=pin_memory)
