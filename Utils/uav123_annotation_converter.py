@@ -1,6 +1,6 @@
 """A tool to convert annotations for UAV123 datset into Ground-Truth or Bounding-Box images.
 
-Based off the same code as `cvat_annotation_converter.py'.
+Based off the same code as `cvat_annotation_converter.py' (https://gist.github.com/cheind/9850e35bb08cfe12500942fb8b55531f).
 """
 
 import os
