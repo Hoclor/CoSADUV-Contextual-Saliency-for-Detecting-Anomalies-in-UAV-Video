@@ -303,9 +303,9 @@ def get_nvvl_UAV123_datasets(root_dir, shuffle=False, sequence_length = 150, img
     """Returns a UAV123 dataset using the NVVL dataset class."""
     if not nvvl_is_available:
         return ModuleNotFoundError("nvvl is not available.")
-    train_data, train_targets = prepare_nvvl_UAV123_Dataset(root_dir, 'train', shuffle=shuffle, sequence_length, img_size)
-    val_data, val_targets   = prepare_nvvl_UAV123_Dataset(root_dir, 'val', shuffle=shuffle, sequence_length, img_size)
-    test_data, test_targets  = prepare_nvvl_UAV123_Dataset(root_dir, 'test', shuffle=shuffle, sequence_length, img_size)
+    train_data, train_targets = prepare_nvvl_UAV123_Dataset(root_dir, 'train', shuffle=shuffle, sequence_length=sequence_length, img_size=img_size)
+    val_data, val_targets   = prepare_nvvl_UAV123_Dataset(root_dir, 'val', shuffle=shuffle, sequence_length=sequence_length, img_size=img_size)
+    test_data, test_targets  = prepare_nvvl_UAV123_Dataset(root_dir, 'test', shuffle=shuffle, sequence_length=sequence_length, img_size=img_size)
     
     return (train_data, train_targets), (val_data, val_targets), (test_data, test_targets)
 
