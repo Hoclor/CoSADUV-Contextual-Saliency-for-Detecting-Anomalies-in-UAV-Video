@@ -22,7 +22,7 @@ class Solver(object):
 
     def __init__(self, optim=torch.optim.Adam, optim_args={},
                  loss_func=torch.nn.KLDivLoss(), location='ncc',
-                 minibatches=1):
+                 minibatches=1, mean_image=None):
         if optim == torch.optim.Adam:
             optim_args_merged = self.default_adam_args.copy()
         else:
@@ -35,8 +35,8 @@ class Solver(object):
         self._reset_histories()
 
         self.location = location
-
-        self.minibatches=minibatches
+        self.minibatches = minibatches
+        self.mean_image = mean_image
 
     def _reset_histories(self):
         """
@@ -57,9 +57,13 @@ class Solver(object):
         - num_epochs: total number of training epochs
         - log_nth: log training accuracy and loss every nth iteration
         """
+        if self.mean_image != None:
+            mean_image = self.mean_image
         # Move the model to cuda first, if applicable, so optimiser is initialized properly
         if torch.cuda.is_available():
             model.cuda()
+            if self.mean_image != None:
+                mean_image.cuda()
         
         # Add the parameters to the optimiser as two groups: the pretrained parameters (PlacesCNN, ResNet50), and the other parameters
         # This allows us to set the lr of the two groups separately (other params as the lr given as input, pretrained params as this lr * 0.1)
@@ -78,7 +82,11 @@ class Solver(object):
         optim.add_param_group(pretrained_param_group)
         self._reset_histories()
         iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
-        
+
+        if self.mean_image != None:
+            mean_image = mean_image.unsqueeze(0) # Add a batch dimension
+            mean_image = mean_image.expand(len(train_loader), -1, -1) # Expand the mean_image among batch dimension
+
         # Create the scheduler to allow lr adjustment
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=0.4)
 
@@ -92,9 +100,6 @@ class Solver(object):
                 epoch_loop = tqdm_notebook(epoch_loop)
             else:
                 epoch_loop = tqdm(epoch_loop)
-
-        # Define a list to hold minibatch losses for each batch
-        minibatch_losses = []
 
         # Iteration counter of batches (NOT minibatches)
         it = 0
@@ -124,6 +129,15 @@ class Solver(object):
                 
                 # Load the items in this batch and their labels from the train_loader
                 inputs, labels = data
+
+                # Normalize inputs by subtracting the mean image, if it was given (this is handled in dataset in torch datasets, but must be done here for NVVL datasets)
+                if self.mean_image != None:
+                    if inputs.shape == mean_image.shape:
+                        inputs = inputs - mean_image
+                    else:
+                        temp_mean_image = mean_image[0, :, :].unsqueeze(0)
+                        inputs = inputs - temp_mean_image.expand(inputs.shape[0], -1, -1)
+
                 # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
                 labels = labels.unsqueeze(3)
 
@@ -172,6 +186,15 @@ class Solver(object):
                 inputs, labels = data
                 # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
                 labels = labels.unsqueeze(3)
+
+                # Normalize inputs by subtracting the mean image, if it was given (this is handled in dataset in torch datasets, but must be done here for NVVL datasets)
+                if self.mean_image != None:
+                    if inputs.shape == mean_image.shape:
+                        inputs = inputs - mean_image
+                    else:
+                        temp_mean_image = mean_image[0, :, :].unsqueeze(0)
+                        inputs = inputs - temp_mean_image.expand(inputs.shape[0], -1, -1)
+
 
                 if torch.cuda.is_available():
                     inputs, labels = inputs.cuda(), labels.cuda()
