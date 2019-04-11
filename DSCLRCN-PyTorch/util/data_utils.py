@@ -299,15 +299,19 @@ def _get_UAV123_datasets(root_dir, mean_image_name, splits=[0.6, 0.2, 0.2], sequ
     
     return (train_data, val_data, test_data)
 
-def get_nvvl_UAV123_datasets(root_dir, shuffle=False, sequence_length = 150, img_size=(480, 640)):
+def get_nvvl_UAV123_datasets(root_dir, mean_image_name, shuffle=False, sequence_length = 150, img_size=(480, 640)):
     """Returns a UAV123 dataset using the NVVL dataset class."""
     if not nvvl_is_available:
         return ModuleNotFoundError("nvvl is not available.")
     train_data, train_targets = prepare_nvvl_UAV123_Dataset(root_dir, 'train', shuffle=shuffle, sequence_length=sequence_length, img_size=img_size)
     val_data, val_targets   = prepare_nvvl_UAV123_Dataset(root_dir, 'val', shuffle=shuffle, sequence_length=sequence_length, img_size=img_size)
     test_data, test_targets  = prepare_nvvl_UAV123_Dataset(root_dir, 'test', shuffle=shuffle, sequence_length=sequence_length, img_size=img_size)
+
+    mean_image = np.load(os.path.join(root_dir, mean_image_name))
+    mean_image = cv2.resize(mean_image, (img_size[1], img_size[0])) # Resize the mean_image to the correct size
+    mean_image = mean_image.astype(np.float32)/255. # Convert to [0, 1] (float)
     
-    return (train_data, train_targets), (val_data, val_targets), (test_data, test_targets)
+    return (train_data, train_targets), (val_data, val_targets), (test_data, test_targets), mean_image
 
 
 ##### Dataloader preparation functions #####
