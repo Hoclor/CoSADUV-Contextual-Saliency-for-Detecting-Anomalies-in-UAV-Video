@@ -63,17 +63,17 @@ class Solver(object):
         
         # Add the parameters to the optimiser as two groups: the pretrained parameters (PlacesCNN, ResNet50), and the other parameters
         # This allows us to set the lr of the two groups separately (other params as the lr given as input, pretrained params as this lr * 0.1)
-        pretrained_parameters = [param for name,param in model.named_parameters() if (name.startswith('local_feats') and not '.bn' in name) or name.startswith('context')]
-        other_parameters = [param for name,param in model.named_parameters() if not (name.startswith('local_feats') or name.startswith('context'))]
+        pretrained_parameters = [param for name,param in model.named_parameters() if (name.startswith('local_feats.') and not '.bn' in name) or name.startswith('context.')]
+        other_parameters = [param for name,param in model.named_parameters() if not (name.startswith('local_feats.') or name.startswith('context.'))]
         pretrained_param_group = self.optim_args.copy()
         pretrained_param_group['lr'] *= 1e-1
         pretrained_param_group['params'] = pretrained_parameters
-        
+
         # Fix the scale (weight) and bias parameters of the BN layers in the ResNet50 (local_feats) model
         for name, param in model.named_parameters():
-            if '.bn' in name:
+            if '.bn' in name and 'local_feats' in name:
                 param.requires_grad = False
-        
+
         optim = self.optim(other_parameters, **self.optim_args)
         optim.add_param_group(pretrained_param_group)
         self._reset_histories()
