@@ -18,7 +18,7 @@ def main():
     else:
         print_func = tqdm.write
 
-    dataset_root_dir = 'Dataset/SALICON'
+    dataset_root_dir = 'Dataset/UAV123'
     mean_image_name = 'mean_image.npy'
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
 
@@ -27,7 +27,7 @@ def main():
         train_data, val_data, test_data = get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
     elif 'UAV123' in dataset_root_dir:
         dataset_type = 'UAV123'
-        train_data, val_data, test_data, mean_image = get_nvvl_UAV123_datasets(dataset_root_dir, shuffle=True, sequence_length=150, img_size=img_size)
+        train_data, val_data, test_data, mean_image = get_nvvl_UAV123_datasets(dataset_root_dir, mean_image_name, shuffle=True, sequence_length=150, img_size=img_size)
 
     batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
     minibatchsize = 4 # Recommended: 4 for 480x640 for 12GB mem, 2 for 8GB mem. Determines how many images are processed in parallel on the GPU at once
