@@ -94,7 +94,11 @@ def get_direct_datasets(root_dir, mean_image_name, img_size=(96, 128)):
     val_data = DirectSaliconData(root_dir, mean_image_name, 'val', img_size)
     test_data = DirectSaliconData(root_dir, mean_image_name, 'test', img_size)
     
-    return (train_data, val_data, test_data)
+    mean_image = np.load(os.path.join(root_dir, mean_image_name))
+    mean_image = cv2.resize(mean_image, (img_size[1], img_size[0])) # Resize the mean_image to the correct size
+    mean_image = mean_image.astype(np.float32)/255. # Convert to [0, 1] (float)
+    
+    return (train_data, val_data, test_data, mean_image)
     
 def get_SALICON_datasets(dataset_folder='Dataset/Transformed/'):
     """
