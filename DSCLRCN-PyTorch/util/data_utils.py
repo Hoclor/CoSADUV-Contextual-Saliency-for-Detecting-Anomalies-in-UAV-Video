@@ -310,6 +310,7 @@ def get_nvvl_UAV123_datasets(root_dir, mean_image_name, shuffle=False, sequence_
     mean_image = np.load(os.path.join(root_dir, mean_image_name))
     mean_image = cv2.resize(mean_image, (img_size[1], img_size[0])) # Resize the mean_image to the correct size
     mean_image = mean_image.astype(np.float32)/255. # Convert to [0, 1] (float)
+    mean_image = torch.from_numpy(mean_image).transpose(0, 1).transpose(1, 2) # Convert to tensor and from (H, W, C) to (C, H, W)
     
     return (train_data, train_targets), (val_data, val_targets), (test_data, test_targets), mean_image
 
