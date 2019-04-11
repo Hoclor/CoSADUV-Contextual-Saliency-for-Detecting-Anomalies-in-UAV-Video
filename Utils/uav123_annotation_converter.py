@@ -3,6 +3,7 @@
 Based off the same code as `cvat_annotation_converter.py' (https://gist.github.com/cheind/9850e35bb08cfe12500942fb8b55531f).
 """
 import os
+import random
 import time
 
 import numpy as np
@@ -11,7 +12,7 @@ from tqdm import tqdm
 import cv2
 
 
-def draw_annotations(dataset_folder, sequence_name, target_folder=None, display=False):
+def draw_annotations(dataset_folder, sequence_name, target_folder=None, display=False, settings={}):
     tqdm.write(sequence_name)
     # Get the sequnce folder and annotations folder
     sequence_folder = os.path.join(dataset_folder, 'data_seq', 'UAV123', sequence_name)
@@ -93,7 +94,7 @@ def draw_annotations(dataset_folder, sequence_name, target_folder=None, display=
     cv2.destroyAllWindows()
 
 
-def draw_groundtruth(dataset_folder, sequence_name, target_folder=None, display=False):
+def draw_groundtruth(dataset_folder, sequence_name, target_folder=None, display=False, settings={}):
     tqdm.write(sequence_name)
     # Get the sequnce folder and annotations folder
     sequence_folder = os.path.join(dataset_folder, 'data_seq', 'UAV123', sequence_name)
@@ -176,11 +177,22 @@ def draw_groundtruth(dataset_folder, sequence_name, target_folder=None, display=
     cv2.destroyAllWindows()
 
 
-def prepare_for_nvvl(dataset_folder, sequence_name, target_folder=None, display=False):
+def prepare_for_nvvl(dataset_folder, sequence_name, target_folder=None, display=False, settings={}):
     """ Creates a video of the original sequence, and a separate video of the ground truth data,
     stored in target_folder and target_folder/targets respectively.
     """
-    tqdm.write(sequence_name)
+    # Read in optional settings
+    try:
+        random_start = settings['random_start']
+    except KeyError:
+        # random_start not given, use default value
+        random_start = False
+    try:
+        duration = settings['duration']
+    except KeyError:
+        # random_start not given, use default value
+        duration = -1
+    
     # Get the sequnce folder and annotations folder
     sequence_folder = os.path.join(dataset_folder, 'data_seq', 'UAV123', sequence_name)
     annotation_file = os.path.join(dataset_folder, 'anno', 'UAV123', sequence_name + '.txt')
@@ -209,6 +221,18 @@ def prepare_for_nvvl(dataset_folder, sequence_name, target_folder=None, display=
         # Skip this sequence as it doesn't have a single annotation file - simplifies processing, but loses out on some data
         return 0
 
+    # If random_start is True, randomly generate a starting frame (that is at least 'duration' frames before the end of the video)
+    if random_start:
+        try:
+            start_time = random.randrange(0, len(annotations) - duration)
+        except ValueError:
+            # The sequence is too short for the requested duration, so skip it
+            return
+    else:
+        start_time = 0
+    # Print out the sequence name, start frame, end frame
+    tqdm.write(sequence_name + ' ' + str(start_time) + '-' + str(start_time+duration))
+
     # Convert each line from a string to a list with 4 numbers
     def process_line(line):
         ret = line.strip().split(',')
@@ -226,7 +250,7 @@ def prepare_for_nvvl(dataset_folder, sequence_name, target_folder=None, display=
     blank_frame = np.zeros((height, width), dtype=np.uint8)
 
     last_time = time.time()
-    for frame_count, annotation in enumerate(tqdm(annotations)):
+    for frame_count, annotation in enumerate(tqdm(annotations[start_time:start_time+duration])):
         # Copy a new blank frame
         frame = np.copy(blank_frame)
 
@@ -281,6 +305,17 @@ if __name__ == '__main__':
         drawing_function = draw_groundtruth
     elif args.drawing_function == 'nvvl':
         drawing_function = prepare_for_nvvl
+        try:
+            duration = int(input("Duration (in frames at 30fps, -1 for full video): "))
+        except ValueError:
+            duration = -1 # int not given, use -1 (default value)
+        rand_start = input("Choose a random starting frame? (y/n): ").lower()
+        rand_start = True if rand_start in 'yes' and rand_start != '' else False
+    
+    settings = {
+        'random_start': rand_start,
+        'duration': duration
+    }
 
     if args.name == None:
         # Read all files in the folder and call the appropriate function on each video/annotation pair found
@@ -294,10 +329,10 @@ if __name__ == '__main__':
                 sequences = [folder_object.name for folder_object in list(folder_iterator)]
         # Call the drawing function with each sequence name in sequences
         for seq_name in tqdm(sequences):
-            drawing_function(args.dataset, seq_name, target_folder=args.target_folder, display=args.verbose)
+            drawing_function(args.dataset, seq_name, target_folder=args.target_folder, display=args.verbose, settings=settings)
     elif len(args.name.strip().split(',')) > 1:
         for seq_name in tqdm(args.name.strip().split(',')):
-            drawing_function(args.dataset, seq_name.strip(), target_folder=args.target_folder, display=args.verbose)
+            drawing_function(args.dataset, seq_name.strip(), target_folder=args.target_folder, display=args.verbose, settings=settings)
     else:
         # Draw bounding boxes on the original video, or ground-truth saliency maps, depending on if -bb was specified
-        drawing_function(args.dataset, args.name, target_folder=args.target_folder, display=args.verbose)
+        drawing_function(args.dataset, args.name, target_folder=args.target_folder, display=args.verbose, settings=settings)
