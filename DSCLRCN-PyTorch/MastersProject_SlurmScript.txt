@@ -23,7 +23,7 @@ source /etc/profile
 # use cuda 9
 module load cuda/9.2
 # Use virtualenv
-source ~/envs/MastersProject/bin/activate
+source ~/envs/MastersProject_0.4torch/bin/activate
 
 # Run your program
 #stdbuf -oL python3 DSCLRCN_ncc.py
