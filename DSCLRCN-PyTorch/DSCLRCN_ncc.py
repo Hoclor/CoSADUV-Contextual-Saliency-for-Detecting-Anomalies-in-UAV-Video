@@ -49,9 +49,11 @@ def main():
     # Attempt to train a model using the original image sizes
     model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
     # Set solver as torch.optim.SGD and lr as 1e-2, or torch.optim.Adam and lr 1e-4
-    solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func, location='ncc')
+    solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func, location='ncc',
+        mean_image=None if dataset_type=='SALICON' else mean_image
+    )
     solver.train(model, train_loader, val_loader, num_epochs=epoch_number, num_minibatches=num_minibatches, log_nth=50, 
-        filename_args={'batchsize' : batchsize, 'epoch_number' : epoch_number, 'optim' : optim_str}
+        filename_args={'batchsize' : batchsize, 'epoch_number' : epoch_number, 'optim' : optim_str},
     )
 
     #Saving the model:
@@ -67,6 +69,10 @@ def main():
         test_loader = get_dataloader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     else:
         test_loader = get_dataloader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+        normalizing_image = mean_image.unsqueeze(0) # Add a batch dimension
+        normalizing_image = normalizing_image.expand(len(test_loader), -1, -1) # Expand the mean_image among batch dimension
+        if torch.cuda.is_available():
+            normalizing_image.cuda()
 
     looper=test_loader
     if location != 'ncc':
@@ -80,6 +86,15 @@ def main():
         else:
             inputs = Variable(inputs)
             labels = Variable(labels)
+
+        # Normalize inputs by subtracting the mean image, if it was given (this is handled in dataset in torch datasets, but must be done here for NVVL datasets)
+        if dataset_type != 'SALICON':
+            if inputs.shape == normalizing_image.shape:
+                inputs = inputs - normalizing_image
+            else:
+                temp_normalizing_image = normalizing_image[0, :, :].unsqueeze(0)
+                inputs = inputs - temp_normalizing_image.expand(inputs.shape[0], -1, -1)
+
 
         # Produce the output
         outputs = model(inputs).squeeze()
@@ -131,6 +146,10 @@ def main():
         test_loader = get_dataloader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     else:
         test_loader = get_dataloader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+        normalizing_image = mean_image.unsqueeze(0) # Add a batch dimension
+        normalizing_image = normalizing_image.expand(len(test_loader), -1, -1) # Expand the mean_image among batch dimension
+        if torch.cuda.is_available():
+            normalizing_image.cuda()
     
     looper = test_loader
     if location != 'ncc':
@@ -144,6 +163,14 @@ def main():
         else:
             inputs = Variable(inputs)
             labels = Variable(labels)
+
+        # Normalize inputs by subtracting the mean image, if it was given (this is handled in dataset in torch datasets, but must be done here for NVVL datasets)
+        if dataset_type != 'SALICON':
+            if inputs.shape == normalizing_image.shape:
+                inputs = inputs - normalizing_image
+            else:
+                temp_normalizing_image = normalizing_image[0, :, :].unsqueeze(0)
+                inputs = inputs - temp_normalizing_image.expand(inputs.shape[0], -1, -1)
 
         # Produce the output
         outputs = model(inputs).squeeze()
