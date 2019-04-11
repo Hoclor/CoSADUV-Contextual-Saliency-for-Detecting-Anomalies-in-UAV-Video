@@ -214,15 +214,15 @@ class _UAV123Data(data.Dataset):
 
 def prepare_nvvl_UAV123_Dataset(root_dir, section, shuffle=False, sequence_length=150, img_size=(480, 640)):
     if not nvvl_is_available:
-        return ModuleNotFoundError("nvvl is not available.")
+        raise ModuleNotFoundError("nvvl is not available.")
     # Get a list of videos for this section
     if os.name == 'posix':
         # Unix
-        videos = os.listdir(os.path.join(root_dir, 'UAV123', section))
+        videos = os.listdir(os.path.join(root_dir, section))
         videos.remove('targets') # Remove the targets folder
     else:
         # Windows (os.name == 'nt')
-        with os.scandir(os.path.join(root_dir, 'UAV123', section)) as folder_iterator:
+        with os.scandir(os.path.join(root_dir, section)) as folder_iterator:
             videos = [folder_object.name for folder_object in list(folder_iterator)]
             videos.remove('targets') # Remove the targets folder
 
@@ -231,9 +231,9 @@ def prepare_nvvl_UAV123_Dataset(root_dir, section, shuffle=False, sequence_lengt
         random.shuffle(videos)
     
     # List of input videos
-    input_videos = [os.path.join(root_dir, 'UAV123', section, name) for name in videos]
+    input_videos = [os.path.join(root_dir, section, name) for name in videos]
     # List of target videos
-    target_videos = [os.path.join(root_dir, 'UAV123', section, 'targets', name) for name in videos]
+    target_videos = [os.path.join(root_dir, section, 'targets', name) for name in videos]
 
     # Define the processing to be applied to the data
     processing = {
