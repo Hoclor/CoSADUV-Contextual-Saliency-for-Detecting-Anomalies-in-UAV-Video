@@ -3,10 +3,12 @@ The initial code was copied from https://gist.github.com/cheind/9850e35bb08cfe12
 a similar purpose for the tool BeaverDam (which produces json), and was then adapted for use with CVAT (which produces xml).
 """
 
-import cv2
 import xml.etree.ElementTree as ET
+
 import numpy as np
 from tqdm import tqdm
+
+import cv2
 
 # Create a list of BGR colours stored as 3-tuples of uint_8s
 colours = [
@@ -21,6 +23,7 @@ colours = [
     [0, 128, 128], # Olive
     [0, 165, 255] # Orange
 ]
+
 
 def draw_annotations(video, annotations, display=False):
     tree = ET.parse(args.ann)
@@ -120,6 +123,7 @@ def draw_annotations(video, annotations, display=False):
     cap.release()
     out.release()
     cv2.destroyAllWindows()
+
 
 def draw_groundtruth(video, annotations, display=False):
     tree = ET.parse(args.ann)

@@ -4,12 +4,15 @@
 # Date = November 2018
 
 import os
-import sys
 import pickle
-import numpy as np
-import cv2
 import re
+import sys
+
+import numpy as np
 from tqdm import tqdm
+
+import cv2
+
 
 def convert_SALICON_Data(input_directory='C:/Users/simon/Downloads/Project Datasets/SALICON',
     output_directory='../DSCLRCN-PyTorch/Dataset/Transformed', height=96, width=128):
@@ -68,6 +71,7 @@ def convert_SALICON_Data(input_directory='C:/Users/simon/Downloads/Project Datas
         # The directory does not exist, so create it and try writing again
         os.mkdir(output_directory)
         np.save(output_directory + '/mean_image.npy', mean_image)
+
 
 # Execute this function with h=480, w=640 if this file is the main file, and output_directory renamed to reflect this width/height
 if __name__ == "__main__":
