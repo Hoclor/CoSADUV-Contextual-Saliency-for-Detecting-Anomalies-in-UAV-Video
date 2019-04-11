@@ -56,7 +56,8 @@ class Rescale(object):
         tar = transform.resize(target, (new_h, new_w))
 
         return img, tar
-    
+
+
 class Normalize(object):
     """Normalize the image in a sample by subtracting a mean image."""
 
@@ -72,6 +73,7 @@ class Normalize(object):
         image = image - self.mean_image
 
         return image, target
+
 
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors.
@@ -149,6 +151,7 @@ class SaliconData(data.Dataset):
     def __len__(self):
         return len(self.image_list)
 
+
 #TODO implement this class
 class _UAV123Data(data.Dataset):
     """NotImplemented: UAV123 dataset, loaded from image files and dynamically resized as specified"""
@@ -207,6 +210,7 @@ class _UAV123Data(data.Dataset):
         
     def __len__(self):
         return len(self.image_list)
+
 
 def prepare_nvvl_UAV123_Dataset(root_dir, section, shuffle=False, sequence_length=150, img_size=(480, 640)):
     if not nvvl_is_available:
