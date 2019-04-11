@@ -110,6 +110,8 @@ class DSCLRCN(nn.Module):
             rows.append(result)
         # Reconstruct the image by stacking the rows
         output_h = torch.stack(rows, dim=1) # Shape (N, H, W, C)
+        del rows, row, result
+
 
 
         # Vertical BLSTM_1
@@ -125,6 +127,7 @@ class DSCLRCN(nn.Module):
             cols.append(result)
         # Reconstruct the image by stacking the columns
         output_hv = torch.stack(cols, dim=2) # Shape (N, H, W, C)
+        del cols, col, result
 
 
         # Horizontal BLSTM_2
@@ -140,6 +143,7 @@ class DSCLRCN(nn.Module):
             rows.append(result)
         # Reconstruct the image by stacking the rows
         output_hvh = torch.stack(rows, dim=1) # Shape (N, H, W, C)
+        del rows, row, result
 
 
         # Vertical BLSTM_2
@@ -156,6 +160,7 @@ class DSCLRCN(nn.Module):
         # Reconstruct the image by stacking the columns
         output_hvhv = torch.stack(cols, dim=2) # Shape (N, H, W, C)
         output_hvhv = output_hvhv.transpose(1, 3).transpose(2, 3) # Shape (N, C, H, W)
+        del cols, col, result
         
         # Reduce channel dimension to 1
         output_conv = self.last_conv(output_hvhv)
