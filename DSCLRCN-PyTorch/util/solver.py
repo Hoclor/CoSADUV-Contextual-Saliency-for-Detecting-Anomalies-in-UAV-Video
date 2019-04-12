@@ -57,12 +57,13 @@ class Solver(object):
         - num_epochs: total number of training epochs
         - log_nth: log training accuracy and loss every nth iteration
         """
-        if self.mean_image != None:
+        if type(self.mean_image) != type(None):
             mean_image = self.mean_image
+            mean_image = mean_image.unsqueeze(0) # Add a batchsize dimension
         # Move the model to cuda first, if applicable, so optimiser is initialized properly
         if torch.cuda.is_available():
             model.cuda()
-            if self.mean_image != None:
+            if type(self.mean_image) != type(None):
                 mean_image.cuda()
         
         # Add the parameters to the optimiser as two groups: the pretrained parameters (PlacesCNN, ResNet50), and the other parameters
@@ -82,10 +83,6 @@ class Solver(object):
         optim.add_param_group(pretrained_param_group)
         self._reset_histories()
         iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
-
-        if self.mean_image != None:
-            mean_image = mean_image.unsqueeze(0) # Add a batch dimension
-            mean_image = mean_image.expand(len(train_loader), -1, -1) # Expand the mean_image among batch dimension
 
         # Create the scheduler to allow lr adjustment
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=0.4)
@@ -126,19 +123,27 @@ class Solver(object):
             # Batch of items in training set
             for i, data in train_loop:
                 counter += 1 # Count the number of minibatches performed since last backprop
-                
+
                 # Load the items in this batch and their labels from the train_loader
-                inputs, labels = data
+                if type(data) == dict:
+                    # input is in data['input'], of shape [N, Seq_len, C, H, W]
+                    # Since this is the non-temporal model version, only seq_len 1 is supported
+                    # Thus, take only the first frame of the sequence
+                    inputs = data['input'][:, 0, :, :, :] # shape [N, 1, C, H, W]
+                    inputs = inputs.squeeze(1) # shape [N, C, H, W]
+                    # We need to load labels manually from self.label_loader. If it is not given, return an error
+                else:
+                    # input and labels are in data as a tuple
+                    inputs, labels = data
 
                 # Normalize inputs by subtracting the mean image, if it was given (this is handled in dataset in torch datasets, but must be done here for NVVL datasets)
-                if self.mean_image != None:
-                    if inputs.shape == mean_image.shape:
-                        inputs = inputs - mean_image
-                    else:
-                        temp_mean_image = mean_image[0, :, :].unsqueeze(0)
-                        inputs = inputs - temp_mean_image.expand(inputs.shape[0], -1, -1)
+                if type(self.mean_image) != type(None):
+                    if inputs.shape != mean_image.shape:
+                        mean_image = mean_image[0, :, :].unsqueeze(0)
+                        mean_image = mean_image.expand(inputs.shape[0], -1, -1)
+                    inputs = inputs - mean_image
 
-                # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
+                # Unsqueeze labels so they're shaped as [N, H, W, 1]
                 labels = labels.unsqueeze(3)
 
                 # Convert these to cuda types if cuda is available
@@ -188,7 +193,7 @@ class Solver(object):
                 labels = labels.unsqueeze(3)
 
                 # Normalize inputs by subtracting the mean image, if it was given (this is handled in dataset in torch datasets, but must be done here for NVVL datasets)
-                if self.mean_image != None:
+                if type(self.mean_image) != type(None):
                     if inputs.shape == mean_image.shape:
                         inputs = inputs - mean_image
                     else:
