@@ -8,9 +8,9 @@
 # GPU selection, job type, QOS
 #SBATCH --gres=gpu:1
 #SBATCH -p "ug-gpu-small"
-#SBATCH --qos="short"
+#SBATCH --qos="debug"
 # Time limit
-#SBATCH -t 30:00:00
+#SBATCH -t 00:05:00
 ## Time limit ~5 hours for 240x320 20 epochs, ~26 hours for 480x640 20 epochs
 # Job tracking
 #SBATCH --job-name=DSCLRCN

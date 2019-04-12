@@ -83,12 +83,13 @@ class Solver(object):
         if mean_image_given:
             mean_image = self.mean_image
             mean_image = mean_image.unsqueeze(0) # Add a batchsize dimension
+            # mean_image now of shape [1, C, H, W]
         
         # Move the model to cuda first, if applicable, so optimiser is initialized properly
         if torch.cuda.is_available():
             model.cuda()
             if mean_image_given:
-                mean_image.cuda()
+                mean_image = mean_image.cuda()
 
         # Check if train_loader is supplied as a tuple. If it is, we have to load the data differently
         # (The only supported case is when nvvl is used as the data loader)
@@ -158,7 +159,6 @@ class Solver(object):
                     # Thus, take only the first frame of the sequence
                     inputs = data[0]['input'][:, 0, :, :, :] # shape [N, 1, C, H, W]
                     inputs = inputs.squeeze(1) # shape [N, C, H, W]
-
                     # labels are in data[1]['input'], of shape [N, Seq_len, C, H, W]
                     # (labels are greyscale but read as RGB)
                     labels = data[1]['input'][:, 0, 0, :, :] # shape [N, 1, 1, H, W]
@@ -175,7 +175,8 @@ class Solver(object):
                 if mean_image_given:
                     if inputs.shape != mean_image.shape:
                         mean_image = mean_image[0, :, :].unsqueeze(0)
-                        mean_image = mean_image.expand(inputs.shape[0], -1, -1)
+                        mean_image = mean_image.expand(inputs.shape[0], 3, -1, -1)
+                        # mean_image will now be shape [N, C, H, W] for the appropriate N for this batch
                     inputs = inputs - mean_image
 
                 # Convert these to cuda types if cuda is available
@@ -191,6 +192,9 @@ class Solver(object):
                 # Squeeze the outputs so it has shape [N, H, W] instead of [N, 1, H, W]
                 outputs = outputs.squeeze(1)
                 
+                tqdm.write('labels shape: ' + str(labels.shape))
+                tqdm.write('outputs shape: ' + str(outputs.shape))
+
                 loss = self.loss_func(outputs, labels)
                 loss.backward()
                 # Only step and zero the gradients every num_minibatches steps
