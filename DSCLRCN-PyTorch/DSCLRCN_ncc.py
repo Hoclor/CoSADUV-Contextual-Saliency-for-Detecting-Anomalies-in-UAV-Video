@@ -17,7 +17,7 @@ def main():
     import pickle
 
 #     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
-    dataset_root_dir = 'Dataset/Raw_Dataset'
+    dataset_root_dir = 'Dataset/SALICON'
     mean_image_name = 'mean_image.npy'
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
     train_data, val_data, test_data, mean_image = get_direct_datasets(dataset_root_dir, mean_image_name, img_size)
