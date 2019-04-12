@@ -159,22 +159,24 @@ class Solver(object):
                     inputs = data[0]['input'][:, 0, :, :, :] # shape [N, 1, C, H, W]
                     inputs = inputs.squeeze(1) # shape [N, C, H, W]
 
-                    # labels are in data[1]['input'], of shape [N, Seq_len, H, W]
-                    labels = data[1]['input'][:, 0, :, :, :] # shape [N, 1, H, W]
-                    labels = labels.squeeze(1) # shape [N, H, W]
+                    # labels are in data[1]['input'], of shape [N, Seq_len, C, H, W]
+                    # (labels are greyscale but read as RGB)
+                    labels = data[1]['input'][:, 0, 0, :, :] # shape [N, 1, 1, H, W]
+                    labels = labels.squeeze(1).squeeze(1) # shape [N, H, W]
                 else:
                     # input and labels are in data as a tuple
                     inputs, labels = data
+                    # inputs shape [N, C, H, W]
+                    # labels shape [N, H, W]
 
-                # Normalize inputs by subtracting the mean image, if it was given (this is handled in dataset in torch datasets, but must be done here for NVVL datasets)
+                # Normalize inputs by subtracting the mean image, if it was given
+                # (this is handled in dataset in torch datasets,
+                # but must be done manually here for NVVL datasets)
                 if mean_image_given:
                     if inputs.shape != mean_image.shape:
                         mean_image = mean_image[0, :, :].unsqueeze(0)
                         mean_image = mean_image.expand(inputs.shape[0], -1, -1)
                     inputs = inputs - mean_image
-
-                # Unsqueeze labels so they're shaped as [N, H, W, 1]
-                labels = labels.unsqueeze(3)
 
                 # Convert these to cuda types if cuda is available
                 if torch.cuda.is_available():
@@ -186,9 +188,8 @@ class Solver(object):
                 
                 # train the model (forward propagation) on the inputs
                 outputs = model(inputs)
-                # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
-                outputs = outputs.transpose(1, 3)
-                outputs = outputs.transpose(1, 2)
+                # Squeeze the outputs so it has shape [N, H, W] instead of [N, 1, H, W]
+                outputs = outputs.squeeze(1)
                 
                 loss = self.loss_func(outputs, labels)
                 loss.backward()
