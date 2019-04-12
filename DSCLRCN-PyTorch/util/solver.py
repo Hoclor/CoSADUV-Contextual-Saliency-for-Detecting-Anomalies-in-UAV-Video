@@ -169,6 +169,9 @@ class Solver(object):
                     # inputs shape [N, C, H, W]
                     # labels shape [N, H, W]
 
+                # Free up memory
+                del data
+
                 # Normalize inputs by subtracting the mean image, if it was given
                 # (this is handled in dataset in torch datasets,
                 # but must be done manually here for NVVL datasets)
@@ -192,6 +195,9 @@ class Solver(object):
                 # Squeeze the outputs so it has shape [N, H, W] instead of [N, 1, H, W]
                 outputs = outputs.squeeze(1)
 
+                # Free up memory
+                del inputs
+
                 loss = self.loss_func(outputs, labels)
                 loss.backward()
                 # Only step and zero the gradients every num_minibatches steps
@@ -206,7 +212,7 @@ class Solver(object):
                     it += 1 # iteration (batch) number
                 
                 # Free up memory
-                del inputs, outputs, labels, loss
+                del outputs, labels, loss
             
             model.eval()
             
