@@ -98,6 +98,9 @@ class Solver(object):
             iter_per_epoch = int(len(train_loader[0])/num_minibatches) # Count an iter as a full batch, not a minibatch
             # Save the tuple as a separate variable to prevent confusion
             train_loader_tuple = train_loader
+            del train_loader # Free up memory
+            val_loader_tuple = val_loader
+            del val_loader # Free up memory
         else:
             nvvl_loader = False
             iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
@@ -137,6 +140,7 @@ class Solver(object):
             if nvvl_loader:
                 # Create the train_loader by zipping the input_data loader (index 0) and the targets loader (index 1)
                 train_loader = zip(train_loader_tuple[0], train_loader_tuple[1])
+                val_loader = zip(val_loader_tuple[0], val_loader_tuple[1])
 
             if self.location == 'ncc':
                 train_loop = enumerate(train_loader, 0)
@@ -226,35 +230,61 @@ class Solver(object):
             # Validation
             val_loss = 0
             for ii, data in val_loop:
-                inputs, labels = data
-                # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
-                labels = labels.unsqueeze(3)
+                # Load the items in this batch and their labels from the train_loader
+                if nvvl_loader:
+                    # input is in data[0]['input'], of shape [N, Seq_len, C, H, W]
+                    # Since this is the non-temporal model version, only seq_len 1 is supported
+                    # Thus, take only the first frame of the sequence
+                    inputs_val = data[0]['input'][:, 0, :, :, :] # shape [N, 1, C, H, W]
+                    inputs_val = inputs_val.squeeze(1) # shape [N, C, H, W]
+                    # labels are in data[1]['input'], of shape [N, Seq_len, C, H, W]
+                    # (labels are greyscale but read as RGB)
+                    labels_val = data[1]['input'][:, 0, 0, :, :] # shape [N, 1, 1, H, W]
+                    labels_val = labels.squeeze(1).squeeze(1) # shape [N, H, W]
+                else:
+                    # inputs and labels are in data as a tuple
+                    inputs_val, labels_val = data
+                    # inputs_val shape [N, C, H, W]
+                    # labels shape [N, H, W]
 
-                # Normalize inputs by subtracting the mean image, if it was given (this is handled in dataset in torch datasets, but must be done here for NVVL datasets)
+                # Free up memory
+                del data
+
+                # Normalize inputs by subtracting the mean image, if it was given
+                # (this is handled in dataset in torch datasets,
+                # but must be done manually here for NVVL datasets)
                 if mean_image_given:
-                    if inputs.shape == mean_image.shape:
-                        inputs = inputs - mean_image
-                    else:
-                        temp_mean_image = mean_image[0, :, :].unsqueeze(0)
-                        inputs = inputs - temp_mean_image.expand(inputs.shape[0], -1, -1)
+                    if inputs_val.shape != mean_image.shape:
+                        mean_image = mean_image[0, :, :].unsqueeze(0)
+                        mean_image = mean_image.expand(inputs_val.shape[0], 3, -1, -1)
+                        # mean_image will now be shape [N, C, H, W] for the appropriate N for this batch
+                    inputs_val = inputs_val - mean_image
 
-
+                # Convert these to cuda types if cuda is available
                 if torch.cuda.is_available():
-                    inputs, labels = inputs.cuda(), labels.cuda()
-                inputs_val = Variable(inputs)
-                labels_val = Variable(labels)
-
+                    inputs_val, labels_val = inputs_val.cuda(), labels_val.cuda()
+                
+                # DEPRECATED - calling Variable should no longer be necessary, but leave in for now
+                inputs_val = Variable(inputs_val)
+                labels_val = Variable(labels_val)
+                
+                # train the model (forward propagation) on the inputs
                 outputs_val = model(inputs_val)
-                # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
-                outputs_val = outputs_val.transpose(1, 3)
-                outputs_val = outputs_val.transpose(1, 2)
+                # Squeeze the outputs so it has shape [N, H, W] instead of [N, 1, H, W]
+                outputs_val = outputs_val.squeeze(1)
+
+                # Free up memory
+                del inputs
 
                 val_loss += self.loss_func(outputs_val, labels_val).item()
                 
                 # Free up memory
-                del inputs_val, outputs_val, labels_val, inputs, labels
+                del inputs_val, outputs_val, labels_val
             
-            val_loss /= len(val_loader)
+            if nvvl_loader:
+                val_loss /= len(val_loader_tuple[0])
+            else:
+                val_loss /= len(val_loader)
             
             self.val_loss_history.append(val_loss)
             # Check if this is the best validation loss so far. If so, save the current model state
