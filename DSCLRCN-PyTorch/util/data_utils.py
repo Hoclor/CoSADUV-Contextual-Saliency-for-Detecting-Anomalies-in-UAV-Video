@@ -340,9 +340,7 @@ def get_nvvl_dataloader(input_dataset, target_dataset, batch_size):
     input_loader = nvvl.VideoLoader(input_dataset, batch_size=batch_size, shuffle=False)
     target_loader = nvvl.VideoLoader(target_dataset, batch_size=batch_size, shuffle=False)
 
-    # Zip the loaders so they produce output as (input, target)
-    data_loader = zip(input_loader, target_loader)
-    return data_loader
+    return (input_loader, target_loader)
 
 def get_torch_dataloader(dataset, batch_size, shuffle, num_workers, pin_memory):
     return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=pin_memory)
