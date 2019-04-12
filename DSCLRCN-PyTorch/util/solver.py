@@ -191,9 +191,6 @@ class Solver(object):
                 outputs = model(inputs)
                 # Squeeze the outputs so it has shape [N, H, W] instead of [N, 1, H, W]
                 outputs = outputs.squeeze(1)
-                
-                tqdm.write('labels shape: ' + str(labels.shape))
-                tqdm.write('outputs shape: ' + str(outputs.shape))
 
                 loss = self.loss_func(outputs, labels)
                 loss.backward()
