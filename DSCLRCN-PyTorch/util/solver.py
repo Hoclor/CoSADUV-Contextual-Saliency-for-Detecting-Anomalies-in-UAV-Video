@@ -70,27 +70,42 @@ class Solver(object):
 
         Inputs:
         - model: model object initialized from a torch.nn.Module
-        - train_loader: train data in torch.utils.data.DataLoader
-        - val_loader: val data in torch.utils.data.DataLoader
+        - train_loader: train data in a torch.utils.data.DataLoader based dataloader, or a tuple of data loaders
+        - val_loader: val data in a torch.utils.data.DataLoader based dataloader, or a tuple of data loaders
         - num_epochs: total number of training epochs
+        - num_minibatches: the number of minibatches to be performed per batch
         - log_nth: log training accuracy and loss every nth iteration
+        - filename_args: dict of args required to accurately name the checkpoint
         """
-        if type(self.mean_image) != type(None):
+        # Check if a mean_image was supplied to the Solver class.
+        # If so, use this to manually normalize each image as they're loaded
+        mean_image_given = (type(self.mean_image) != type(None))
+        if mean_image_given:
             mean_image = self.mean_image
             mean_image = mean_image.unsqueeze(0) # Add a batchsize dimension
+        
         # Move the model to cuda first, if applicable, so optimiser is initialized properly
         if torch.cuda.is_available():
             model.cuda()
-            if type(self.mean_image) != type(None):
+            if mean_image_given:
                 mean_image.cuda()
-        
-        
+
+        # Check if train_loader is supplied as a tuple. If it is, we have to load the data differently
+        # (The only supported case is when nvvl is used as the data loader)
+        if type(train_loader) == tuple:
+            nvvl_loader = True
+            iter_per_epoch = int(len(train_loader[0])/num_minibatches) # Count an iter as a full batch, not a minibatch
+            # Save the tuple as a separate variable to prevent confusion
+            train_loader_tuple = train_loader
+        else:
+            nvvl_loader = False
+            iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
+
         # Prepare parameters by reducing lr of pretrained parameters, freezing batch-norm weights
         pretrained_parameters, new_parameters = prepare_parameters(model, self.optim_args)
         optim = self.optim(new_parameters, **self.optim_args)
         optim.add_param_group(pretrained_parameters)
         self._reset_histories()
-        iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
 
         # Create the scheduler to allow lr adjustment
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=0.4)
@@ -118,6 +133,10 @@ class Solver(object):
             # Set the model to training mode
             model.train()
 
+            if nvvl_loader:
+                # Create the train_loader by zipping the input_data loader (index 0) and the targets loader (index 1)
+                train_loader = zip(train_loader_tuple[0], train_loader_tuple[1])
+
             if self.location == 'ncc':
                 train_loop = enumerate(train_loader, 0)
             elif self.location == 'jupyter':
@@ -133,19 +152,22 @@ class Solver(object):
                 counter += 1 # Count the number of minibatches performed since last backprop
 
                 # Load the items in this batch and their labels from the train_loader
-                if type(data) == dict:
-                    # input is in data['input'], of shape [N, Seq_len, C, H, W]
+                if nvvl_loader:
+                    # input is in data[0]['input'], of shape [N, Seq_len, C, H, W]
                     # Since this is the non-temporal model version, only seq_len 1 is supported
                     # Thus, take only the first frame of the sequence
-                    inputs = data['input'][:, 0, :, :, :] # shape [N, 1, C, H, W]
+                    inputs = data[0]['input'][:, 0, :, :, :] # shape [N, 1, C, H, W]
                     inputs = inputs.squeeze(1) # shape [N, C, H, W]
-                    # We need to load labels manually from self.label_loader. If it is not given, return an error
+
+                    # labels are in data[1]['input'], of shape [N, Seq_len, H, W]
+                    labels = data[1]['input'][:, 0, :, :, :] # shape [N, 1, H, W]
+                    labels = labels.squeeze(1) # shape [N, H, W]
                 else:
                     # input and labels are in data as a tuple
                     inputs, labels = data
 
                 # Normalize inputs by subtracting the mean image, if it was given (this is handled in dataset in torch datasets, but must be done here for NVVL datasets)
-                if type(self.mean_image) != type(None):
+                if mean_image_given:
                     if inputs.shape != mean_image.shape:
                         mean_image = mean_image[0, :, :].unsqueeze(0)
                         mean_image = mean_image.expand(inputs.shape[0], -1, -1)
@@ -201,7 +223,7 @@ class Solver(object):
                 labels = labels.unsqueeze(3)
 
                 # Normalize inputs by subtracting the mean image, if it was given (this is handled in dataset in torch datasets, but must be done here for NVVL datasets)
-                if type(self.mean_image) != type(None):
+                if mean_image_given:
                     if inputs.shape == mean_image.shape:
                         inputs = inputs - mean_image
                     else:
