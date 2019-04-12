@@ -218,12 +218,11 @@ def prepare_nvvl_UAV123_Dataset(root_dir, section, shuffle=False, sequence_lengt
     # Get a list of videos for this section
     if os.name == 'posix':
         # Unix
-        videos = os.listdir(os.path.join(root_dir, section))
-        videos.remove('targets') # Remove the targets folder
+        videos = [name for name in os.listdir(os.path.join(root_dir, section)) if '.avi' in name]
     else:
         # Windows (os.name == 'nt')
         with os.scandir(os.path.join(root_dir, section)) as folder_iterator:
-            videos = [folder_object.name for folder_object in list(folder_iterator)]
+            videos = [folder_object.name for folder_object in list(folder_iterator) if '.avi' in folder_object.name]
             videos.remove('targets') # Remove the targets folder
 
     if shuffle:
@@ -312,10 +311,11 @@ def get_nvvl_UAV123_datasets(root_dir, mean_image_name, shuffle=False, sequence_
     test_data, test_targets  = prepare_nvvl_UAV123_Dataset(root_dir, 'test', shuffle=shuffle, sequence_length=sequence_length, img_size=img_size)
 
     mean_image = np.load(os.path.join(root_dir, mean_image_name))
+    mean_image = cv2.cvtColor(mean_image, cv2.COLOR_BGR2GRAY)
     mean_image = cv2.resize(mean_image, (img_size[1], img_size[0])) # Resize the mean_image to the correct size
     mean_image = mean_image.astype(np.float32)/255. # Convert to [0, 1] (float)
-    mean_image = torch.from_numpy(mean_image).transpose(0, 1).transpose(1, 2) # Convert to tensor and from (H, W, C) to (C, H, W)
-    
+    mean_image = torch.from_numpy(mean_image)    
+
     return (train_data, train_targets), (val_data, val_targets), (test_data, test_targets), mean_image
 
 
