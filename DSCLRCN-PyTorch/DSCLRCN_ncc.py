@@ -18,7 +18,7 @@ def main():
     else:
         print_func = tqdm.write
 
-    dataset_root_dir = 'Dataset/SALICON'
+    dataset_root_dir = 'Dataset/UAV123'
     mean_image_name = 'mean_image.npy'
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
 
