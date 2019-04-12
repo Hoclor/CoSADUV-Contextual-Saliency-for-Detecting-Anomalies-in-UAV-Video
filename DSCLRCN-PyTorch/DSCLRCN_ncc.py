@@ -28,6 +28,7 @@ def main():
     elif 'UAV123' in dataset_root_dir:
         dataset_type = 'UAV123'
         train_data, val_data, test_data, mean_image = get_nvvl_UAV123_datasets(dataset_root_dir, mean_image_name, shuffle=True, sequence_length=1, img_size=img_size)
+    print_func('Using dataset: {}'.format(dataset_type))
 
     batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
     minibatchsize = 2 # Recommended: 4 for 480x640 for 12GB mem, 2 for 8GB mem. Determines how many images are processed in parallel on the GPU at once
