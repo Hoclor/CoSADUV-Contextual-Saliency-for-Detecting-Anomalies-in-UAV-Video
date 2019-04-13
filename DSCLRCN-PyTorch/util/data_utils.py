@@ -16,23 +16,6 @@ import pickle
 import cv2
 
 class SaliconData(data.Dataset):
-
-    def __init__(self, X, y):
-        self.X = X
-        self.y = y
-
-    def __getitem__(self, index):
-        img = self.X[index]
-        fix_map = self.y[index]
-
-        img = torch.from_numpy(img)
-        fix_map = torch.from_numpy(fix_map)
-        return img, fix_map
-
-    def __len__(self):
-        return len(self.y)
-
-class DirectSaliconData(data.Dataset):
     """ Salicon dataset, loaded from image files and dynamically resized as specified"""
     def __init__(self, root_dir, mean_image_name, section, img_size=(96, 128)):
         self.root_dir = root_dir
@@ -89,52 +72,13 @@ class DirectSaliconData(data.Dataset):
     def __len__(self):
         return len(self.image_list)
 
-def get_direct_datasets(root_dir, mean_image_name, img_size=(96, 128)):
-    train_data = DirectSaliconData(root_dir, mean_image_name, 'train', img_size)
-    val_data = DirectSaliconData(root_dir, mean_image_name, 'val', img_size)
-    test_data = DirectSaliconData(root_dir, mean_image_name, 'test', img_size)
+def get_SALICON_datasets(root_dir, mean_image_name, img_size=(96, 128)):
+    train_data = SaliconData(root_dir, mean_image_name, 'train', img_size)
+    val_data = SaliconData(root_dir, mean_image_name, 'val', img_size)
+    test_data = SaliconData(root_dir, mean_image_name, 'test', img_size)
     
     mean_image = np.load(os.path.join(root_dir, mean_image_name))
     mean_image = cv2.resize(mean_image, (img_size[1], img_size[0])) # Resize the mean_image to the correct size
     mean_image = mean_image.astype(np.float32)/255. # Convert to [0, 1] (float)
     
     return (train_data, val_data, test_data, mean_image)
-    
-def get_SALICON_datasets(dataset_folder='Dataset/Transformed/'):
-    """
-    Load and preprocess the SALICON dataset.
-    """
-
-    if not dataset_folder.endswith('/'):
-        dataset_folder += '/'
-
-    mean_image = np.load(dataset_folder + 'mean_image.npy').astype(np.float32)/255.
-    
-    with open(dataset_folder + 'train_datadict.pickle', 'rb') as f:
-        train_data = pickle.load(f)
-    X_train = [(image.astype(np.float32)/255. - mean_image).transpose(2,0,1) for image in train_data['images']]
-    y_train = [fix_map.astype(np.float32)/255. for fix_map in train_data['fix_maps']]
-    # Restart the line
-    sys.stdout.write('Progress: 50%\r')
-    sys.stdout.flush()
-
-    with open(dataset_folder + 'val_datadict.pickle', 'rb') as f:
-        val_data = pickle.load(f)
-    X_val = [(image.astype(np.float32)/255. - mean_image).transpose(2,0,1) for image in val_data['images']]
-    y_val = [fix_map.astype(np.float32)/255. for fix_map in val_data['fix_maps']]
-    # Restart the line
-    sys.stdout.write('Progress: 75%\r')
-    sys.stdout.flush()
-
-    with open(dataset_folder + 'test_datadict.pickle', 'rb') as f:
-        test_data = pickle.load(f)
-    X_test = [(image.astype(np.float32)/255. - mean_image).transpose(2,0,1) for image in test_data['images']]
-    y_test = [fix_map.astype(np.float32)/255. for fix_map in test_data['fix_maps']]
-    # Restart the line
-    sys.stdout.write('Progress: 100%\r')
-    sys.stdout.flush()
-    
-    return (SaliconData(X_train, y_train),
-            SaliconData(X_val, y_val),
-            SaliconData(X_test, y_test),
-            mean_image)
