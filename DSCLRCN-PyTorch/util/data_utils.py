@@ -97,7 +97,7 @@ class VideoData(data.Dataset):
             with os.scandir(os.path.join(self.video_folder, 'frames')) as frame_list:
                 frame_list = [frame.name for frame in list(frame_list) if frame.name.endswith('.jpg') or frame.name.endswith('.png')]
         self.frame_list = sorted(frame_list)
-    
+
         if frame_count > -1:
             # Slice the frame list at a random (valid) index
             start_index = random.randrange(0, len(self.frame_list) - frame_count)
@@ -135,6 +135,46 @@ class VideoData(data.Dataset):
         
     def __len__(self):
         return len(self.frame_list)
+
+
+class VideoDataset(data.Dataset):
+    """ Video dataset, loaded from frame files and dynamically resized as specified.
+
+    Loads each folder in 'section' as a separate video: e.g., if section is 'train',
+    then it loads 'train/video1', 'train/video2', 'train/video3' as 3 separate videos.
+
+    This is done by creating a standard torch.utils.data.Dataset for each folder
+    and supplying this when __getitem__ is called. Thus, the VideoData class can be
+    iterated over to yield a list of video datasets, which in turn can be iterated over
+    to yield each frame of the video (with its corresponding ground truth).
+    """
+    def __init__(self, root_dir, mean_image_name, section, frame_count=-1, img_size=(480, 640)):
+        self.root_dir = root_dir
+        self.section = section.lower()
+        self.img_size = img_size # Height, Width
+        self.mean_image_name = mean_image_name
+        self.frame_count = frame_count # Length of each sequence
+        
+        # Create the list of videos in this section in root_dir
+        if os.name == 'posix':
+            # Unix
+            video_names = os.listdir(os.path.join(self.root_dir, section))
+        else:
+            # Windows (os.name == 'nt')
+            with os.scandir(os.path.join(self.root_dir, section)) as file_iterator:
+                video_names = [folder.name for folder in list(file_iterator)]
+        video_names = sorted(video_names)
+
+        # Produce a list of datasets, one for each video in video_names
+        self.video_list = [VideoData(self.root_dir, self.mean_image_name, self.section, video_name, self.frame_count, self.img_size) for video_name in video_names]
+    
+    def __getitem__(self, index):
+        # Return the dataset of the video of the given index
+        return self.video_list[index]
+        
+    def __len__(self):
+        # Return a count of how many videos there are
+        return len(self.video_list)
 
 
 def get_SALICON_datasets(root_dir, mean_image_name, img_size=(96, 128)):
