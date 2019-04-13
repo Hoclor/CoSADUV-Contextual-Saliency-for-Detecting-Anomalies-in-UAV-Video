@@ -222,11 +222,12 @@ def prepare_for_nvvl(dataset_folder, sequence_name, target_folder=None, img_size
 
     width, height = img_size
 
-    blank_frame = np.zeros((height, width), dtype=np.uint8)
+    # Original UAV123 dataset size: 1280x720
+    blank_frame = np.zeros((720, 1280), dtype=np.uint8)
 
     for frame_count, annotation in enumerate(tqdm(annotations)):
         # Copy a new blank frame
-        frame = np.copy(blank_frame)
+        target_frame = np.copy(blank_frame)
 
         # Get the corresponding frame name
         frame_name = frames[frame_count]
@@ -242,12 +243,15 @@ def prepare_for_nvvl(dataset_folder, sequence_name, target_folder=None, img_size
             y_tl = annotation[1]
             x_br = x_tl + annotation[2]
             y_br = y_tl + annotation[3]
-            cv2.rectangle(frame, (x_tl, y_tl), (x_br, y_br), 255, cv2.FILLED)
+            cv2.rectangle(target_frame, (x_tl, y_tl), (x_br, y_br), 255, cv2.FILLED)
+
+        # Resize the target frame
+        target_frame = cv2.resize(target_frame, (width, height))
 
         # Write the input frame
         cv2.imwrite(os.path.join(target_folder, sequence_name, 'frames', frame_name), input_frame)
         # Write the target
-        cv2.imwrite(os.path.join(target_folder, sequence_name, 'targets', frame_name), frame)
+        cv2.imwrite(os.path.join(target_folder, sequence_name, 'targets', frame_name), target_frame)
         # Display the resulting frame
         if display:
             cv2.imshow('input frame', input_frame)
