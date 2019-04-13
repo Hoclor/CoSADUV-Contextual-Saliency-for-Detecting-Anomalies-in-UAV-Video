@@ -1,5 +1,6 @@
 """Data utility functions."""
 import os
+import random
 import sys
 
 import numpy as np
@@ -77,7 +78,7 @@ class VideoData(data.Dataset):
     Returned by the VideoDataset class, but can be used independently.
     File structure should match description in /Dataset/UAV123/README.md
     """
-    def __init__(self, root_dir, mean_image_name, section, video_name, img_size=(480, 640)):
+    def __init__(self, root_dir, mean_image_name, section, video_name, frame_count=-1, img_size=(480, 640)):
         self.video_folder = os.path.join(root_dir, section, video_name)
         self.section = section.lower()
         self.img_size = img_size # Height, Width
@@ -96,6 +97,12 @@ class VideoData(data.Dataset):
             with os.scandir(os.path.join(self.video_folder, 'frames')) as frame_list:
                 frame_list = [frame.name for frame in list(frame_list) if frame.name.endswith('.jpg') or frame.name.endswith('.png')]
         self.frame_list = sorted(frame_list)
+    
+        if frame_count > -1:
+            # Slice the frame list at a random (valid) index
+            start_index = random.randrange(0, len(self.frame_list) - frame_count)
+            self.frame_list = self.frame_list[start_index:start_index+frame_count]
+
     
     def __getitem__(self, index):
         # Load the image of given index, and its target
