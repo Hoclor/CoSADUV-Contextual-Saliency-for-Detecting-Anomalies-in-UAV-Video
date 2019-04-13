@@ -72,6 +72,64 @@ class SaliconData(data.Dataset):
     def __len__(self):
         return len(self.image_list)
 
+class VideoData(data.Dataset):
+    """ A dataset of a single video, loaded from frame files and dynamically resized as specified.
+    Returned by the VideoDataset class, but can be used independently.
+    File structure should match description in /Dataset/UAV123/README.md
+    """
+    def __init__(self, root_dir, mean_image_name, section, video_name, img_size=(480, 640)):
+        self.video_folder = os.path.join(root_dir, section, video_name)
+        self.section = section.lower()
+        self.img_size = img_size # Height, Width
+        self.mean_image = np.load(os.path.join(root_dir, mean_image_name))
+        self.mean_image = cv2.resize(self.mean_image, (self.img_size[1], self.img_size[0])) # Resize the mean_image to the correct size
+        self.mean_image = self.mean_image.astype(np.float32)/255. # Convert to [0, 1] (float)
+        
+        # Create the list of frames for this video (in video_folder/frames)
+        if os.name == 'posix':
+            # Unix
+            frame_list = os.listdir(os.path.join(self.video_folder, 'frames'))
+            # Filter the list of frames so we only get image files (assumped to be .jpg or .png)
+            frame_list = [name for name in frame_list if name.endswith('.jpg') or name.endswith('.png')]
+        else:
+            # Windows (os.name == 'nt')
+            with os.scandir(os.path.join(self.video_folder, 'frames')) as frame_list:
+                frame_list = [frame.name for frame in list(frame_list) if frame.name.endswith('.jpg') or frame.name.endswith('.png')]
+        self.frame_list = sorted(frame_list)
+    
+    def __getitem__(self, index):
+        # Load the image of given index, and its target
+        img_name = os.path.join(self.video_folder, 'frames', self.frame_list[index])
+        
+        image = imread(img_name)
+        image = imresize(image, self.img_size)
+        # If image is Grayscale convert it to RGB
+        if len(image.shape) == 2:
+            image = np.repeat(np.expand_dims(image, 2), 3, 2)
+        
+        # Normalize image by converting from [0,255] to [0,1], subtracting mean_image,
+        # and reordering from [H, W, C] to [C, H, W]
+        image = (image.astype(np.float32)/255.0 - self.mean_image).transpose(2, 0, 1)
+        
+        # Load the target
+        target = imread(os.path.join(self.video_folder, 'targets', self.frame_list[index]))
+        target = imresize(target, self.img_size)
+        
+        # Normalize target by converting from [0, 255] (int) to [0, 1] (float),
+        # and reordering from [H, W, C] to [C, H, W]
+        target = target.astype(np.float32)/255.
+        
+        # Convert image and target to torch tensors
+        image = torch.from_numpy(image)
+        target = torch.from_numpy(target)
+        
+        # Return the image and the target
+        return image, target
+        
+    def __len__(self):
+        return len(self.frame_list)
+
+
 def get_SALICON_datasets(root_dir, mean_image_name, img_size=(96, 128)):
     train_data = SaliconData(root_dir, mean_image_name, 'train', img_size)
     val_data = SaliconData(root_dir, mean_image_name, 'val', img_size)
