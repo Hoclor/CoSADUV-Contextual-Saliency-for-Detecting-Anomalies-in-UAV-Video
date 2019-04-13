@@ -1,4 +1,6 @@
 from random import shuffle
+import time
+
 import numpy as np
 
 import torch
@@ -99,8 +101,11 @@ class Solver(object):
         # Iteration counter of batches (NOT minibatches)
         it = 0
 
+
+        total_time = 0
         # Epoch
         for j in epoch_loop:
+            start_time = time.time()
             train_loss_logs = 0
             # Downscale the learning rate by a factor of 2.5 (i.e. multiply by 1/2.5) every epoch
             scheduler.step()
@@ -210,10 +215,13 @@ class Solver(object):
             
             # Free up memory
             del val_loss
-            
+
+            time_taken = time.time() - start_time
+            total_time += time_taken
+
             # Print the average Train loss for the last epoch (avg of the logged losses, as decided by log_nth value)
             tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, sum(self.train_loss_history[-train_loss_logs:])/train_loss_logs))
             tqdm.write('[Epoch %i/%i] VAL NSS Loss: %f' % (j, num_epochs, self.val_loss_history[-1]))
-            
+            tqdm.write('Time taken: {} last epoch, {} total'.format(int(time_taken), int(total_time)))
         
         tqdm.write('FINISH.')
