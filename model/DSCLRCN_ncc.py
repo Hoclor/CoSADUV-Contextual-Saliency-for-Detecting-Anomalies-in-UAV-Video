@@ -48,7 +48,7 @@ def main():
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     elif 'UAV123' in dataset_root_dir:
-        train_data, val_data, test_data, mean_image = data_utils.get_video_datasets(
+        train_loader, val_loader, test_loader, mean_image = data_utils.get_video_datasets(
             dataset_root_dir, mean_image_name, duration=duration, img_size=img_size,
             loader_settings = {'batch_size': minibatchsize, 'num_workers': 8, 'pin_memory': True})
     
