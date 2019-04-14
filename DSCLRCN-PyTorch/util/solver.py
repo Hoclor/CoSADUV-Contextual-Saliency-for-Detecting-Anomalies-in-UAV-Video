@@ -108,57 +108,77 @@ class Solver(object):
             # Set the model to training mode
             model.train()
 
-            if self.location == 'ncc':
-                train_loop = enumerate(train_loader, 0)
-            elif self.location == 'jupyter':
-                train_loop = enumerate(tqdm_notebook(train_loader), 0)
+            if type(train_loader.dataset) == torch.utils.data.Dataset:
+                # Dataloader loads in images, insert the loader into a list
+                # to simulate it being returned as a list of loaders
+                outer_train_loop = [train_loader]
             else:
-                train_loop = enumerate(tqdm(train_loader), 0)
-                
+                # Dataloader loads in a list of dataloaders, so leave it as it is
+                outer_train_loop = train_loader
+
+            if self.location == 'ncc':
+                outer_train_loop = enumerate(outer_train_loop, 0)
+            elif self.location == 'jupyter':
+                outer_train_loop = enumerate(tqdm_notebook(outer_train_loop), 0)
+            else:
+                outer_train_loop = enumerate(tqdm(outer_train_loop), 0)
+
+
             counter = 0 # counter for minibatches
             it = j*iter_per_epoch
 
-            # Batch of items in training set
-            for i, data in train_loop:
-                counter += 1 # Count the number of minibatches performed since last backprop
-                
-                # Load the items in this batch and their labels from the train_loader
-                inputs, labels = data
-                # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
-                labels = labels.unsqueeze(3)
+            # Repeat training for each loader in the train_loader
+            for k, loader in outer_train_loop:
+                if self.location == 'ncc':
+                    inner_train_loop = enumerate(loader, 0)
+                elif self.location == 'jupyter':
+                    inner_train_loop = enumerate(tqdm_notebook(loader), 0)
+                else:
+                    inner_train_loop = enumerate(tqdm(loader), 0)
+                    
+                # Repeat training for each batch in the loader
+                for i, data in inner_train_loop:
+                    # Batch of items in training set
 
-                # Convert these to cuda types if cuda is available
-                if torch.cuda.is_available():
-                    inputs, labels = inputs.cuda(), labels.cuda()
-                
-                # DEPRECATED - calling Variable should no longer be necessary, but leave in for now
-                inputs = Variable(inputs)
-                labels = Variable(labels)
-                
-                # train the model (forward propagation) on the inputs
-                outputs = model(inputs)
-                # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
-                outputs = outputs.transpose(1, 3)
-                outputs = outputs.transpose(1, 2)
-                
-                loss = self.loss_func(outputs, labels)
-                loss.backward()
-                # Only step and zero the gradients every num_minibatches steps
-                if counter == num_minibatches:
-                    counter = 0 # Reset the minibatch counter
-                    optim.step()
-                    optim.zero_grad()
-                    if it%log_nth==0:
-                        tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
-                        self.train_loss_history.append(loss.item())
-                        train_loss_logs += 1
-                    it += 1 # iteration (batch) number
-                
-                # Free up memory
-                del inputs, outputs, labels, loss
-            
+                    counter += 1 # Count the number of minibatches performed since last backprop
+                    
+                    # Load the items in this batch and their labels from the train_loader
+                    inputs, labels = data
+                    # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
+                    labels = labels.unsqueeze(3)
+
+                    # Convert these to cuda types if cuda is available
+                    if torch.cuda.is_available():
+                        inputs, labels = inputs.cuda(), labels.cuda()
+                    
+                    # DEPRECATED - calling Variable should no longer be necessary, but leave in for now
+                    inputs = Variable(inputs)
+                    labels = Variable(labels)
+                    
+                    # train the model (forward propagation) on the inputs
+                    outputs = model(inputs)
+                    # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
+                    outputs = outputs.transpose(1, 3)
+                    outputs = outputs.transpose(1, 2)
+                    
+                    loss = self.loss_func(outputs, labels)
+                    loss.backward()
+                    # Only step and zero the gradients every num_minibatches steps
+                    if counter == num_minibatches:
+                        counter = 0 # Reset the minibatch counter
+                        optim.step()
+                        optim.zero_grad()
+                        if it%log_nth==0:
+                            tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
+                            self.train_loss_history.append(loss.item())
+                            train_loss_logs += 1
+                        it += 1 # iteration (batch) number
+                    
+                    # Free up memory
+                    del inputs, outputs, labels, loss
+
             model.eval()
-            
+
             if self.location == 'ncc':
                 val_loop = enumerate(val_loader, 0)
             elif self.location == 'jupyter':
