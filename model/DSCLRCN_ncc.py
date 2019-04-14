@@ -1,5 +1,3 @@
-#import torch
-
 def main():
     import numpy as np
     import pickle
@@ -47,12 +45,13 @@ def main():
     ### Prepare datasets and loaders ###
     if 'SALICON' in dataset_root_dir:
         train_data, val_data, test_data, mean_image = data_utils.data_utils.get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
+        train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+        val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     elif 'UAV123' in dataset_root_dir:
-        train_data, val_data, test_data, mean_image = data_utils.get_video_datasets(dataset_root_dir, mean_image_name, duration=duration, img_size=img_size)
+        train_data, val_data, test_data, mean_image = data_utils.get_video_datasets(
+            dataset_root_dir, mean_image_name, duration=duration, img_size=img_size,
+            loader_settings = {'batch_size': minibatchsize, 'num_workers': 8, 'pin_memory': True})
     
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
-
     ### Training ###
     model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
     # Set solver as torch.optim.SGD and lr as 1e-2, or torch.optim.Adam and lr 1e-4
@@ -71,7 +70,8 @@ def main():
     
     # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
     test_losses = []
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+    if 'SALICON' in dataset_root_dir:
+        test_loader = torch.utils.data.DataLoader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     test_loss_func = NSS_loss_2
     
     looper=test_loader
@@ -133,7 +133,8 @@ def main():
     
     # Test the checkpoint
     test_losses_checkpoint = []
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+    if 'SALICON' in dataset_root_dir:
+        test_loader = torch.utils.data.DataLoader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     
     looper = test_loader
     if location != 'ncc':
