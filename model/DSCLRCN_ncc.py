@@ -20,7 +20,7 @@ def main():
     dataset_root_dir = 'Dataset/UAV123'
     mean_image_name = 'mean_image.npy'
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
-    duration = -1 # Length of sequences loaded from each video, if a video dataset is used
+    duration = 300 # Length of sequences loaded from each video, if a video dataset is used
 
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
