@@ -309,11 +309,11 @@ if __name__ == '__main__':
         sequences = [] # List of sequences as 2-tuples: (sequence_name, section)
         # Split the sequences 50% train, 25% val, 25% test
         for i, seq in enumerate(all_sequences):
-            if i % 4 < 2:
+            if i % 4 == 0 or i % 4 == 3:
                 sequences.append((seq, 'train'))
-            elif i % 4 == 2:
+            elif i % 4 == 1:
                 sequences.append((seq, 'val'))
-            elif i % 4 == 3:
+            elif i % 4 == 2:
                 sequences.append((seq, 'test'))
         targets = {
             'train': 'C:\\Users\\simon\\GitRepositories\\MastersProject\\DSCLRCN-PyTorch\\Dataset\\UAV123\\train',
