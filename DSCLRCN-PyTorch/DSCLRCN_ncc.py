@@ -1,12 +1,6 @@
 #import torch
 
 def main():
-    location = 'ncc' # ncc or '', where the code is to be run (affects output)
-    if location == 'ncc':
-        print_func = print
-    else:
-        print_func = tqdm.write
-
     import numpy as np
     import pickle
     import cv2
@@ -14,14 +8,19 @@ def main():
     from torch.autograd import Variable
     from tqdm import tqdm
 
-    import util.data_utils
+    from util import data_utils
+
+    location = 'ncc' # ncc or '', where the code is to be run (affects output)
+    if location == 'ncc':
+        print_func = print
+    else:
+        print_func = tqdm.write
 
     ### Data options ###
     dataset_root_dir = 'Dataset/UAV123'
     mean_image_name = 'mean_image.npy'
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
-    
-
+    duration = -1 # Length of sequences loaded from each video, if a video dataset is used
 
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
@@ -47,12 +46,9 @@ def main():
 
     ### Prepare datasets and loaders ###
     if 'SALICON' in dataset_root_dir:
-        train_data, val_data, test_data, mean_image = get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
+        train_data, val_data, test_data, mean_image = data_utils.data_utils.get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
     elif 'UAV123' in dataset_root_dir:
-        train_data, val_data, test_data, mean_image = get_video_datasets
-        train_data = VideoDataset(dataset_root_dir, mean_image_name, 'train', duration=duration, img_size=img_size)
-        val_data = VideoDataset(dataset_root_dir, mean_image_name, 'val', duration=duration, img_size=img_size)
-        test_data = VideoDataset(dataset_root_dir, mean_image_name, 'test', duration=duration, img_size=img_size)
+        train_data, val_data, test_data, mean_image = data_utils.get_video_datasets(dataset_root_dir, mean_image_name, duration=duration, img_size=img_size)
     
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
