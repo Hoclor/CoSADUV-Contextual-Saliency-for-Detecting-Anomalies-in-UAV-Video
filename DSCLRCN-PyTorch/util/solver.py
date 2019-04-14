@@ -12,8 +12,7 @@ from random import *
 from tqdm import tqdm
 from tqdm import tqdm_notebook
 
-import data_utils
-
+from util import data_utils
 
 class Solver(object):
     default_adam_args = {"lr": 1e-4,
