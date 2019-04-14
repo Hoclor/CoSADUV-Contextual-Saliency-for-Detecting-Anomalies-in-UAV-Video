@@ -7,14 +7,14 @@ def main():
     else:
         print_func = tqdm.write
 
-
-    from util.data_utils import get_SALICON_datasets
-    from util.data_utils import VideoData
-    from tqdm import tqdm
-    from torch.autograd import Variable
     import numpy as np
-    import cv2
     import pickle
+    import cv2
+
+    from torch.autograd import Variable
+    from tqdm import tqdm
+
+    import util.data_utils
 
 #     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
     dataset_root_dir = 'Dataset/UAV123'
