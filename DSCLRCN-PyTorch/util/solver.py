@@ -243,6 +243,6 @@ class Solver(object):
             # Print the average Train loss for the last epoch (avg of the logged losses, as decided by log_nth value)
             tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, sum(self.train_loss_history[-train_loss_logs:])/train_loss_logs))
             tqdm.write('[Epoch %i/%i] VAL NSS Loss: %f' % (j, num_epochs, self.val_loss_history[-1]))
-            tqdm.write('Time taken: {}:{}:{} last epoch, {}:{}:{} total'.format(time_taken//3600, (time_taken % 3600)//60, int(time_taken % 60), total_time//3600, (total_time % 3600)//60, int(total_time % 60)))
+            tqdm.write('Time taken: {}:{}:{} last epoch, {}:{}:{} total'.format(int(time_taken//3600), int((time_taken % 3600)//60), int(time_taken % 60), int(total_time//3600), int((total_time % 3600)//60), int(total_time % 60)))
         
         tqdm.write('FINISH.')
