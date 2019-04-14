@@ -159,10 +159,13 @@ class VideoDataset(data.Dataset):
         if os.name == 'posix':
             # Unix
             video_names = os.listdir(os.path.join(self.root_dir, section))
+            # Filter out hidden files/folders (that begin with '.')
+            video_names = [name for name in video_names if not name.startswith('.')]
         else:
             # Windows (os.name == 'nt')
             with os.scandir(os.path.join(self.root_dir, section)) as file_iterator:
                 video_names = [folder.name for folder in list(file_iterator)]
+            video_names = [name for name in video_names if not name.startswith('.')]
         video_names = sorted(video_names)
 
         # Produce a list of datasets, one for each video in video_names
@@ -198,3 +201,4 @@ def get_video_datasets(root_dir, mean_image_name, duration=-1, img_size=(480, 64
     mean_image = mean_image.astype(np.float32)/255. # Convert to [0, 1] (float)
     
     return (train_data, val_data, test_data, mean_image)
+
