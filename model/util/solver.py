@@ -114,7 +114,7 @@ class Solver(object):
             # Set the model to training mode
             model.train()
 
-            if type(train_loader.dataset) == data_utils.VideoDataset:
+            if type(train_loader) == data_utils.VideoDataset:
                 # Dataloader loads in a list of dataloaders, so leave it as it is
                 outer_train_loop = train_loader
             else:
