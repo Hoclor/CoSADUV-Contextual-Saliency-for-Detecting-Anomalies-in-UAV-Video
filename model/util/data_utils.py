@@ -99,6 +99,9 @@ class VideoData(data.Dataset):
         self.frame_list = sorted(frame_list)
 
         if duration > -1:
+            # Cap duration at the number of frames of this video
+            duration = min(duration, len(self.frame_list))
+
             # Slice the frame list at a random (valid) index
             start_index = random.randrange(0, len(self.frame_list) - duration)
             self.frame_list = self.frame_list[start_index:start_index+duration]
