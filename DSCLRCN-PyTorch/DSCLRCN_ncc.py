@@ -10,13 +10,13 @@ def main():
     import numpy as np
     import pickle
     import cv2
-
+    
     from torch.autograd import Variable
     from tqdm import tqdm
 
     import util.data_utils
 
-#     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
+    ### Data options ###
     dataset_root_dir = 'Dataset/UAV123'
     mean_image_name = 'mean_image.npy'
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
@@ -28,6 +28,7 @@ def main():
     
     from util.loss_functions import NSS_loss, NSS_loss_2
 
+    ### Training options ###
     batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
     minibatchsize = 2 # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem. Determines how many images are processed in parallel on the GPU at once
     epoch_number = 20 # Recommended: 10 (epoch_number =~ batchsize/2)
@@ -35,6 +36,7 @@ def main():
     optim_args = {'lr': 1e-2} # 1e-2 if SGD, 1e-4 if Adam
     loss_func = NSS_loss # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
 
+    ### Prepare optimiser ###
     if batchsize % minibatchsize:
         print("Error, batchsize % minibatchsize must equal 0 ({} % {} != 0).".format(batchsize, minibatchsize))
         exit()
@@ -55,7 +57,7 @@ def main():
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
 
-    # Attempt to train a model using the original image sizes
+    ### Training ###
     model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
     # Set solver as torch.optim.SGD and lr as 1e-2, or torch.optim.Adam and lr 1e-4
     solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func, location='ncc')
@@ -68,6 +70,7 @@ def main():
     with open('trained_models/solver_{}_lr2_batch{}_epoch{}.pkl'.format(optim_str, batchsize, epoch_number), 'wb') as outf:
         pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)
     
+    ### Testing ###
     print_func("Testing model and best checkpoint on SALICON validation set")
     
     # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
