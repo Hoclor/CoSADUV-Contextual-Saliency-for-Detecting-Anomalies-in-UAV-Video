@@ -205,7 +205,7 @@ def get_SALICON_datasets(root_dir, mean_image_name, img_size=(480, 640)):
     
     return (train_data, val_data, test_data, mean_image)
 
-def get_video_datasets(root_dir, mean_image_name, duration=-1, img_size=(480, 640), loader_settings={'batch_size': minibatchsize, 'num_workers': 8, 'pin_memory': True}):
+def get_video_datasets(root_dir, mean_image_name, duration=-1, img_size=(480, 640), loader_settings={'batch_size': 2, 'num_workers': 8, 'pin_memory': True}):
     train_data = VideoDataset(root_dir, mean_image_name, 'train', duration=duration, img_size=img_size, loader_settings=loader_settings)
     val_data = VideoDataset(root_dir, mean_image_name, 'val', duration=duration, img_size=img_size, loader_settings=loader_settings)
     test_data = VideoDataset(root_dir, mean_image_name, 'test', duration=duration, img_size=img_size, loader_settings=loader_settings)
