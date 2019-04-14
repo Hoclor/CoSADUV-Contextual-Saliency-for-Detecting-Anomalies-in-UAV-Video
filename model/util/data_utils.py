@@ -103,7 +103,7 @@ class VideoData(data.Dataset):
             duration = min(duration, len(self.frame_list))
 
             # Slice the frame list at a random (valid) index
-            start_index = random.randrange(0, len(self.frame_list) - duration)
+            start_index = random.randrange(0, len(self.frame_list) - duration + 1)
             self.frame_list = self.frame_list[start_index:start_index+duration]
 
     
