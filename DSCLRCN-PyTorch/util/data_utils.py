@@ -177,7 +177,7 @@ class VideoDataset(data.Dataset):
         return len(self.video_list)
 
 
-def get_SALICON_datasets(root_dir, mean_image_name, img_size=(96, 128)):
+def get_SALICON_datasets(root_dir, mean_image_name, img_size=(480, 640)):
     train_data = SaliconData(root_dir, mean_image_name, 'train', img_size)
     val_data = SaliconData(root_dir, mean_image_name, 'val', img_size)
     test_data = SaliconData(root_dir, mean_image_name, 'test', img_size)
