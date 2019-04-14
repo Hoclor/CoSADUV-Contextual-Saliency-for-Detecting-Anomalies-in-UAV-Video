@@ -1,36 +1,33 @@
 #import torch
 
 def main():
+    import numpy as np
+    import pickle
+    import cv2
+    
+    from torch.autograd import Variable
+    from tqdm import tqdm
+
+    from util import data_utils
+
     location = 'ncc' # ncc or '', where the code is to be run (affects output)
     if location == 'ncc':
         print_func = print
     else:
         print_func = tqdm.write
 
-
-    from util.data_utils import get_SALICON_datasets
-    from util.data_utils import VideoData
-    from tqdm import tqdm
-    from torch.autograd import Variable
-    import numpy as np
-    import cv2
-    import pickle
-
-#     train_data, val_data, test_data, mean_image = get_SALICON_datasets('Dataset/Transformed') # 128x96
+    ### Data options ###
     dataset_root_dir = 'Dataset/UAV123'
     mean_image_name = 'mean_image.npy'
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
-    #train_data, val_data, test_data, mean_image = get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
-    train_data = VideoData(dataset_root_dir, mean_image_name, 'train', 'bike1')
-    val_data = VideoData(dataset_root_dir, mean_image_name, 'val', 'bike2')
-    test_data = VideoData(dataset_root_dir, mean_image_name, 'test', 'bike3')
-
+    duration = -1 # Length of sequences loaded from each video, if a video dataset is used
 
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
     from util.solver import Solver
     
     from util.loss_functions import NSS_loss, NSS_loss_2
 
+    ### Training options ###
     batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
     minibatchsize = 2 # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem. Determines how many images are processed in parallel on the GPU at once
     epoch_number = 20 # Recommended: 10 (epoch_number =~ batchsize/2)
@@ -38,6 +35,7 @@ def main():
     optim_args = {'lr': 1e-2} # 1e-2 if SGD, 1e-4 if Adam
     loss_func = NSS_loss # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
 
+    ### Prepare optimiser ###
     if batchsize % minibatchsize:
         print("Error, batchsize % minibatchsize must equal 0 ({} % {} != 0).".format(batchsize, minibatchsize))
         exit()
@@ -46,11 +44,16 @@ def main():
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
+    ### Prepare datasets and loaders ###
+    if 'SALICON' in dataset_root_dir:
+        train_data, val_data, test_data, mean_image = data_utils.data_utils.get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
+    elif 'UAV123' in dataset_root_dir:
+        train_data, val_data, test_data, mean_image = data_utils.get_video_datasets(dataset_root_dir, mean_image_name, duration=duration, img_size=img_size)
+    
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
-
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
 
-    # Attempt to train a model using the original image sizes
+    ### Training ###
     model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
     # Set solver as torch.optim.SGD and lr as 1e-2, or torch.optim.Adam and lr 1e-4
     solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func, location='ncc')
@@ -63,6 +66,7 @@ def main():
     with open('trained_models/solver_{}_lr2_batch{}_epoch{}.pkl'.format(optim_str, batchsize, epoch_number), 'wb') as outf:
         pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)
     
+    ### Testing ###
     print_func("Testing model and best checkpoint on SALICON validation set")
     
     # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
