@@ -151,7 +151,7 @@ class VideoDataset(data.Dataset):
     iterated over to yield a list of video datasets, which in turn can be iterated over
     to yield each frame of the video (with its corresponding ground truth).
     """
-    def __init__(self, root_dir, mean_image_name, section, duration=-1, img_size=(480, 640)):
+    def __init__(self, root_dir, mean_image_name, section, duration=-1, img_size=(480, 640), loader_settings={}):
         self.root_dir = root_dir
         self.section = section.lower()
         self.img_size = img_size # Height, Width
@@ -171,8 +171,19 @@ class VideoDataset(data.Dataset):
             video_names = [name for name in video_names if not name.startswith('.')]
         video_names = sorted(video_names)
 
-        # Produce a list of datasets, one for each video in video_names
-        self.video_list = [VideoData(self.root_dir, self.mean_image_name, self.section, video_name, self.duration, self.img_size) for video_name in video_names]
+        batch_size = loader_settings['batch_size']
+        num_workers = loader_settings['num_workers']
+        pin_memory = loader_settings['pin_memory']
+
+        # Produce a list of dataloaders of datasets, one for each video in video_names
+        self.video_list = [
+            data.DataLoader(
+                VideoData(
+                    self.root_dir, self.mean_image_name, self.section, video_name, self.duration, self.img_size
+                ), 
+                batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory
+            ) for video_name in video_names
+        ]
     
     def __getitem__(self, index):
         # Return the dataset of the video of the given index
@@ -194,10 +205,10 @@ def get_SALICON_datasets(root_dir, mean_image_name, img_size=(480, 640)):
     
     return (train_data, val_data, test_data, mean_image)
 
-def get_video_datasets(root_dir, mean_image_name, duration=-1, img_size=(480, 640)):
-    train_data = VideoDataset(root_dir, mean_image_name, 'train', duration=duration, img_size=img_size)
-    val_data = VideoDataset(root_dir, mean_image_name, 'val', duration=duration, img_size=img_size)
-    test_data = VideoDataset(root_dir, mean_image_name, 'test', duration=duration, img_size=img_size)
+def get_video_datasets(root_dir, mean_image_name, duration=-1, img_size=(480, 640), loader_settings={'batch_size': minibatchsize, 'num_workers': 8, 'pin_memory': True}):
+    train_data = VideoDataset(root_dir, mean_image_name, 'train', duration=duration, img_size=img_size, loader_settings=loader_settings)
+    val_data = VideoDataset(root_dir, mean_image_name, 'val', duration=duration, img_size=img_size, loader_settings=loader_settings)
+    test_data = VideoDataset(root_dir, mean_image_name, 'test', duration=duration, img_size=img_size, loader_settings=loader_settings)
     
     mean_image = np.load(os.path.join(root_dir, mean_image_name))
     mean_image = cv2.resize(mean_image, (img_size[1], img_size[0])) # Resize the mean_image to the correct size
