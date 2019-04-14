@@ -80,8 +80,12 @@ class Solver(object):
         optim = self.optim(other_parameters, **self.optim_args)
         optim.add_param_group(pretrained_param_group)
         self._reset_histories()
-        iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
-        
+        if type(train_loader) == data_utils.VideoDataset:
+            # Sum up the length of each loader in train_loader
+            iter_per_epoch = int(sum([len(loader) for loader in train_loader])/num_minibatches) # Count an iter as a full batch, not a minibatch
+        else:
+            iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
+
         # Create the scheduler to allow lr adjustment
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=0.4)
 
