@@ -292,29 +292,28 @@ if __name__ == '__main__':
         dataset='C:\\Users\\simon\\Downloads\\Project Datasets\\UAV123\\UAV123'
         img_size = (640, 480)
         all_sequences = [
-            'bike1', 'bike2', 'bike3', 'bird1', 'boat1', 'boat2', 'boat3',
+            'bike1', 'bike2', 'bike3', 'boat1', 'boat2', 'boat3',
             'boat4', 'boat5', 'boat6', 'boat7', 'boat8', 'boat9', 'building1',
             'building2', 'building3', 'building4', 'building5', 'car1', 'car10',
             'car11', 'car12', 'car13', 'car14','car15', 'car16', 'car17', 'car18',
-            'car1_s', 'car2', 'car2_s', 'car3', 'car3_s', 'car4', 'car4_s', 'car5',
-            'car6', 'car7', 'car8', 'car9', 'group1', 'group2', 'group3', 'person1',
-            'person10', 'person11', 'person12', 'person13', 'person14', 'person15',
-            'person16', 'person17', 'person18', 'person19', 'person1_s', 'person2',
-            'person20', 'person21', 'person22', 'person23', 'person2_s', 'person3',
-            'person3_s', 'person4', 'person5', 'person6', 'person7', 'person8',
-            'person9', 'truck1', 'truck2', 'truck3', 'truck4', 'uav1', 'uav2',
-            'uav3', 'uav4', 'uav5', 'uav6', 'uav7', 'uav8', 'wakeboard1',
+            'car2', 'car3', 'car4', 'car5', 'car6', 'car7', 'car8', 'car9',
+            'group1', 'group2', 'group3', 'person1', 'person10', 'person11',
+            'person12', 'person13', 'person14', 'person15', 'person16', 'person17',
+            'person18', 'person19', 'person2', 'person20', 'person21', 'person22',
+            'person23', 'person3', 'person4', 'person5', 'person6', 'person7',
+            'person8', 'person9', 'truck1', 'truck2', 'truck3', 'truck4', 'uav1',
+            'uav2', 'uav3', 'uav4', 'uav5', 'uav6', 'uav7', 'uav8', 'wakeboard1',
             'wakeboard10', 'wakeboard2', 'wakeboard3', 'wakeboard4', 'wakeboard5',
             'wakeboard6', 'wakeboard7', 'wakeboard8', 'wakeboard9'
         ]
         sequences = [] # List of sequences as 2-tuples: (sequence_name, section)
         # Split the sequences 50% train, 25% val, 25% test
         for i, seq in enumerate(all_sequences):
-            if i % 4 < 2:
+            if i % 4 == 0 or i % 4 == 3:
                 sequences.append((seq, 'train'))
-            elif i % 4 == 2:
+            elif i % 4 == 1:
                 sequences.append((seq, 'val'))
-            elif i % 4 == 3:
+            elif i % 4 == 2:
                 sequences.append((seq, 'test'))
         targets = {
             'train': 'C:\\Users\\simon\\GitRepositories\\MastersProject\\DSCLRCN-PyTorch\\Dataset\\UAV123\\train',
