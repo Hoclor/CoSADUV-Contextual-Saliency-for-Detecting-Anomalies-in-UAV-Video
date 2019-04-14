@@ -292,7 +292,7 @@ if __name__ == '__main__':
         dataset='C:\\Users\\simon\\Downloads\\Project Datasets\\UAV123\\UAV123'
         img_size = (640, 480)
         all_sequences = [
-            'bike1', 'bike2', 'bike3', 'bird1', 'boat1', 'boat2', 'boat3',
+            'bike1', 'bike2', 'bike3', 'boat1', 'boat2', 'boat3',
             'boat4', 'boat5', 'boat6', 'boat7', 'boat8', 'boat9', 'building1',
             'building2', 'building3', 'building4', 'building5', 'car1', 'car10',
             'car11', 'car12', 'car13', 'car14','car15', 'car16', 'car17', 'car18',
