@@ -10,6 +10,8 @@ from random import *
 from tqdm import tqdm
 from tqdm import tqdm_notebook
 
+import data_utils
+
 
 class Solver(object):
     default_adam_args = {"lr": 1e-4,
@@ -108,13 +110,13 @@ class Solver(object):
             # Set the model to training mode
             model.train()
 
-            if type(train_loader.dataset) == torch.utils.data.Dataset:
-                # Dataloader loads in images, insert the loader into a list
-                # to simulate it being returned as a list of loaders
-                outer_train_loop = [train_loader]
-            else:
+            if type(train_loader.dataset) == data_utils.VideoDataset:
                 # Dataloader loads in a list of dataloaders, so leave it as it is
                 outer_train_loop = train_loader
+            else:
+                # Assume dataloader loads in images, so insert the loader into a list
+                # to simulate it being returned as a list of loaders
+                outer_train_loop = [train_loader]
 
             if self.location == 'ncc':
                 outer_train_loop = enumerate(outer_train_loop, 0)
