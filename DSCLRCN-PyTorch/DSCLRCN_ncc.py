@@ -20,10 +20,7 @@ def main():
     dataset_root_dir = 'Dataset/UAV123'
     mean_image_name = 'mean_image.npy'
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
-    #train_data, val_data, test_data, mean_image = get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
-    train_data = VideoData(dataset_root_dir, mean_image_name, 'train', 'bike1')
-    val_data = VideoData(dataset_root_dir, mean_image_name, 'val', 'bike2')
-    test_data = VideoData(dataset_root_dir, mean_image_name, 'test', 'bike3')
+    
 
 
     from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
@@ -46,8 +43,16 @@ def main():
 
     optim = torch.optim.SGD if optim_str == 'SGD' else torch.optim.Adam
 
+    ### Prepare datasets and loaders ###
+    if 'SALICON' in dataset_root_dir:
+        train_data, val_data, test_data, mean_image = get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
+    elif 'UAV123' in dataset_root_dir:
+        train_data, val_data, test_data, mean_image = get_video_datasets
+        train_data = VideoDataset(dataset_root_dir, mean_image_name, 'train', duration=duration, img_size=img_size)
+        val_data = VideoDataset(dataset_root_dir, mean_image_name, 'val', duration=duration, img_size=img_size)
+        test_data = VideoDataset(dataset_root_dir, mean_image_name, 'test', duration=duration, img_size=img_size)
+    
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
-
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
 
     # Attempt to train a model using the original image sizes
