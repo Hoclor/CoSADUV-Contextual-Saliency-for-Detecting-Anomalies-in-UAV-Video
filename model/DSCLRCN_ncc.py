@@ -186,6 +186,7 @@ def main():
     # Print out the result
     print()
     print('{} score on test set:'.format(test_loss_func.__name__))
+    print('(Higher is better)')
     print('Last model     : {:6f}'.format(-1*test_loss/test_count))
     print('Best Checkpoint: {:6f}'.format(-1*test_loss_checkpoint/test_count_checkpoint))
 
