@@ -15,8 +15,8 @@ def main():
         print_func = tqdm.write
 
     ### Data options ###
-    dataset_root_dir = 'Dataset/UAV123'
-    mean_image_name = 'mean_image.npy'
+    dataset_root_dir = 'Dataset/UAV123' # Dataset/[SALICON, UAV123]
+    mean_image_name = 'mean_image.npy' # Must be located at dataset_root_dir/mean_image_name
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
     duration = 300 # Length of sequences loaded from each video, if a video dataset is used
 
