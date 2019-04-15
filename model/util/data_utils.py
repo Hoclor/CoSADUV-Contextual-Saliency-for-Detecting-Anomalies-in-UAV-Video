@@ -151,7 +151,7 @@ class VideoDataset(data.Dataset):
     iterated over to yield a list of video datasets, which in turn can be iterated over
     to yield each frame of the video (with its corresponding ground truth).
     """
-    def __init__(self, root_dir, mean_image_name, section, duration=-1, img_size=(480, 640), loader_settings={}):
+    def __init__(self, root_dir, mean_image_name, section, duration=-1, img_size=(480, 640), shuffle=True, loader_settings={}):
         self.root_dir = root_dir
         self.section = section.lower()
         self.img_size = img_size # Height, Width
@@ -170,6 +170,8 @@ class VideoDataset(data.Dataset):
                 video_names = [folder.name for folder in list(file_iterator)]
             video_names = [name for name in video_names if not name.startswith('.')]
         video_names = sorted(video_names)
+        if shuffle:
+            random.shuffle(video_names)
 
         batch_size = loader_settings['batch_size']
         num_workers = loader_settings['num_workers']
@@ -205,10 +207,10 @@ def get_SALICON_datasets(root_dir, mean_image_name, img_size=(480, 640)):
     
     return (train_data, val_data, test_data, mean_image)
 
-def get_video_datasets(root_dir, mean_image_name, duration=-1, img_size=(480, 640), loader_settings={'batch_size': 2, 'num_workers': 8, 'pin_memory': True}):
-    train_data = VideoDataset(root_dir, mean_image_name, 'train', duration=duration, img_size=img_size, loader_settings=loader_settings)
-    val_data = VideoDataset(root_dir, mean_image_name, 'val', duration=duration, img_size=img_size, loader_settings=loader_settings)
-    test_data = VideoDataset(root_dir, mean_image_name, 'test', duration=duration, img_size=img_size, loader_settings=loader_settings)
+def get_video_datasets(root_dir, mean_image_name, duration=-1, img_size=(480, 640), shuffle = True, loader_settings={'batch_size': 2, 'num_workers': 8, 'pin_memory': False}):
+    train_data = VideoDataset(root_dir, mean_image_name, 'train', duration=duration, img_size=img_size, shuffle=shuffle, loader_settings=loader_settings)
+    val_data = VideoDataset(root_dir, mean_image_name, 'val', duration=duration, img_size=img_size, shuffle=shuffle, loader_settings=loader_settings)
+    test_data = VideoDataset(root_dir, mean_image_name, 'test', duration=duration, img_size=img_size, shuffle=shuffle, loader_settings=loader_settings)
     
     mean_image = np.load(os.path.join(root_dir, mean_image_name))
     mean_image = cv2.resize(mean_image, (img_size[1], img_size[0])) # Resize the mean_image to the correct size

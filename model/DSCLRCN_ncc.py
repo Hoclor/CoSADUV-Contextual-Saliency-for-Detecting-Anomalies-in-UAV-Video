@@ -51,7 +51,10 @@ def main():
     elif 'UAV123' in dataset_root_dir:
         train_loader, val_loader, test_loader, mean_image = get_video_datasets(
             dataset_root_dir, mean_image_name, duration=duration, img_size=img_size,
-            loader_settings = {'batch_size': minibatchsize, 'num_workers': 8, 'pin_memory': True})
+            shuffle = True, loader_settings = {
+                'batch_size': minibatchsize, 'num_workers': 8, 'pin_memory': False
+            }
+        )
     
     ### Training ###
     model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
@@ -90,48 +93,14 @@ def main():
     print_func("(on val set if using SALICON, otherwise on test set)")
     test_loss_func = NSS_loss_2
 
-    test_loss = 0
-    test_count = 0
-    test_loop = test_loader
-    if location != 'ncc':
-        test_loop = tqdm(test_loop, desc="Test (final model)")
-    
-    for video_loader in test_loop:
-        if location != 'ncc':
-            video_loader = tqdm(video_loader, desc="Video")
-
-        for data in video_loader:
-            inputs, labels = data
-            if torch.cuda.is_available():
-                inputs = inputs.cuda()
-                labels = labels.cuda()
-            # Produce the output
-            outputs = model(inputs).squeeze(1)
-            # Move the output to the CPU so we can process it using numpy
-            outputs = outputs.cpu().data.numpy()
-
-            # Resize the images to input size
-            outputs = np.array([cv2.resize(output, (labels.shape[2], labels.shape[1])) for output in outputs])
-            # Apply a Gaussian filter to blur the saliency maps
-            sigma = 0.035*min(labels.shape[1], labels.shape[2])
-            kernel_size = int(4*sigma)
-            # make sure the kernel size is odd
-            kernel_size += 1 if kernel_size % 2 == 0 else 0
-            outputs = np.array([cv2.GaussianBlur(output, (kernel_size, kernel_size), sigma) for output in outputs])
-            
-            outputs = torch.from_numpy(outputs)
-            if torch.cuda.is_available():
-                outputs = outputs.cuda()
-                labels  = labels.cuda()
-            test_loss += test_loss_func(outputs, labels).item()
-            test_count += 1
-    
+    test_loss, test_count = test_model(model, test_loader, test_loss_func, location=location)
     # Delete the model to free up memory
     del model
     filename = 'trained_models/best_model_{}_lr2_batch{}_epoch{}.pth'.format(
                                 optim_str,
                                 batchsize,
                                 epoch_number)
+
     # Load the checkpoint
     if torch.cuda.is_available():
         checkpoint = torch.load(filename)
@@ -146,13 +115,21 @@ def main():
 
     # Test the checkpoint
     print_func("Testing best checkpoint, after {} epochs".format(start_epoch))
-    test_loss_checkpoint = 0
-    test_count_checkpoint = 0
-    
-    test_loop = test_loader
+    test_loss_checkpoint, test_count_checkpoint = test_model(model, test_loader, test_loss_func, location=location)
+
+    # Print out the result
+    print()
+    print('{} score on test set:'.format(test_loss_func.__name__))
+    print('(Higher is better)')
+    print('Last model     : {:6f}'.format(-1*test_loss/test_count))
+    print('Best Checkpoint: {:6f}'.format(-1*test_loss_checkpoint/test_count_checkpoint))
+
+def test_model(model, test_set, loss_fn, location='ncc'):
+    loss = 0
+    count = 0
+    test_loop = test_set
     if location != 'ncc':
         test_loop = tqdm(test_loop, desc="Test (best checkpoint)")
-    
     for video_loader in test_loop:
         if location != 'ncc':
             video_loader = tqdm(video_loader, desc="Video")
@@ -180,15 +157,9 @@ def main():
             if torch.cuda.is_available():
                 outputs = outputs.cuda()
                 labels  = labels.cuda()
-            test_loss_checkpoint += test_loss_func(outputs, labels).item()
-            test_count_checkpoint += 1
-
-    # Print out the result
-    print()
-    print('{} score on test set:'.format(test_loss_func.__name__))
-    print('(Higher is better)')
-    print('Last model     : {:6f}'.format(-1*test_loss/test_count))
-    print('Best Checkpoint: {:6f}'.format(-1*test_loss_checkpoint/test_count_checkpoint))
+            loss += loss_fn(outputs, labels).item()
+            count += 1
+    return loss, count
 
 
 if __name__ == '__main__':
