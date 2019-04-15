@@ -54,6 +54,23 @@ def main():
     
     ### Training ###
     model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
+
+    print('Starting train on model with settings:')
+    print('### Dataset settings ###')
+    print('Dataset: {}'.format(dataset_root_dir.split('/')[-1]))
+    print('Image size: ({}h, {}w)'.format(img_size[0], img_size[1]))
+    print('Sequence duration: {}'.format(duration))
+    print('')
+    print('### Training settings ###')
+    print('Batch size: {}'.format(batchsize))
+    print('Minibatch size: {}'.format(minibatchsize))
+    print('Epochs: {}'.format(epoch_number))
+    print('')
+    print('### Optimiser settings ###')
+    print('Optimiser: {}'.format(optim_str))
+    print('lr: {}'.format(str(optim_args['lr'])))
+    print('Loss function: {}'.format(loss_func.__name__))
+
     # Set solver as torch.optim.SGD and lr as 1e-2, or torch.optim.Adam and lr 1e-4
     solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func, location='ncc')
     solver.train(model, train_loader, val_loader, num_epochs=epoch_number, num_minibatches=num_minibatches, log_nth=50, 
