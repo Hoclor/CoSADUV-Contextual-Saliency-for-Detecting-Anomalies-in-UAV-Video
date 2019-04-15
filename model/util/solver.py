@@ -91,7 +91,7 @@ class Solver(object):
             # to simulate it being returned as a list of loaders
             outer_train_loop = [train_loader]
         # Do the same for the validation data
-        if type(train_loader) == data_utils.VideoDataset:
+        if type(val_loader) == data_utils.VideoDataset:
             outer_val_loop = val_loader
         else:
             outer_val_loop = [val_loader]
