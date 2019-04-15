@@ -82,10 +82,12 @@ class Solver(object):
 
         Inputs:
         - model: model object initialized from a torch.nn.Module
-        - train_loader: train data in torch.utils.data.DataLoader
-        - val_loader: val data in torch.utils.data.DataLoader
+        - train_loader: train data, list of torch.utils.data.DataLoader objects
+        - val_loader: validation data, list of torch.utils.data.DataLoader objects
         - num_epochs: total number of training epochs
+        - num_minibatches: the number of minibatches per bath
         - log_nth: log training accuracy and loss every nth iteration
+        - filename_args: parameters for naming the checkpoint file
         """
         ### Prepare optimiser ###
 
