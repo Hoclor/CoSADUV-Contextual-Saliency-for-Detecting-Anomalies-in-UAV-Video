@@ -44,7 +44,7 @@ def main():
 
     ### Prepare datasets and loaders ###
     if 'SALICON' in dataset_root_dir:
-        train_data, val_data, test_data, mean_image = data_utils.data_utils.get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
+        train_data, val_data, test_data, mean_image = data_utils.get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     elif 'UAV123' in dataset_root_dir:
