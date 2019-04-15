@@ -87,27 +87,6 @@ class Solver(object):
         - num_epochs: total number of training epochs
         - log_nth: log training accuracy and loss every nth iteration
         """
-        ### Prepare datasets ###
-
-        # Create the training loop as a list of videos to train on.
-        # if dataset is SALICON (or any other image set that's not
-        # loaded with data_utils.VideoDataset), simply embed the dataset
-        # in a list.
-        if type(train_loader) == data_utils.VideoDataset:
-            # Dataloader loads in a list of dataloaders, so leave it as it is
-            train_loader_list = train_loader
-        else:
-            # Assume dataloader loads in images, so insert the loader into a list
-            # to simulate it being returned as a list of loaders
-            train_loader_list = [train_loader]
-        # Do the same for the validation data
-        if type(val_loader) == data_utils.VideoDataset:
-            val_loader_list = val_loader
-        else:
-            val_loader_list = [val_loader]
-        # Sum up the length of each loader in train_loader
-        iter_per_epoch = int(sum([len(loader) for loader in train_loader_list])/num_minibatches) # Count an iter as a full batch, not a minibatch
-
         ### Prepare optimiser ###
 
         # Move the model to cuda first, if applicable, so optimiser is initialized properly
@@ -122,6 +101,9 @@ class Solver(object):
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=0.4)
 
         ### Training ###
+
+        # Sum up the length of each loader in train_loader
+        iter_per_epoch = int(sum([len(loader) for loader in train_loader_list])/num_minibatches) # Count an iter as a full batch, not a minibatch
 
         tqdm.write('START TRAIN.')
         
@@ -179,7 +161,7 @@ class Solver(object):
                     # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
                     labels = labels.unsqueeze(3)
 
-                    # Convert these to cuda types if cuda is available
+                    # Convert these to cuda if cuda is available
                     if torch.cuda.is_available():
                         inputs, labels = inputs.cuda(), labels.cuda()
                     
