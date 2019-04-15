@@ -110,6 +110,10 @@ class Solver(object):
         tqdm.write('START TRAIN.')
         
         nIterations = num_epochs*iter_per_epoch
+
+        tqdm.write('Number of iterations: {}'.format(nIterations))
+        tqdm.write('Minibatches per iteration: {}'.format(num_minibatches))
+        tqdm.write('Frames per minibatch: {}'.format(filename_args['batchsize']/num_minibatches))
         
         epoch_loop = range(num_epochs)
         if self.location != 'ncc':
@@ -185,7 +189,7 @@ class Solver(object):
                         optim.step()
                         optim.zero_grad()
                         # Print results every log_nth batches, or if this is the last batch of the last loader
-                        if it%log_nth==0 or ((i == len(loader) - 1) and (k == len(train_loader_list) - 1)):
+                        if it%log_nth==0 or ((i == len(loader) - 1) and (k == len(train_loader) - 1)):
                             tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
                             self.train_loss_history.append(loss.item())
                             train_loss_logs += 1
