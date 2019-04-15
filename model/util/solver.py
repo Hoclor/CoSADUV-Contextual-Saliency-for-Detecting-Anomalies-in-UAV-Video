@@ -51,8 +51,7 @@ class Solver(object):
                         "momentum": 0.9}
 
     def __init__(self, optim=torch.optim.Adam, optim_args={},
-                 loss_func=torch.nn.KLDivLoss(), location='ncc',
-                 minibatches=1):
+                 loss_func=torch.nn.KLDivLoss(), location='ncc'):
         if optim == torch.optim.Adam:
             optim_args_merged = self.default_adam_args.copy()
         else:
@@ -66,7 +65,6 @@ class Solver(object):
 
         self.location = location
 
-        self.minibatches=minibatches
 
     def _reset_histories(self):
         """
