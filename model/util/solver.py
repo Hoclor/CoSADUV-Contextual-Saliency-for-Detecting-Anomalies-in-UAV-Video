@@ -77,6 +77,25 @@ class Solver(object):
         - num_epochs: total number of training epochs
         - log_nth: log training accuracy and loss every nth iteration
         """
+        # Create the training loop as a list of videos to train on.
+        # if dataset is SALICON (or any other image set that's not
+        # loaded with data_utils.VideoDataset), simply embed the dataset
+        # in a list.
+        if type(train_loader) == data_utils.VideoDataset:
+            # Dataloader loads in a list of dataloaders, so leave it as it is
+            outer_train_loop = train_loader
+        else:
+            # Assume dataloader loads in images, so insert the loader into a list
+            # to simulate it being returned as a list of loaders
+            outer_train_loop = [train_loader]
+        # Do the same for the validation data
+        if type(train_loader) == data_utils.VideoDataset:
+            outer_val_loop = val_loader
+        else:
+            outer_val_loop = [val_loader]
+        # Sum up the length of each loader in train_loader
+        iter_per_epoch = int(sum([len(loader) for loader in outer_train_loop])/num_minibatches) # Count an iter as a full batch, not a minibatch
+
         # Move the model to cuda first, if applicable, so optimiser is initialized properly
         if torch.cuda.is_available():
             model.cuda()
@@ -99,12 +118,8 @@ class Solver(object):
             else:
                 epoch_loop = tqdm(epoch_loop)
 
-        # Define a list to hold minibatch losses for each batch
-        minibatch_losses = []
-
         # Iteration counter of batches (NOT minibatches)
         it = 0
-
 
         total_time = 0
         # Epoch
@@ -116,14 +131,6 @@ class Solver(object):
 
             # Set the model to training mode
             model.train()
-
-            if type(train_loader) == data_utils.VideoDataset:
-                # Dataloader loads in a list of dataloaders, so leave it as it is
-                outer_train_loop = train_loader
-            else:
-                # Assume dataloader loads in images, so insert the loader into a list
-                # to simulate it being returned as a list of loaders
-                outer_train_loop = [train_loader]
 
             if self.location == 'ncc':
                 outer_train_loop = enumerate(outer_train_loop, 0)
