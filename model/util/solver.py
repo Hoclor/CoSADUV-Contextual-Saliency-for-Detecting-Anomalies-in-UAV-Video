@@ -219,7 +219,7 @@ class Solver(object):
                 else:
                     inner_val_loop = enumerate(tqdm(val_loader), 0)
 
-                for ii, data in val_loop:
+                for ii, data in inner_val_loop:
                     inputs, labels = data
                     # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
                     labels = labels.unsqueeze(3)
