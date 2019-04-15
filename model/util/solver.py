@@ -14,6 +14,23 @@ from tqdm import tqdm_notebook
 
 from util import data_utils
 
+def prepare_parameters(model, optim_args):
+    """Produce two groups of parameters: the pretrained parameters (PlacesCNN, ResNet50), and the other parameters
+    This allows us to set the lr of the two groups separately (other params as the lr given as input, pretrained params as this lr * 0.1)
+    """
+    pretrained_parameters = [param for name,param in model.named_parameters() if (name.startswith('local_feats') and not '.bn' in name) or name.startswith('context')]
+    new_parameters = [param for name,param in model.named_parameters() if not (name.startswith('local_feats') or name.startswith('context'))]
+    pretrained_param_group = optim_args.copy()
+    pretrained_param_group['lr'] *= 1e-1
+    pretrained_param_group['params'] = pretrained_parameters
+    
+    # Fix the scale (weight) and bias parameters of the BN layers in the ResNet50 (local_feats) model
+    for name, param in model.named_parameters():
+        if '.bn' in name:
+            param.requires_grad = False
+
+    return pretrained_param_group, new_parameters
+
 class Solver(object):
     default_adam_args = {"lr": 1e-4,
                          "betas": (0.9, 0.999),
@@ -63,29 +80,11 @@ class Solver(object):
         # Move the model to cuda first, if applicable, so optimiser is initialized properly
         if torch.cuda.is_available():
             model.cuda()
-        
-        # Add the parameters to the optimiser as two groups: the pretrained parameters (PlacesCNN, ResNet50), and the other parameters
-        # This allows us to set the lr of the two groups separately (other params as the lr given as input, pretrained params as this lr * 0.1)
-        pretrained_parameters = [param for name,param in model.named_parameters() if (name.startswith('local_feats.') and not '.bn' in name) or name.startswith('context.')]
-        other_parameters = [param for name,param in model.named_parameters() if not (name.startswith('local_feats.') or name.startswith('context.'))]
-        pretrained_param_group = self.optim_args.copy()
-        pretrained_param_group['lr'] *= 1e-1
-        pretrained_param_group['params'] = pretrained_parameters
-
-        # Fix the scale (weight) and bias parameters of the BN layers in the ResNet50 (local_feats) model
-        for name, param in model.named_parameters():
-            if '.bn' in name and 'local_feats' in name:
-                param.requires_grad = False
-
-        optim = self.optim(other_parameters, **self.optim_args)
-        optim.add_param_group(pretrained_param_group)
+        # Reducing lr of pretrained parameters and freeze batch-norm weights
+        pretrained_parameters, new_parameters = prepare_parameters(model, self.optim_args)
+        optim = self.optim(new_parameters, **self.optim_args)
+        optim.add_param_group(pretrained_parameters)
         self._reset_histories()
-        if type(train_loader) == data_utils.VideoDataset:
-            # Sum up the length of each loader in train_loader
-            iter_per_epoch = int(sum([len(loader) for loader in train_loader])/num_minibatches) # Count an iter as a full batch, not a minibatch
-        else:
-            iter_per_epoch = int(len(train_loader)/num_minibatches) # Count an iter as a full batch, not a minibatch
-
         # Create the scheduler to allow lr adjustment
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=0.4)
 
