@@ -196,18 +196,16 @@ def main():
 
 
 if __name__ == '__main__':
+    import torch
     # Note: You must put all your training code into one function rather than in the global scope
     #       (this is good practice anyway).
     #       Subsequently you must call the set_start_method and your main function from inside this
     #       if-statement. If you don't do that, each worker will attempt to run all of your training
     #       code and everything will go very wild and very wrong.
-    import torch
     torch.multiprocessing.set_start_method('forkserver') # spawn, forkserver, or fork
     
     # Use CuDNN with benchmarking for performance improvement - from 1.05 batch20/s to 1.55 batch20/s on Quadro P4000
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
-    
-    print("Using multiprocessing start method:", torch.multiprocessing.get_start_method())
     
     main()
