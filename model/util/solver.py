@@ -31,6 +31,16 @@ def prepare_parameters(model, optim_args):
 
     return pretrained_param_group, new_parameters
 
+def get_time_format(time_in_seconds):
+    hours = int(time_in_seconds//3600)
+    minutes = int((time_in_seconds % 3600)//60)
+    seconds = int(time_in_seconds % 60)
+    # Convert to two digit format, as string
+    hours = '0' + str(hours) if hours < 10 else str(hours)
+    minutes = '0' + str(minutes) if minutes < 10 else str(minutes)
+    seconds = '0' + str(seconds) if seconds < 10 else str(seconds)
+    return hours, minutes, seconds
+
 class Solver(object):
     default_adam_args = {"lr": 1e-4,
                          "betas": (0.9, 0.999),
@@ -72,32 +82,13 @@ class Solver(object):
 
         Inputs:
         - model: model object initialized from a torch.nn.Module
-        - train_loader: train data in torch.utils.data.DataLoader
-        - val_loader: val data in torch.utils.data.DataLoader
+        - train_loader: train data, list of torch.utils.data.DataLoader objects
+        - val_loader: validation data, list of torch.utils.data.DataLoader objects
         - num_epochs: total number of training epochs
+        - num_minibatches: the number of minibatches per bath
         - log_nth: log training accuracy and loss every nth iteration
+        - filename_args: parameters for naming the checkpoint file
         """
-        ### Prepare datasets ###
-
-        # Create the training loop as a list of videos to train on.
-        # if dataset is SALICON (or any other image set that's not
-        # loaded with data_utils.VideoDataset), simply embed the dataset
-        # in a list.
-        if type(train_loader) == data_utils.VideoDataset:
-            # Dataloader loads in a list of dataloaders, so leave it as it is
-            train_loader_list = train_loader
-        else:
-            # Assume dataloader loads in images, so insert the loader into a list
-            # to simulate it being returned as a list of loaders
-            train_loader_list = [train_loader]
-        # Do the same for the validation data
-        if type(val_loader) == data_utils.VideoDataset:
-            val_loader_list = val_loader
-        else:
-            val_loader_list = [val_loader]
-        # Sum up the length of each loader in train_loader
-        iter_per_epoch = int(sum([len(loader) for loader in train_loader_list])/num_minibatches) # Count an iter as a full batch, not a minibatch
-
         ### Prepare optimiser ###
 
         # Move the model to cuda first, if applicable, so optimiser is initialized properly
@@ -112,6 +103,9 @@ class Solver(object):
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=0.4)
 
         ### Training ###
+
+        # Sum up the length of each loader in train_loader
+        iter_per_epoch = int(sum([len(loader) for loader in train_loader_list])/num_minibatches) # Count an iter as a full batch, not a minibatch
 
         tqdm.write('START TRAIN.')
         
@@ -169,7 +163,7 @@ class Solver(object):
                     # Unsqueeze labels so they're shaped as [10, 96, 128, 1]
                     labels = labels.unsqueeze(3)
 
-                    # Convert these to cuda types if cuda is available
+                    # Convert these to cuda if cuda is available
                     if torch.cuda.is_available():
                         inputs, labels = inputs.cuda(), labels.cuda()
                     
@@ -270,12 +264,16 @@ class Solver(object):
             # Free up memory
             del val_loss
 
-            time_taken = time.time() - start_time
-            total_time += time_taken
+            # Compute the time taken for this epoch and in total
+            this_time = time.time() - start_time
+            total_time += this_time
+            # Print this info out in hh:mm:ss format
+            hours_this, minutes_this, seconds_this = get_time_format(this_time)
+            hours_total, minutes_total, seconds_total = get_time_format(total_time)
 
             # Print the average Train loss for the last epoch (avg of the logged losses, as decided by log_nth value)
             tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, sum(self.train_loss_history[-train_loss_logs:])/train_loss_logs))
             tqdm.write('[Epoch %i/%i] VAL NSS Loss: %f' % (j, num_epochs, self.val_loss_history[-1]))
-            tqdm.write('Time taken: {}:{}:{} last epoch, {}:{}:{} total'.format(int(time_taken//3600), int((time_taken % 3600)//60), int(time_taken % 60), int(total_time//3600), int((total_time % 3600)//60), int(total_time % 60)))
+            tqdm.write('Time taken: {}:{}:{} last epoch, {}:{}:{} total'.format(hours_this, minutes_this, seconds_this, hours_total, minutes_total, seconds_total))
         
         tqdm.write('FINISH.')
