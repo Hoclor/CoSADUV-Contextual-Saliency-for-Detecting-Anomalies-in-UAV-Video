@@ -196,14 +196,22 @@ class Solver(object):
             model.eval()
 
             if self.location == 'ncc':
-                val_loop = enumerate(val_loader, 0)
+                outer_val_loop = enumerate(outer_val_loop, 0)
             elif self.location == 'jupyter':
-                val_loop = enumerate(tqdm_notebook(val_loader), 0)
+                outer_val_loop = enumerate(tqdm_notebook(outer_val_loop), 0)
             else:
-                val_loop = enumerate(tqdm(val_loader), 0)
+                outer_val_loop = enumerate(tqdm(outer_val_loop), 0)
             
-            # Validation
             val_loss = 0
+            # Repeat validation for each loader in outer_val_loop
+            for kk, val_loader in outer_val_loop:
+                if self.location == 'ncc':
+                    inner_val_loop = enumerate(val_loader, 0)
+                elif self.location == 'jupyter':
+                    inner_val_loop = enumerate(tqdm_notebook(val_loader), 0)
+                else:
+                    inner_val_loop = enumerate(tqdm(val_loader), 0)
+
             for ii, data in val_loop:
                 inputs, labels = data
                 # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
@@ -224,7 +232,7 @@ class Solver(object):
                 # Free up memory
                 del inputs_val, outputs_val, labels_val, inputs, labels
             
-            val_loss /= len(val_loader)
+            val_loss /= sum([len(vloader) for vloader in outer_val_loop])
             
             self.val_loss_history.append(val_loss)
             # Check if this is the best validation loss so far. If so, save the current model state
