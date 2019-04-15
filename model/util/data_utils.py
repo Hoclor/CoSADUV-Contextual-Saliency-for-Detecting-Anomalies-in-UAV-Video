@@ -210,7 +210,7 @@ def get_SALICON_datasets(root_dir, mean_image_name, img_size=(480, 640)):
 def get_video_datasets(root_dir, mean_image_name, duration=-1, img_size=(480, 640), shuffle = True, loader_settings={'batch_size': 2, 'num_workers': 8, 'pin_memory': False}):
     train_data = VideoDataset(root_dir, mean_image_name, 'train', duration=duration, img_size=img_size, shuffle=shuffle, loader_settings=loader_settings)
     val_data = VideoDataset(root_dir, mean_image_name, 'val', duration=duration, img_size=img_size, shuffle=shuffle, loader_settings=loader_settings)
-    test_data = VideoDataset(root_dir, mean_image_name, 'test', duration=duration, img_size=img_size, shuffle=shuffle, loader_settings=loader_settings)
+    test_data = VideoDataset(root_dir, mean_image_name, 'test', duration=duration, img_size=img_size, shuffle=False, loader_settings=loader_settings)
     
     mean_image = np.load(os.path.join(root_dir, mean_image_name))
     mean_image = cv2.resize(mean_image, (img_size[1], img_size[0])) # Resize the mean_image to the correct size
