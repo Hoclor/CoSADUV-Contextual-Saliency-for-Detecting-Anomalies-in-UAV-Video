@@ -51,7 +51,10 @@ def main():
     elif 'UAV123' in dataset_root_dir:
         train_loader, val_loader, test_loader, mean_image = get_video_datasets(
             dataset_root_dir, mean_image_name, duration=duration, img_size=img_size,
-            loader_settings = {'batch_size': minibatchsize, 'num_workers': 8, 'pin_memory': True})
+            shuffle = True, loader_settings = {
+                'batch_size': minibatchsize, 'num_workers': 8, 'pin_memory': False
+            }
+        )
     
     ### Training ###
     model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
