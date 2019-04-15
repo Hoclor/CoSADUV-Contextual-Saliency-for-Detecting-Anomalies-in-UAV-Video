@@ -68,8 +68,10 @@ def main():
     print('')
     print('### Optimiser settings ###')
     print('Optimiser: {}'.format(optim_str))
-    print('lr: {}'.format(str(optim_args['lr'])))
+    print('Effective lr: {}'.format(str(optim_args['lr']*num_minibatches)))
+    print('Actual lr: {}'.format(str(optim_args['lr'])))
     print('Loss function: {}'.format(loss_func.__name__))
+    print('\n')
 
     # Set solver as torch.optim.SGD and lr as 1e-2, or torch.optim.Adam and lr 1e-4
     solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func, location='ncc')
