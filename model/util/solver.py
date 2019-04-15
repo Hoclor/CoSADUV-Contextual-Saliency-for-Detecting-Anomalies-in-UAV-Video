@@ -31,6 +31,16 @@ def prepare_parameters(model, optim_args):
 
     return pretrained_param_group, new_parameters
 
+def get_time_format(time_in_seconds):
+    hours = int(time_in_seconds//3600)
+    minutes = int((time_in_seconds % 3600)//60)
+    seconds = int(time_in_seconds % 60)
+    # Convert to two digit format, as string
+    hours = '0' + str(hours) if hours < 10 else str(hours)
+    minutes = '0' + str(minutes) if minutes < 10 else str(minutes)
+    seconds = '0' + str(seconds) if seconds < 10 else str(seconds)
+    return hours, minutes, seconds
+
 class Solver(object):
     default_adam_args = {"lr": 1e-4,
                          "betas": (0.9, 0.999),
@@ -269,12 +279,16 @@ class Solver(object):
             # Free up memory
             del val_loss
 
-            time_taken = time.time() - start_time
-            total_time += time_taken
+            # Compute the time taken for this epoch and in total
+            this_time = time.time() - start_time
+            total_time += this_time
+            # Print this info out in hh:mm:ss format
+            hours_this, minutes_this, seconds_this = get_time_format(this_time)
+            hours_total, minutes_total, seconds_total = get_time_format(total_time)
 
             # Print the average Train loss for the last epoch (avg of the logged losses, as decided by log_nth value)
             tqdm.write('[Epoch %i/%i] TRAIN NSS Loss: %f' % (j, num_epochs, sum(self.train_loss_history[-train_loss_logs:])/train_loss_logs))
             tqdm.write('[Epoch %i/%i] VAL NSS Loss: %f' % (j, num_epochs, self.val_loss_history[-1]))
-            tqdm.write('Time taken: {}:{}:{} last epoch, {}:{}:{} total'.format(int(time_taken//3600), int((time_taken % 3600)//60), int(time_taken % 60), int(total_time//3600), int((total_time % 3600)//60), int(total_time % 60)))
+            tqdm.write('Time taken: {}:{}:{} last epoch, {}:{}:{} total'.format(hours_this, minutes_this, seconds_this, hours_total, minutes_total, seconds_total))
         
         tqdm.write('FINISH.')
