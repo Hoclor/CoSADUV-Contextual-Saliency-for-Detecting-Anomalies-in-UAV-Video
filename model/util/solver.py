@@ -85,18 +85,18 @@ class Solver(object):
         # in a list.
         if type(train_loader) == data_utils.VideoDataset:
             # Dataloader loads in a list of dataloaders, so leave it as it is
-            outer_train_loop = train_loader
+            train_loader_list = train_loader
         else:
             # Assume dataloader loads in images, so insert the loader into a list
             # to simulate it being returned as a list of loaders
-            outer_train_loop = [train_loader]
+            train_loader_list = [train_loader]
         # Do the same for the validation data
         if type(val_loader) == data_utils.VideoDataset:
-            outer_val_loop = val_loader
+            val_loader_list = val_loader
         else:
-            outer_val_loop = [val_loader]
+            val_loader_list = [val_loader]
         # Sum up the length of each loader in train_loader
-        iter_per_epoch = int(sum([len(loader) for loader in outer_train_loop])/num_minibatches) # Count an iter as a full batch, not a minibatch
+        iter_per_epoch = int(sum([len(loader) for loader in train_loader_list])/num_minibatches) # Count an iter as a full batch, not a minibatch
 
         ### Prepare optimiser ###
 
@@ -139,11 +139,11 @@ class Solver(object):
             model.train()
 
             if self.location == 'ncc':
-                outer_train_loop = enumerate(outer_train_loop, 0)
+                outer_train_loop = enumerate(train_loader_list, 0)
             elif self.location == 'jupyter':
-                outer_train_loop = enumerate(tqdm_notebook(outer_train_loop), 0)
+                outer_train_loop = enumerate(tqdm_notebook(train_loader_list), 0)
             else:
-                outer_train_loop = enumerate(tqdm(outer_train_loop), 0)
+                outer_train_loop = enumerate(tqdm(train_loader_list), 0)
 
 
             counter = 0 # counter for minibatches
@@ -203,21 +203,21 @@ class Solver(object):
             model.eval()
 
             if self.location == 'ncc':
-                outer_val_loop = enumerate(outer_val_loop, 0)
+                outer_val_loop = enumerate(val_loader_list, 0)
             elif self.location == 'jupyter':
-                outer_val_loop = enumerate(tqdm_notebook(outer_val_loop), 0)
+                outer_val_loop = enumerate(tqdm_notebook(val_loader_list), 0)
             else:
-                outer_val_loop = enumerate(tqdm(outer_val_loop), 0)
+                outer_val_loop = enumerate(tqdm(val_loader_list), 0)
 
             val_loss = 0
             # Repeat validation for each loader in outer_val_loop
-            for kk, val_loader in outer_val_loop:
+            for kk, loader in outer_val_loop:
                 if self.location == 'ncc':
-                    inner_val_loop = enumerate(val_loader, 0)
+                    inner_val_loop = enumerate(loader, 0)
                 elif self.location == 'jupyter':
-                    inner_val_loop = enumerate(tqdm_notebook(val_loader), 0)
+                    inner_val_loop = enumerate(tqdm_notebook(loader), 0)
                 else:
-                    inner_val_loop = enumerate(tqdm(val_loader), 0)
+                    inner_val_loop = enumerate(tqdm(loader), 0)
 
                 for ii, data in val_loop:
                     inputs, labels = data
