@@ -1,12 +1,16 @@
 def main():
     import numpy as np
     import pickle
-    import cv2
     
+    import cv2
+
     from torch.autograd import Variable
     from tqdm import tqdm
 
-    from util import data_utils
+    from models.DSCLRCN_PyTorch import DSCLRCN
+    from util.data_utils import get_SALICON_datasets, get_video_datasets
+    from util.loss_functions import NSS_loss, NSS_loss_2
+    from util.solver import Solver
 
     location = 'ncc' # ncc or '', where the code is to be run (affects output)
     if location == 'ncc':
@@ -19,11 +23,6 @@ def main():
     mean_image_name = 'mean_image.npy' # Must be located at dataset_root_dir/mean_image_name
     img_size = (480, 640) # height, width - original: 480, 640, reimplementation: 96, 128
     duration = 300 # Length of sequences loaded from each video, if a video dataset is used
-
-    from models.DSCLRCN_PyTorch import DSCLRCN #DSCLRCN_PyTorch, DSCLRCN_PyTorch2 or DSCLRCN_PyTorch3
-    from util.solver import Solver
-    
-    from util.loss_functions import NSS_loss, NSS_loss_2
 
     ### Training options ###
     batchsize = 20 # Recommended: 20. Determines how many images are processed before backpropagation is done
@@ -44,11 +43,11 @@ def main():
 
     ### Prepare datasets and loaders ###
     if 'SALICON' in dataset_root_dir:
-        train_data, val_data, test_data, mean_image = data_utils.get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
+        train_data, val_data, test_data, mean_image = get_SALICON_datasets(dataset_root_dir, mean_image_name, img_size)
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
     elif 'UAV123' in dataset_root_dir:
-        train_loader, val_loader, test_loader, mean_image = data_utils.get_video_datasets(
+        train_loader, val_loader, test_loader, mean_image = get_video_datasets(
             dataset_root_dir, mean_image_name, duration=duration, img_size=img_size,
             loader_settings = {'batch_size': minibatchsize, 'num_workers': 8, 'pin_memory': True})
     
