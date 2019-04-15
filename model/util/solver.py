@@ -77,6 +77,8 @@ class Solver(object):
         - num_epochs: total number of training epochs
         - log_nth: log training accuracy and loss every nth iteration
         """
+        ### Prepare datasets ###
+
         # Create the training loop as a list of videos to train on.
         # if dataset is SALICON (or any other image set that's not
         # loaded with data_utils.VideoDataset), simply embed the dataset
@@ -96,6 +98,8 @@ class Solver(object):
         # Sum up the length of each loader in train_loader
         iter_per_epoch = int(sum([len(loader) for loader in outer_train_loop])/num_minibatches) # Count an iter as a full batch, not a minibatch
 
+        ### Prepare optimiser ###
+
         # Move the model to cuda first, if applicable, so optimiser is initialized properly
         if torch.cuda.is_available():
             model.cuda()
@@ -106,6 +110,8 @@ class Solver(object):
         self._reset_histories()
         # Create the scheduler to allow lr adjustment
         scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=1, gamma=0.4)
+
+        ### Training ###
 
         tqdm.write('START TRAIN.')
         
@@ -193,6 +199,7 @@ class Solver(object):
                     # Free up memory
                     del inputs, outputs, labels, loss
 
+            ### Validation ###
             model.eval()
 
             if self.location == 'ncc':
@@ -201,7 +208,7 @@ class Solver(object):
                 outer_val_loop = enumerate(tqdm_notebook(outer_val_loop), 0)
             else:
                 outer_val_loop = enumerate(tqdm(outer_val_loop), 0)
-            
+
             val_loss = 0
             # Repeat validation for each loader in outer_val_loop
             for kk, val_loader in outer_val_loop:
@@ -212,25 +219,25 @@ class Solver(object):
                 else:
                     inner_val_loop = enumerate(tqdm(val_loader), 0)
 
-            for ii, data in val_loop:
-                inputs, labels = data
-                # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
-                labels = labels.unsqueeze(3)
+                for ii, data in val_loop:
+                    inputs, labels = data
+                    # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
+                    labels = labels.unsqueeze(3)
 
-                if torch.cuda.is_available():
-                    inputs, labels = inputs.cuda(), labels.cuda()
-                inputs_val = Variable(inputs)
-                labels_val = Variable(labels)
+                    if torch.cuda.is_available():
+                        inputs, labels = inputs.cuda(), labels.cuda()
+                    inputs_val = Variable(inputs)
+                    labels_val = Variable(labels)
 
-                outputs_val = model(inputs_val)
-                # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
-                outputs_val = outputs_val.transpose(1, 3)
-                outputs_val = outputs_val.transpose(1, 2)
+                    outputs_val = model(inputs_val)
+                    # transpose the outputs so it's in the order [N, H, W, C] instead of [N, C, H, W]
+                    outputs_val = outputs_val.transpose(1, 3)
+                    outputs_val = outputs_val.transpose(1, 2)
 
-                val_loss += self.loss_func(outputs_val, labels_val).item()
-                
-                # Free up memory
-                del inputs_val, outputs_val, labels_val, inputs, labels
+                    val_loss += self.loss_func(outputs_val, labels_val).item()
+
+                    # Free up memory
+                    del inputs_val, outputs_val, labels_val, inputs, labels
             
             val_loss /= sum([len(vloader) for vloader in outer_val_loop])
             
