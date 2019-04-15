@@ -239,7 +239,8 @@ class Solver(object):
                     # Free up memory
                     del inputs_val, outputs_val, labels_val, inputs, labels
             
-            val_loss /= sum([len(vloader) for vloader in outer_val_loop])
+            # Compute avg loss
+            val_loss /= sum([len(vloader) for vloader in val_loader_list])
             
             self.val_loss_history.append(val_loss)
             # Check if this is the best validation loss so far. If so, save the current model state
