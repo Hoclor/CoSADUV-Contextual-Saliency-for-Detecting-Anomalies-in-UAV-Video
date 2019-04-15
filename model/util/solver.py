@@ -105,7 +105,7 @@ class Solver(object):
         ### Training ###
 
         # Sum up the length of each loader in train_loader
-        iter_per_epoch = int(sum([len(loader) for loader in train_loader_list])/num_minibatches) # Count an iter as a full batch, not a minibatch
+        iter_per_epoch = int(sum([len(loader) for loader in train_loader])/num_minibatches) # Count an iter as a full batch, not a minibatch
 
         tqdm.write('START TRAIN.')
         
@@ -133,11 +133,11 @@ class Solver(object):
             model.train()
 
             if self.location == 'ncc':
-                outer_train_loop = enumerate(train_loader_list, 0)
+                outer_train_loop = enumerate(train_loader, 0)
             elif self.location == 'jupyter':
-                outer_train_loop = enumerate(tqdm_notebook(train_loader_list, desc="Epoch (train)"), 0)
+                outer_train_loop = enumerate(tqdm_notebook(train_loader, desc="Epoch (train)"), 0)
             else:
-                outer_train_loop = enumerate(tqdm(train_loader_list, desc="Epoch (train)"), 0)
+                outer_train_loop = enumerate(tqdm(train_loader, desc="Epoch (train)"), 0)
 
 
             counter = 0 # counter for minibatches
@@ -200,11 +200,11 @@ class Solver(object):
             model.eval()
 
             if self.location == 'ncc':
-                outer_val_loop = enumerate(val_loader_list, 0)
+                outer_val_loop = enumerate(val_loader, 0)
             elif self.location == 'jupyter':
-                outer_val_loop = enumerate(tqdm_notebook(val_loader_list, desc="Validation"), 0)
+                outer_val_loop = enumerate(tqdm_notebook(val_loader, desc="Validation"), 0)
             else:
-                outer_val_loop = enumerate(tqdm(val_loader_list, desc="Validation"), 0)
+                outer_val_loop = enumerate(tqdm(val_loader, desc="Validation"), 0)
 
             val_loss = 0
             # Repeat validation for each loader in outer_val_loop
@@ -240,7 +240,7 @@ class Solver(object):
             del outer_val_loop, inner_val_loop, data, loader
 
             # Compute avg loss
-            val_loss /= sum([len(vloader) for vloader in val_loader_list])
+            val_loss /= sum([len(vloader) for vloader in val_loader])
 
             self.val_loss_history.append(val_loss)
             # Check if this is the best validation loss so far. If so, save the current model state
