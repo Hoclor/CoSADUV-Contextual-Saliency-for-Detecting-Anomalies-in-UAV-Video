@@ -76,7 +76,7 @@ def main():
     
     looper=test_loader
     if location != 'ncc':
-        looper=tqdm(looper)
+        looper=tqdm(looper, desc="Test (model)")
 
     for data in looper:
         inputs, labels = data
@@ -138,7 +138,7 @@ def main():
     
     looper = test_loader
     if location != 'ncc':
-        looper = tqdm(looper)
+        looper = tqdm(looper, desc="Test (checkpoint)")
     
     for data in looper:
         inputs, labels = data
