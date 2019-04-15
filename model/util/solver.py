@@ -109,9 +109,12 @@ class Solver(object):
         
         nIterations = num_epochs*iter_per_epoch
 
-        tqdm.write('Number of iterations: {}'.format(nIterations))
-        tqdm.write('Minibatches per iteration: {}'.format(num_minibatches))
-        tqdm.write('Frames per minibatch: {}'.format(filename_args['batchsize']/num_minibatches))
+        tqdm.write('Number of epochs: {}'.format(num_epochs))
+        tqdm.write('(train) Frames per epoch: {}'.format(sum([len(loader) for loader in train_loader])))
+        tqdm.write('(val) Frames per epoch: {}'.format(sum([len(loader) for loader in val_loader])))
+        tqdm.write('Frames per batch: {}'.format(filename_args['batchsize']))
+        tqdm.write('Number of iterations/batches per (train) epoch: {}'.format(iter_per_epoch))
+        tqdm.write('Train accuracy recorded every {} iterations'.format(log_nth))
         
         epoch_loop = range(num_epochs)
         if self.location != 'ncc':
