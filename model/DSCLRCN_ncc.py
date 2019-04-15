@@ -74,8 +74,8 @@ def main():
     print('Loss function: {}'.format(loss_func.__name__))
     print('\n')
 
-    # Set solver as torch.optim.SGD and lr as 1e-2, or torch.optim.Adam and lr 1e-4
-    solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func, location='ncc')
+    # Create a solver with the options given above and appropriate location
+    solver = Solver(optim=optim, optim_args=optim_args, loss_func=loss_func, location=location)
     solver.train(model, train_loader, val_loader, num_epochs=epoch_number, num_minibatches=num_minibatches, log_nth=50, 
         filename_args={'batchsize' : batchsize, 'epoch_number' : epoch_number, 'optim' : optim_str}
     )
@@ -86,115 +86,108 @@ def main():
         pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)
     
     ### Testing ###
-    print_func("Testing model and best checkpoint on SALICON validation set")
-    
-    # test on validation data as we don't have ground truths for the test data (this was also done in original DSCLRCN paper)
-    test_losses = []
-    if 'SALICON' in dataset_root_dir:
-        test_loader = torch.utils.data.DataLoader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+    print_func("Testing model")
+    print_func("(on val set if using SALICON, otherwise on test set)")
     test_loss_func = NSS_loss_2
-    
-    looper=test_loader
+
+    test_loss = 0
+    test_count = 0
+    test_loop = test_loader
     if location != 'ncc':
-        looper=tqdm(looper, desc="Test (model)")
-
-    for data in looper:
-        inputs, labels = data
-        if torch.cuda.is_available():
-            inputs = inputs.cuda()
-            labels = labels.cuda()
-
-        # Produce the output
-        outputs = model(inputs).squeeze(1)
-        # Move the output to the CPU so we can process it using numpy
-        outputs = outputs.cpu().data.numpy()
-
-        # Resize the images to input size
-        outputs = np.array([cv2.resize(output, (labels.shape[2], labels.shape[1])) for output in outputs])
-
-        # Apply a Gaussian filter to blur the saliency maps
-        sigma = 0.035*min(labels.shape[1], labels.shape[2])
-        kernel_size = int(4*sigma)
-        # make sure the kernel size is odd
-        kernel_size += 1 if kernel_size % 2 == 0 else 0
-        
-        outputs = np.array([cv2.GaussianBlur(output, (kernel_size, kernel_size), sigma) for output in outputs])
-        
-        outputs = torch.from_numpy(outputs)
-        
-        if torch.cuda.is_available():
-            outputs = outputs.cuda()
-            labels  = labels.cuda()
-        
-        testLosses.append(test_loss_func(outputs, labels).item())
+        test_loop = tqdm(test_loop, desc="Test (final model)")
     
-    # Delete the model to free up memory, load the best checkpoint of the model, and test this too
+    for video_loader in test_loop:
+        if location != 'ncc':
+            video_loader = tqdm(video_loader, desc="Video")
+
+        for data in video_loader:
+            inputs, labels = data
+            if torch.cuda.is_available():
+                inputs = inputs.cuda()
+                labels = labels.cuda()
+            # Produce the output
+            outputs = model(inputs).squeeze(1)
+            # Move the output to the CPU so we can process it using numpy
+            outputs = outputs.cpu().data.numpy()
+
+            # Resize the images to input size
+            outputs = np.array([cv2.resize(output, (labels.shape[2], labels.shape[1])) for output in outputs])
+            # Apply a Gaussian filter to blur the saliency maps
+            sigma = 0.035*min(labels.shape[1], labels.shape[2])
+            kernel_size = int(4*sigma)
+            # make sure the kernel size is odd
+            kernel_size += 1 if kernel_size % 2 == 0 else 0
+            outputs = np.array([cv2.GaussianBlur(output, (kernel_size, kernel_size), sigma) for output in outputs])
+            
+            outputs = torch.from_numpy(outputs)
+            if torch.cuda.is_available():
+                outputs = outputs.cuda()
+                labels  = labels.cuda()
+            test_loss += test_loss_func(outputs, labels).item()
+            test_count += 1
+    
+    # Delete the model to free up memory
     del model
     filename = 'trained_models/best_model_{}_lr2_batch{}_epoch{}.pth'.format(
                                 optim_str,
                                 batchsize,
                                 epoch_number)
-    
     # Load the checkpoint
     if torch.cuda.is_available():
         checkpoint = torch.load(filename)
     else:
         checkpoint = torch.load(filename, map_location='cpu')
     start_epoch = checkpoint['epoch']
-    best_accuracy = checkpoint['best_accuracy']
-    
     # Create the model
     model = DSCLRCN(input_dim=img_size, local_feats_net='Seg')
     model.load_state_dict(checkpoint['state_dict'])
     if torch.cuda.is_available():
         model = model.cuda()
-        
-    print("START TEST.")
-    
+
     # Test the checkpoint
-    test_losses_checkpoint = []
-    if 'SALICON' in dataset_root_dir:
-        test_loader = torch.utils.data.DataLoader(test_data, batch_size=minibatchsize, shuffle=True, num_workers=8, pin_memory=True)
+    print_func("Testing best checkpoint, after {} epochs".format(start_epoch))
+    test_loss_checkpoint = 0
+    test_count_checkpoint = 0
     
-    looper = test_loader
+    test_loop = test_loader
     if location != 'ncc':
-        looper = tqdm(looper, desc="Test (checkpoint)")
+        test_loop = tqdm(test_loop, desc="Test (best checkpoint)")
     
-    for data in looper:
-        inputs, labels = data
-        if torch.cuda.is_available():
-            inputs = inputs.cuda()
-            labels = labels.cuda()
+    for video_loader in test_loop:
+        if location != 'ncc':
+            video_loader = tqdm(video_loader, desc="Video")
 
-        # Produce the output
-        outputs = model(inputs).squeeze(1)
-        # Move the output to the CPU so we can process it using numpy
-        outputs = outputs.cpu().data.numpy()
+        for data in video_loader:
+            inputs, labels = data
+            if torch.cuda.is_available():
+                inputs = inputs.cuda()
+                labels = labels.cuda()
+            # Produce the output
+            outputs = model(inputs).squeeze(1)
+            # Move the output to the CPU so we can process it using numpy
+            outputs = outputs.cpu().data.numpy()
 
-        # Resize the images to input size
-        outputs = np.array([cv2.resize(output, (labels.shape[2], labels.shape[1])) for output in outputs])
-
-        # Apply a Gaussian filter to blur the saliency maps
-        sigma = 0.035*min(labels.shape[1], labels.shape[2])
-        kernel_size = int(4*sigma)
-        # make sure the kernel size is odd
-        kernel_size += 1 if kernel_size % 2 == 0 else 0
-        
-        outputs = np.array([cv2.GaussianBlur(output, (kernel_size, kernel_size), sigma) for output in outputs])
-        
-        outputs = torch.from_numpy(outputs)
-        
-        if torch.cuda.is_available():
-            outputs = outputs.cuda()
-            labels  = labels.cuda()
-        
-        testLosses_checkpoint.append(test_loss_func(outputs, labels).item())
+            # Resize the images to input size
+            outputs = np.array([cv2.resize(output, (labels.shape[2], labels.shape[1])) for output in outputs])
+            # Apply a Gaussian filter to blur the saliency maps
+            sigma = 0.035*min(labels.shape[1], labels.shape[2])
+            kernel_size = int(4*sigma)
+            # make sure the kernel size is odd
+            kernel_size += 1 if kernel_size % 2 == 0 else 0
+            outputs = np.array([cv2.GaussianBlur(output, (kernel_size, kernel_size), sigma) for output in outputs])
+            
+            outputs = torch.from_numpy(outputs)
+            if torch.cuda.is_available():
+                outputs = outputs.cuda()
+                labels  = labels.cuda()
+            test_loss_checkpoint += test_loss_func(outputs, labels).item()
+            test_count_checkpoint += 1
 
     # Print out the result
     print()
-    print('NSS on Validation set:')
-    print('Last model     : {:6f}'.format(-1*np.mean(test_losses)))
-    print('Best Checkpoint: {:6f}'.format(-1*np.mean(test_losses_checkpoint)))
+    print('{} score on test set:'.format(test_loss_func.__name__))
+    print('Last model     : {:6f}'.format(-1*test_loss/test_count))
+    print('Best Checkpoint: {:6f}'.format(-1*test_loss_checkpoint/test_count_checkpoint))
 
 
 if __name__ == '__main__':
@@ -205,9 +198,9 @@ if __name__ == '__main__':
     #       if-statement. If you don't do that, each worker will attempt to run all of your training
     #       code and everything will go very wild and very wrong.
     torch.multiprocessing.set_start_method('forkserver') # spawn, forkserver, or fork
-    
+
     # Use CuDNN with benchmarking for performance improvement - from 1.05 batch20/s to 1.55 batch20/s on Quadro P4000
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
-    
+
     main()
