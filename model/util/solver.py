@@ -199,6 +199,9 @@ class Solver(object):
                     # Free up memory
                     del inputs, outputs, labels, loss
 
+            # Free up memory
+            del outer_train_loop, inner_train_loop, data, loader
+
             ### Validation ###
             model.eval()
 
@@ -238,10 +241,13 @@ class Solver(object):
 
                     # Free up memory
                     del inputs_val, outputs_val, labels_val, inputs, labels
-            
+
+            # Free up memory
+            del outer_val_loop, inner_val_loop, data, loader
+
             # Compute avg loss
             val_loss /= sum([len(vloader) for vloader in val_loader_list])
-            
+
             self.val_loss_history.append(val_loss)
             # Check if this is the best validation loss so far. If so, save the current model state
             if val_loss < self.best_val_loss:
