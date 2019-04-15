@@ -190,7 +190,8 @@ class Solver(object):
                         counter = 0 # Reset the minibatch counter
                         optim.step()
                         optim.zero_grad()
-                        if it%log_nth==0:
+                        # Print results every log_nth batches, or if this is the last batch of the last loader
+                        if it%log_nth==0 or ((i == len(loader) - 1) and (k == len(train_loader_list) - 1)):
                             tqdm.write('[Iteration %i/%i] TRAIN loss: %f' % (it, nIterations, loss))
                             self.train_loss_history.append(loss.item())
                             train_loss_logs += 1
