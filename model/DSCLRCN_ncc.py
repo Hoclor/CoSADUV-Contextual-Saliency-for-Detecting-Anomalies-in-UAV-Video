@@ -125,6 +125,10 @@ def main():
     print('Best Checkpoint: {:6f}'.format(-1*test_loss_checkpoint/test_count_checkpoint))
 
 def test_model(model, test_set, loss_fn, location='ncc'):
+    import tqdm as tqdm
+    import numpy as np
+    import torch
+
     loss = 0
     count = 0
     test_loop = test_set
