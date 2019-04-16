@@ -164,9 +164,9 @@ class Solver(object):
         epoch_loop = range(num_epochs)
         if self.location != "ncc":
             if self.location == "jupyter":
-                epoch_loop = tqdm_notebook(epoch_loop, desc="Model (train+val)")
+                epoch_loop = tqdm_notebook(epoch_loop, desc="Epochs")
             else:
-                epoch_loop = tqdm(epoch_loop, desc="Model (train+val)")
+                epoch_loop = tqdm(epoch_loop, desc="Epochs")
 
         # Iteration counter of batches (NOT minibatches)
         it = 0
@@ -186,11 +186,11 @@ class Solver(object):
                 outer_train_loop = enumerate(train_loader, 0)
             elif self.location == "jupyter":
                 outer_train_loop = enumerate(
-                    tqdm_notebook(train_loader, desc="Epoch (train)"), 0
+                    tqdm_notebook(train_loader, desc="Videos (train)"), 0
                 )
             else:
                 outer_train_loop = enumerate(
-                    tqdm(train_loader, desc="Epoch (train)"), 0
+                    tqdm(train_loader, desc="Videos (train)"), 0
                 )
 
             counter = 0  # counter for minibatches
@@ -201,9 +201,9 @@ class Solver(object):
                 if self.location == "ncc":
                     inner_train_loop = enumerate(loader, 0)
                 elif self.location == "jupyter":
-                    inner_train_loop = enumerate(tqdm_notebook(loader, desc="Video"), 0)
+                    inner_train_loop = enumerate(tqdm_notebook(loader, desc="Minibatches"), 0)
                 else:
-                    inner_train_loop = enumerate(tqdm(loader, desc="Video"), 0)
+                    inner_train_loop = enumerate(tqdm(loader, desc="Minibatches"), 0)
 
                 # Repeat training for each batch in the loader
                 for i, data in inner_train_loop:
@@ -264,10 +264,10 @@ class Solver(object):
                 outer_val_loop = enumerate(val_loader, 0)
             elif self.location == "jupyter":
                 outer_val_loop = enumerate(
-                    tqdm_notebook(val_loader, desc="Validation"), 0
+                    tqdm_notebook(val_loader, desc="Videos (val)"), 0
                 )
             else:
-                outer_val_loop = enumerate(tqdm(val_loader, desc="Validation"), 0)
+                outer_val_loop = enumerate(tqdm(val_loader, desc="Videos (val)"), 0)
 
             val_loss = 0
             # Repeat validation for each loader in outer_val_loop
@@ -275,9 +275,9 @@ class Solver(object):
                 if self.location == "ncc":
                     inner_val_loop = enumerate(loader, 0)
                 elif self.location == "jupyter":
-                    inner_val_loop = enumerate(tqdm_notebook(loader, desc="Video"), 0)
+                    inner_val_loop = enumerate(tqdm_notebook(loader, desc="Minibatches"), 0)
                 else:
-                    inner_val_loop = enumerate(tqdm(loader, desc="Video"), 0)
+                    inner_val_loop = enumerate(tqdm(loader, desc="Minibatches"), 0)
 
                 for ii, data in inner_val_loop:
                     inputs, labels = data
