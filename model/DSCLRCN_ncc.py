@@ -142,15 +142,13 @@ def main():
         num_epochs=epoch_number,
         num_minibatches=num_minibatches,
         log_nth=50,
-        filename_args={
-            "batchsize": batchsize,
-            "epoch_number": epoch_number,
-            "optim": optim_str,
-        },
+        filename_args={"batchsize": batchsize, "epoch_number": epoch_number},
     )
 
     # Saving the model:
-    model_name = "{}_lr2_batch{}_epoch{}".format(optim_str, batchsize, epoch_number)
+    model_name = "{}_lr2_batch{}_epoch{}".format(
+        loss_func.__name__, batchsize, epoch_number
+    )
     model.save("trained_models/model_" + model_name)
     with open("trained_models/solver_" + model_name + ".pkl", "wb") as outf:
         pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)

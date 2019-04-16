@@ -310,13 +310,13 @@ class Solver(object):
             # Check if this is the best validation loss so far.
             # If so, save the current model state
             if val_loss < self.best_val_loss:
-                if len(filename_args) < 3:
+                if len(filename_args) < 2:
                     filename = "trained_models/model_state_dict_best_loss_{:6f}.pth".format(
                         val_loss
                     )
                 else:
                     filename = "trained_models/best_model_{}_lr2_batch{}_epoch{}.pth".format(
-                        filename_args["optim"],
+                        self.loss_func.__name__,
                         filename_args["batchsize"],
                         filename_args["epoch_number"],
                     )
