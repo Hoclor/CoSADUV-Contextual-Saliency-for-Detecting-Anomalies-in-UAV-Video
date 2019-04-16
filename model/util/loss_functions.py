@@ -14,7 +14,7 @@ def NSS_loss(x, y):
         y = y.squeeze(0)
     # Loop over each image in the batch, apply NSS, return the average
     loss = 0
-        for i in range(x.shape[0]):
+    for i in range(x.shape[0]):
         x_i, y_i = x[i, :, :], y[i, :, :]
         # Normalize x_i
         x_i = (x_i - x_i.mean()) / x_i.std()
@@ -40,7 +40,7 @@ def NSS_loss_2(x, y):
         y = y.squeeze(0)
     # Loop over each image in the batch, apply NSS, return the average
     loss = 0
-        for i in range(x.shape[0]):
+    for i in range(x.shape[0]):
         x_i, y_i = x[i, :, :], y[i, :, :]
         # normalize saliency map
         sal_map = (x_i - x_i.mean()) / x_i.std()
@@ -49,6 +49,61 @@ def NSS_loss_2(x, y):
         loss += sal_map.mean()
     # Return the -ve avg NSS score
     return -1 * loss / x.shape[0]
+
+
+# Cross entropy combined with MAE loss
+def CE_MAE_loss(x, y):
+    """ Computes loss, given prediction x and target y, as the sum of Cross Entropy loss
+    and MAE loss.
+    x and y must be 2 dimensional tensors corresponding to an image, of the same size.
+
+    Used by: https://paperswithcode.com/paper/pyramid-dilated-deeper-convlstm-for-video
+    to train model for video saliency evaluation
+    """
+    # If dimensionality of x is 2, insert a singleton batch dimension
+    if len(x.shape) == 2:
+        x = x.squeeze(0)
+        y = y.squeeze(0)
+    # Loop over each image in the batch, apply NSS, return the average
+    loss = 0
+    for i in range(x.shape[0]):
+        x_i, y_i = x[i, :, :], y[i, :, :]
+        loss += CE_loss(x_i, y_i) + MAE_loss(x_i, y_i)
+    # Return the sum of CE and MAE
+    return loss / x.shape[0]
+
+
+def CE_loss(x, y):
+    """Computes the Cross Entropy loss of the given prediction x and target y"""
+    # If dimensionality of x is 2, insert a singleton batch dimension
+    if len(x.shape) == 2:
+        x = x.squeeze(0)
+        y = y.squeeze(0)
+    # Debug: if 0 or 1 is in x, print out an error
+    if any([0 in row for img in x for row in img]) or any([1 in row for img in x for row in img]):
+        print("ERROR: 0 or 1 found in x, CE loss will return nan. x: {}".format(x))
+    # Loop over each image in the batch, apply NSS, return the average
+    n = x.shape[1] * x.shape[2]
+    loss = 0
+    for i in range(x.shape[0]):
+        x_i, y_i = x[i, :, :], y[i, :, :]
+        loss += -1 / n * torch.sum(y_i * torch.log(x_i) + (1 - y_i) * torch.log(1 - x_i))
+    return loss / x.shape[0]
+
+
+def MAE_loss(x, y):
+    """Computes the MAE loss of the given prediction x and target y"""
+    # If dimensionality of x is 2, insert a singleton batch dimension
+    if len(x.shape) == 2:
+        x = x.squeeze(0)
+        y = y.squeeze(0)
+    # Loop over each image in the batch, apply NSS, return the average
+    n = x.shape[1] * x.shape[2]
+    loss = 0
+    for i in range(x.shape[0]):
+        x_i, y_i = x[i, :, :], y[i, :, :]
+        loss += 1 / n * torch.sum(torch.abs(y_i - x_i))
+    return loss / x.shape[0]
 
 
 # Pearson Cross Correlation
