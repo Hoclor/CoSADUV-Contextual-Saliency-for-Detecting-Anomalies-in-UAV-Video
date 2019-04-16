@@ -26,13 +26,13 @@ def prepare_parameters(model, optim_args):
     pretrained_parameters = [
         param
         for name, param in model.named_parameters()
-        if (name.startswith("local_feats") and not ".bn" in name)
-        or name.startswith("context")
+        if (name.startswith("local_feats.") and not ".bn" in name)
+        or name.startswith("context.")
     ]
     new_parameters = [
         param
         for name, param in model.named_parameters()
-        if not (name.startswith("local_feats") or name.startswith("context"))
+        if not (name.startswith("local_feats.") or name.startswith("context."))
     ]
     pretrained_param_group = optim_args.copy()
     pretrained_param_group["lr"] *= 1e-1
