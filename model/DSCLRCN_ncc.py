@@ -37,7 +37,12 @@ def main():
     epoch_number = 10  # Recommended: 10 (epoch_number =~ batchsize/2)
     optim_str = "SGD"  # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-4 if Adam
-    loss_func = loss_functions.CE_MAE_loss  # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
+    # Loss functions:
+    # NSS_loss
+    # KLDiv_loss
+    # CE_MAE_loss
+    # PCC_loss
+    loss_func = loss_functions.CE_MAE_loss  # Recommended: NSS_loss
     test_loss_func = loss_functions.CE_MAE_loss
 
     ### Prepare optimiser ###
