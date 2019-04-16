@@ -76,4 +76,4 @@ def PCC_loss_torch(x, y):
         )
         # Loss is equal to 1 - the absolute value of cc
         loss += 1 - abs(cc)
-    return loss
+    return loss / x.shape[0]
