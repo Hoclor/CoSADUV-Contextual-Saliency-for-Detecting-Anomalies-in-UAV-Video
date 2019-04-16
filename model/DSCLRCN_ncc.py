@@ -38,8 +38,9 @@ def main():
     optim_str = "SGD"  # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-4 if Adam
     # Loss functions:
-    # NSS_loss
     # torch.nn.functional.kl_div
+    # From loss_functions (use loss_functions.LOSS_FUNCTION_NAME)
+    # NSS_loss
     # CE_MAE_loss
     # PCC_loss
     loss_func = loss_functions.CE_MAE_loss  # Recommended: NSS_loss
