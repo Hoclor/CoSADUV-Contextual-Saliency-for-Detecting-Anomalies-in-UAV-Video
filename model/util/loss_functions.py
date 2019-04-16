@@ -72,8 +72,8 @@ def PCC_loss_torch(x, y):
         vx = x_i - torch.mean(x_i)
         vy = y_i - torch.mean(y_i)
         cc = torch.sum(vx * y_i) / (
-        torch.sqrt(torch.sum(vx ** 2)) * torch.sqrt(torch.sum(vy ** 2))
-    )
+            torch.sqrt(torch.sum(vx ** 2)) * torch.sqrt(torch.sum(vy ** 2))
+        )
         # Loss is equal to 1 - the absolute value of cc
         loss += 1 - abs(cc)
     return loss
