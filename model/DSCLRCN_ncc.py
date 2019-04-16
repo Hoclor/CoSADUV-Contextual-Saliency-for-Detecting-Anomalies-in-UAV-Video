@@ -9,7 +9,7 @@ def main():
 
     from models.DSCLRCN_PyTorch import DSCLRCN
     from util.data_utils import get_SALICON_datasets, get_video_datasets
-    from util.loss_functions import NSS_loss, NSS_loss_2
+    from util import loss_functions
     from util.solver import Solver
 
     location = "ncc"  # ncc or '', where the code is to be run (affects output)
@@ -37,7 +37,7 @@ def main():
     epoch_number = 20  # Recommended: 10 (epoch_number =~ batchsize/2)
     optim_str = "SGD"  # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-4 if Adam
-    loss_func = NSS_loss  # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
+    loss_func = loss_functions.NSS_loss  # NSS_loss or torch.nn.KLDivLoss() Recommended: NSS_loss
 
     ### Prepare optimiser ###
     if batchsize % minibatchsize:
@@ -153,7 +153,7 @@ def main():
 
     print_func("Testing model")
     print_func("(on val set if using SALICON, otherwise on test set)\n")
-    test_loss_func = NSS_loss_2
+    test_loss_func = loss_functions.NSS_loss_2
 
     test_loss, test_count = test_model(
         model, test_loader, test_loss_func, location=location
