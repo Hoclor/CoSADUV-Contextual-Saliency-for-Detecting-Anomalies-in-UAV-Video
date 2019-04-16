@@ -1,3 +1,4 @@
+import math
 from random import shuffle
 import time
 
@@ -103,16 +104,21 @@ class Solver(object):
         ### Training ###
 
         # Sum up the length of each loader in train_loader
-        iter_per_epoch = int(sum([len(loader) for loader in train_loader])/num_minibatches) # Count an iter as a full batch, not a minibatch
+        iter_per_epoch = int(math.ceil(sum([len(loader) for loader in train_loader])/num_minibatches)) # Count an iter as a full batch, not a minibatch
 
         tqdm.write('START TRAIN.')
         
         nIterations = num_epochs*iter_per_epoch
 
-        tqdm.write('Number of iterations: {}'.format(nIterations))
-        tqdm.write('Minibatches per iteration: {}'.format(num_minibatches))
-        tqdm.write('Frames per minibatch: {}'.format(filename_args['batchsize']/num_minibatches))
-        
+        tqdm.write('')
+        tqdm.write('Number of epochs: {}'.format(num_epochs))
+        tqdm.write('Approx. train frames per epoch: {}'.format(iter_per_epoch*filename_args['batchsize']))
+        tqdm.write('Approx. val frames per epoch: {}'.format(iter_per_epoch*filename_args['batchsize']))
+        tqdm.write('Frames per batch: {}'.format(filename_args['batchsize']))
+        tqdm.write('Number of iterations/batches per (train) epoch: {}'.format(iter_per_epoch))
+        tqdm.write('Train accuracy recorded every {} iterations'.format(log_nth))
+        tqdm.write('')
+
         epoch_loop = range(num_epochs)
         if self.location != 'ncc':
             if self.location == 'jupyter':

@@ -90,7 +90,7 @@ def main():
     
     ### Testing ###
     print_func("Testing model")
-    print_func("(on val set if using SALICON, otherwise on test set)")
+    print_func("(on val set if using SALICON, otherwise on test set)\n")
     test_loss_func = NSS_loss_2
 
     test_loss, test_count = test_model(model, test_loader, test_loss_func, location=location)
@@ -114,7 +114,7 @@ def main():
         model = model.cuda()
 
     # Test the checkpoint
-    print_func("Testing best checkpoint, after {} epochs".format(start_epoch))
+    print_func("Testing best checkpoint, after {} epochs of training".format(start_epoch))
     test_loss_checkpoint, test_count_checkpoint = test_model(model, test_loader, test_loss_func, location=location)
 
     # Print out the result
@@ -125,6 +125,10 @@ def main():
     print('Best Checkpoint: {:6f}'.format(-1*test_loss_checkpoint/test_count_checkpoint))
 
 def test_model(model, test_set, loss_fn, location='ncc'):
+    import tqdm as tqdm
+    import numpy as np
+    import torch
+
     loss = 0
     count = 0
     test_loop = test_set
