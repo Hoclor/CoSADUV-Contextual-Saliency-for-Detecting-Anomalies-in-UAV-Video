@@ -3,3 +3,7 @@
 *.jpg
 *.jpeg
 *.tiff
+
+# archived datasets
+
+*.zip
