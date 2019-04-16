@@ -39,7 +39,7 @@ def main():
     optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-4 if Adam
     # Loss functions:
     # NSS_loss
-    # KLDiv_loss
+    # torch.nn.functional.kl_div
     # CE_MAE_loss
     # PCC_loss
     loss_func = loss_functions.CE_MAE_loss  # Recommended: NSS_loss
