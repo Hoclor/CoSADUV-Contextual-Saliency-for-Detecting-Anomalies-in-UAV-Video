@@ -8,8 +8,7 @@ def NSS_loss(x, y):
         and y (label).
         x and y are assumed to be torch tensors, either individual images or batches.
         """
-    # Check if dimensionality of x is 2.
-    # If so, insert a singleton batch dimension
+    # If dimensionality of x is 2, insert a singleton batch dimension
     if len(x.shape) == 2:
         x = x.squeeze(0)
         y = y.squeeze(0)
@@ -35,8 +34,7 @@ def NSS_loss_2(x, y):
         and y (label).
         x and y are assumed to be torch tensors, either individual images or batches.
         """
-    # Check if dimensionality of x is 2.
-    # If so, insert a singleton batch dimension
+    # If dimensionality of x is 2, insert a singleton batch dimension
     if len(x.shape) == 2:
         x = x.squeeze(0)
         y = y.squeeze(0)
@@ -59,8 +57,7 @@ def PCC_loss_torch(x, y):
     :param x: prediction
     :param y: label
     """
-    # Check if dimensionality of x is 2.
-    # If so, insert a singleton batch dimension
+    # If dimensionality of x is 2, insert a singleton batch dimension
     if len(x.shape) == 2:
         x = x.squeeze(0)
         y = y.squeeze(0)
