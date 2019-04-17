@@ -212,9 +212,9 @@ class CoSADUV(nn.Module):
         # Reduce channel dimension to 1
         output_conv = self.last_conv(output_hvhv)  # Shape (N, 1, H, W)
 
-        N, C, H, W, = output_conv.size()
+        N, _, H, W, = output_conv.size()
 
-        output_conv = output_conv.view(N, 1, C * H * W)
+        output_conv = output_conv.contiguous().view(N, 1, H * W)
 
         # Apply the temporal LSTM
         # Give the current temporal state as input if there is one stored
@@ -225,6 +225,8 @@ class CoSADUV(nn.Module):
         else:
             output_temporal, self.temporal_LSTM_state = self.temporal_LSTM(output_conv)
             self.stored_temporal_state = True
+
+        output_temporal = output_temporal.contiguous().view(N, 1, H, W)
 
         # Upsampling - nn.functional.interpolate does not exist in < 0.4.1,
         # but upsample is deprecated in > 0.4.0, so use this switch
