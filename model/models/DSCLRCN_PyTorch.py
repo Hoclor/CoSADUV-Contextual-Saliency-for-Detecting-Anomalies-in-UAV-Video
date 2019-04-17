@@ -1,4 +1,4 @@
-"""LocalFeaturesCNN"""
+"""Deep Spatial Contextual Long-term Recurrent Convolutional Network"""
 import torch
 import torchvision
 import torch.nn as nn
