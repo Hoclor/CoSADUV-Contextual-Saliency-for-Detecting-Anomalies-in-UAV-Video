@@ -92,7 +92,19 @@ class CoSADUV(nn.Module):
                     bias.data[start:end].fill_(1.0)
 
         # Last conv to move to one channel
-        self.last_conv = nn.Conv2d(2 * self.LSTMs_hsz[3], 1, 1)
+        self.last_conv = nn.Conv2d(2 * self.pixel_LSTMs_hsz[3], 1, 1)
+
+        # LSTM applied to the sequence in time domain, one hidden cell per pixel
+        self.temporal_LSTM = nn.LSTM(
+            input_size=input_dim[0] * input_dim[1],
+            hidden_size=input_dim[0] * input_dim[1],
+            num_layers=1,
+            batch_first=True,
+        )
+
+        # The hidden state of the temporal LSTM
+        self.temporal_LSTM_state = None
+        self.stored_temporal_state = False
 
         # # softmax
         # self.score = nn.Softmax(dim=2)
@@ -198,21 +210,39 @@ class CoSADUV(nn.Module):
         del cols, col, result
 
         # Reduce channel dimension to 1
-        output_conv = self.last_conv(output_hvhv)
+        output_conv = self.last_conv(output_hvhv)  # Shape (N, 1, H, W)
 
-        N, C, _, _, = output_conv.size()
+        N, C, H, W, = output_conv.size()
+
+        output_conv = output_conv.view(N, 1, C * H * W)
+
+        # Apply the temporal LSTM
+        # Give the current temporal state as input if there is one stored
+        if self.stored_temporal_state:
+            output_temporal, self.temporal_LSTM_state = self.temporal_LSTM(
+                output_conv, self.temporal_LSTM_state
+            )
+        else:
+            output_temporal, self.temporal_LSTM_state = self.temporal_LSTM(output_conv)
+            self.stored_temporal_state = True
 
         # Upsampling - nn.functional.interpolate does not exist in < 0.4.1,
         # but upsample is deprecated in > 0.4.0, so use this switch
         if torch.__version__ == "0.4.0":
             output_upsampled = nn.functional.upsample(
-                output_conv, size=self.input_dim, mode="bilinear", align_corners=True
+                output_temporal,
+                size=self.input_dim,
+                mode="bilinear",
+                align_corners=True,
             )
         else:
             # align_corners=False assumed, default behaviour was changed
             # from True to False from pytorch 0.3.1 to 0.4
             output_upsampled = nn.functional.interpolate(
-                output_conv, size=self.input_dim, mode="bilinear", align_corners=True
+                output_temporal,
+                size=self.input_dim,
+                mode="bilinear",
+                align_corners=True,
             )
 
         # # Softmax scoring
@@ -221,6 +251,10 @@ class CoSADUV(nn.Module):
         # output_score = output_score.contiguous().view(N, C, H, W)
 
         return output_upsampled
+
+    def clear_temporal_state(self):
+        self.temporal_LSTM_state = None
+        self.stored_temporal_state = False
 
     @property
     def is_cuda(self):
