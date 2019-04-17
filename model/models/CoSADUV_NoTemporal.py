@@ -90,8 +90,8 @@ class CoSADUV(nn.Module):
         # Last conv to move to one channel
         self.last_conv = nn.Conv2d(2 * self.LSTMs_hsz[3], 1, 1)
 
-        # softmax
-        self.score = nn.Softmax(dim=2)
+        # # softmax
+        # self.score = nn.Softmax(dim=2)
 
     def forward(self, x):
         """
@@ -211,12 +211,12 @@ class CoSADUV(nn.Module):
                 output_conv, size=self.input_dim, mode="bilinear", align_corners=True
             )
 
-        # Softmax scoring
-        output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
+        # # Softmax scoring
+        # output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
 
-        output_score = output_score.contiguous().view(N, C, H, W)
+        # output_score = output_score.contiguous().view(N, C, H, W)
 
-        return output_score
+        return output_upsampled
 
     @property
     def is_cuda(self):
