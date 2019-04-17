@@ -92,7 +92,7 @@ class CoSADUV(nn.Module):
                     bias.data[start:end].fill_(1.0)
 
         # Last conv to move to one channel
-        self.last_conv = nn.Conv2d(2 * self.pixel_LSTMs_hsz[3], 1, 1)
+        self.last_conv = nn.Conv2d(2 * self.pixel_LSTMs_hsz[-1], 1, 1)
 
         # LSTM applied to the sequence in time domain, one hidden cell per pixel
         self.temporal_LSTM = nn.LSTM(
@@ -136,7 +136,9 @@ class CoSADUV(nn.Module):
         # local_feats_h shape: (N, H, W, C)
         local_feats_h = local_feats.transpose(1, 2).transpose(2, 3).contiguous()
         # Context shape: (N, 1, C)
-        scene_context_h = scene_context_first.contiguous().view(N, 1, self.pixel_LSTMs_isz[0])
+        scene_context_h = scene_context_first.contiguous().view(
+            N, 1, self.pixel_LSTMs_isz[0]
+        )
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
@@ -156,7 +158,9 @@ class CoSADUV(nn.Module):
 
         # Vertical BLSTM_1
         # Context shape: (N, 1, C)
-        scene_context_v = scene_context_rest.contiguous().view(N, 1, self.pixel_LSTMs_isz[1])
+        scene_context_v = scene_context_rest.contiguous().view(
+            N, 1, self.pixel_LSTMs_isz[1]
+        )
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
@@ -174,7 +178,9 @@ class CoSADUV(nn.Module):
 
         # Horizontal BLSTM_2
         # Context shape: (N, 1, C)
-        scene_context_h_2 = scene_context_rest.contiguous().view(N, 1, self.pixel_LSTMs_isz[2])
+        scene_context_h_2 = scene_context_rest.contiguous().view(
+            N, 1, self.pixel_LSTMs_isz[2]
+        )
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
@@ -192,7 +198,9 @@ class CoSADUV(nn.Module):
 
         # Vertical BLSTM_2
         # Context shape: (N, 1, C)
-        scene_context_v = scene_context_rest.contiguous().view(N, 1, self.pixel_LSTMs_isz[3])
+        scene_context_v = scene_context_rest.contiguous().view(
+            N, 1, self.pixel_LSTMs_isz[3]
+        )
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
@@ -229,7 +237,7 @@ class CoSADUV(nn.Module):
         output_temporal = output_temporal.contiguous().view(N, 1, H, W)
 
         # Upsampling - nn.functional.interpolate does not exist in < 0.4.1,
-        # but upsample is deprecated in > 0.4.0, so use this switch
+        # but upsample is deprecated in > 0.4.0
         if torch.__version__ == "0.4.0":
             output_upsampled = nn.functional.upsample(
                 output_temporal,
