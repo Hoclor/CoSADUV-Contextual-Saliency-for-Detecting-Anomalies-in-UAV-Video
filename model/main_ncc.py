@@ -129,6 +129,7 @@ def main():
     print("Effective lr: {}".format(str(optim_args["lr"] * num_minibatches)))
     print("Actual lr: {}".format(str(optim_args["lr"])))
     print("Loss function: {}".format(loss_func.__name__))
+    print("Model: {}".format(type(model).__name__))
     print("\n")
 
     # Create a solver with the options given above and appropriate location
