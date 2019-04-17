@@ -1,17 +1,13 @@
 import math
-from random import shuffle
 import time
+from random import *
+from random import shuffle
 
 import numpy as np
-
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-
-from random import *
-
-from tqdm import tqdm
-from tqdm import tqdm_notebook
+from tqdm import tqdm, tqdm_notebook
 
 from util import data_utils
 
@@ -367,4 +363,3 @@ class Solver(object):
             )
 
         tqdm.write("FINISH.")
-

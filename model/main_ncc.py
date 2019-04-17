@@ -1,15 +1,14 @@
 def main():
-    import numpy as np
     import pickle
 
-    import cv2
-
+    import numpy as np
     from torch.autograd import Variable
     from tqdm import tqdm
 
+    import cv2
     from models.CoSADUV_NoTemporal import CoSADUV
-    from util.data_utils import get_SALICON_datasets, get_video_datasets
     from util import loss_functions
+    from util.data_utils import get_SALICON_datasets, get_video_datasets
     from util.solver import Solver
 
     location = ""  # ncc or '', where the code is to be run (affects output)

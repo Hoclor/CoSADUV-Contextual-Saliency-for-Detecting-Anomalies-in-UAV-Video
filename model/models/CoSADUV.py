@@ -1,15 +1,14 @@
 """Model for Contextual Saliency for Anomaly Detection in UAV Video (CoSADUV)
 Based on the Deep Spatial Contextual Long-term Recurrent Convolutional Network model
 """
+import numpy as np
 import torch
-import torchvision
 import torch.nn as nn
+import torchvision
 
 from models.cnn_vgg16.local_cnn import LocalFeatsCNN
 from models.places_vgg16.places_cnn import PlacesCNN
 from models.segmentation_resnet50.segmentation_nn import SegmentationNN
-
-import numpy as np
 
 
 class CoSADUV(nn.Module):

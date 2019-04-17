@@ -1,14 +1,13 @@
 """Deep Spatial Contextual Long-term Recurrent Convolutional Network
 With only a single DSLSTM module"""
+import numpy as np
 import torch
-import torchvision
 import torch.nn as nn
+import torchvision
 
 from models.cnn_vgg16.local_cnn import LocalFeatsCNN
 from models.places_vgg16.places_cnn import PlacesCNN
 from models.segmentation_resnet50.segmentation_nn import SegmentationNN
-
-import numpy as np
 
 
 class DSCLRCN_Reduced(nn.Module):
@@ -32,8 +31,8 @@ class DSCLRCN_Reduced(nn.Module):
         self.LSTMs_isz = (
             512,
             2 * self.LSTMs_hsz[0],
-        ###    2 * self.LSTMs_hsz[1],
-        ###    2 * self.LSTMs_hsz[2],
+            ###    2 * self.LSTMs_hsz[1],
+            ###    2 * self.LSTMs_hsz[2],
         )
 
         if local_feats_net == "Seg":

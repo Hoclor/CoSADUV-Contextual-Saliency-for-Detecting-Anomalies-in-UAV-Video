@@ -1,5 +1,6 @@
-import torch
 import numpy as np
+import torch
+
 
 # Normalized Scanpath Saliency
 def NSS_loss(x, y):
