@@ -1,18 +1,19 @@
-"""LocalFeaturesCNN"""
+"""Deep Spatial Contextual Long-term Recurrent Convolutional Network
+Without Scene Context information (PlacesCNN)"""
 import torch
 import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 
 from models.cnn_vgg16.local_cnn import LocalFeatsCNN
-from models.places_vgg16.places_cnn import PlacesCNN
+### from models.places_vgg16.places_cnn import PlacesCNN
 from models.segmentation_resnet50.segmentation_nn import SegmentationNN
 
 import numpy as np
 
 
 class DSCLRCN(nn.Module):
-    def __init__(self, input_dim=(96, 128), local_feats_net="CNN"):
+    def __init__(self, input_dim=(480, 640), local_feats_net="CNN"):
         super(DSCLRCN, self).__init__()
 
         self.input_dim = input_dim
