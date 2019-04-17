@@ -11,9 +11,9 @@ from models.cnn_vgg16.local_cnn import LocalFeatsCNN
 import numpy as np
 
 
-class DSCLRCN(nn.Module):
+class DSCLRCN_NoLSTM(nn.Module):
     def __init__(self, input_dim=(480, 640), local_feats_net="Seg"):
-        super(DSCLRCN, self).__init__()
+        super(DSCLRCN_NoLSTM, self).__init__()
 
         self.input_dim = input_dim
 

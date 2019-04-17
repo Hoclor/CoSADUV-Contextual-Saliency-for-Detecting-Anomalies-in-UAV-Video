@@ -11,9 +11,9 @@ from models.segmentation_resnet50.segmentation_nn import SegmentationNN
 import numpy as np
 
 
-class DSCLRCN(nn.Module):
+class DSCLRCN_NoContext(nn.Module):
     def __init__(self, input_dim=(480, 640), local_feats_net="Seg"):
-        super(DSCLRCN, self).__init__()
+        super(DSCLRCN_NoContext, self).__init__()
 
         self.input_dim = input_dim
 
