@@ -22,7 +22,7 @@ class DSCLRCN_Reduced(nn.Module):
         # LSTM_2 hidden size: 128
         ### # LSTM_3 hidden size: 128
         ### # LSTM_4 hidden size: 128
-        self.LSTMs_hsz = (128, 128) ### , 128, 128)
+        self.LSTMs_hsz = (128, 128)  ### , 128, 128)
 
         # Input size of the LSTMs
         # LSTM_1 input size: channel of local_feats output (512)
@@ -76,7 +76,7 @@ class DSCLRCN_Reduced(nn.Module):
         ### )
 
         # Initialize the biases of the forget gates to 1 for all blstms
-        for blstm in [self.blstm_h_1, self.blstm_v_1]: ### , self.blstm_h_2, self.blstm_v_2]:
+        for blstm in [self.blstm_h_1, self.blstm_v_1]:
             # Below code taken from:
             # https://discuss.pytorch.org/t/set-forget-gate-bias-of-lstm/1745/4
             for names in blstm._all_weights:
@@ -153,7 +153,7 @@ class DSCLRCN_Reduced(nn.Module):
             cols.append(result)
         # Reconstruct the image by stacking the columns
         output_hv = torch.stack(cols, dim=2)  # Shape (N, H, W, C)
-        output_hv = output_hv.transpose(1, 3).transpose(2, 3) # Shape (N, C, H, W)
+        output_hv = output_hv.transpose(1, 3).transpose(2, 3)  # Shape (N, C, H, W)
         del cols, col, result
 
         ### # Horizontal BLSTM_2
