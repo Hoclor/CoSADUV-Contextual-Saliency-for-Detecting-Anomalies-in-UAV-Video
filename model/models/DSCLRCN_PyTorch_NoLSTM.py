@@ -5,8 +5,8 @@ import torchvision
 import torch.nn as nn
 
 from models.cnn_vgg16.local_cnn import LocalFeatsCNN
-from models.places_vgg16.places_cnn import PlacesCNN
-from models.segmentation_resnet50.segmentation_nn import SegmentationNN
+### from models.places_vgg16.places_cnn import PlacesCNN
+### from models.segmentation_resnet50.segmentation_nn import SegmentationNN
 
 import numpy as np
 
