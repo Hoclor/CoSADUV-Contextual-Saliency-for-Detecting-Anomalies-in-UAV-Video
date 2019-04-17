@@ -7,7 +7,7 @@ def main():
     from torch.autograd import Variable
     from tqdm import tqdm
 
-    from models.DSCLRCN_PyTorch import DSCLRCN
+    from models.DSCLRCN import DSCLRCN
     from util.data_utils import get_SALICON_datasets, get_video_datasets
     from util import loss_functions
     from util.solver import Solver
