@@ -12,7 +12,7 @@ import numpy as np
 
 
 class DSCLRCN(nn.Module):
-    def __init__(self, input_dim=(96, 128), local_feats_net="CNN"):
+    def __init__(self, input_dim=(480, 640), local_feats_net="CNN"):
         super(DSCLRCN, self).__init__()
 
         self.input_dim = input_dim
