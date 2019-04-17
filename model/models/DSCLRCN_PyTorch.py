@@ -42,7 +42,6 @@ class DSCLRCN(nn.Module):
             self.local_feats = LocalFeatsCNN()
 
         self.context = PlacesCNN(input_dim=input_dim)
-
         self.context_fc_1 = nn.Linear(128, self.LSTMs_isz[0])
         self.context_fc_rest = nn.Linear(128, self.LSTMs_isz[1])
 
@@ -111,18 +110,16 @@ class DSCLRCN(nn.Module):
 
         # Get scene feature information
         context = self.context(x)
-        context_1 = self.context_fc_1(context)  # Create context input into BLSTM_1
-        context_rest = self.context_fc_rest(
-            context
-        )  # Create context input into BLSTM_[2,3,4]
+        # Create context input into BLSTM_1
+        context_1 = self.context_fc_1(context)
+        # Create context input into BLSTM_[2,3,4]
+        context_rest = self.context_fc_rest(context)
 
         # Horizontal BLSTM_1
-        local_feats_h = (
-            local_feats.transpose(1, 2).transpose(2, 3).contiguous()
-        )  # Shape (N, H, W, C)
-        context_h = context_1.contiguous().view(
-            N, 1, self.LSTMs_isz[0]
-        )  # Context shape (N, 1, C)
+        # local_feats_h shape: (N, H, W, C)
+        local_feats_h = local_feats.transpose(1, 2).transpose(2, 3).contiguous()
+        # Context shape: (N, 1, C)
+        context_h = context_1.contiguous().view(N, 1, self.LSTMs_isz[0])
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
@@ -141,9 +138,8 @@ class DSCLRCN(nn.Module):
         del rows, row, result
 
         # Vertical BLSTM_1
-        context_v = context_rest.contiguous().view(
-            N, 1, self.LSTMs_isz[1]
-        )  # Context shape (N, 1, C)
+        # Context shape: (N, 1, C)
+        context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[1])
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
@@ -160,9 +156,8 @@ class DSCLRCN(nn.Module):
         del cols, col, result
 
         # Horizontal BLSTM_2
-        context_h_2 = context_rest.contiguous().view(
-            N, 1, self.LSTMs_isz[2]
-        )  # Context shape (N, 1, C)
+        # Context shape: (N, 1, C)
+        context_h_2 = context_rest.contiguous().view(N, 1, self.LSTMs_isz[2])
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
@@ -179,9 +174,8 @@ class DSCLRCN(nn.Module):
         del rows, row, result
 
         # Vertical BLSTM_2
-        context_v = context_rest.contiguous().view(
-            N, 1, self.LSTMs_isz[3]
-        )  # Context shape (N, 1, C)
+        # Context shape: (N, 1, C)
+        context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[3])
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
