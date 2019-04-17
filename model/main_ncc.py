@@ -7,7 +7,7 @@ def main():
     from torch.autograd import Variable
     from tqdm import tqdm
 
-    from models.DSCLRCN import DSCLRCN
+    from models.CoSADUV_NoTemporal import CoSADUV
     from util.data_utils import get_SALICON_datasets, get_video_datasets
     from util import loss_functions
     from util.solver import Solver
@@ -111,7 +111,7 @@ def main():
 
     ### Training ###
 
-    model = DSCLRCN(input_dim=img_size, local_feats_net="Seg")
+    model = CoSADUV(input_dim=img_size, local_feats_net="Seg")
 
     print("Starting train on model with settings:")
     print("### Dataset settings ###")
@@ -174,7 +174,7 @@ def main():
         checkpoint = torch.load(filename, map_location="cpu")
     start_epoch = checkpoint["epoch"]
     # Create the model
-    model = DSCLRCN(input_dim=img_size, local_feats_net="Seg")
+    model = CoSADUV(input_dim=img_size, local_feats_net="Seg")
     model.load_state_dict(checkpoint["state_dict"])
     if torch.cuda.is_available():
         model = model.cuda()
