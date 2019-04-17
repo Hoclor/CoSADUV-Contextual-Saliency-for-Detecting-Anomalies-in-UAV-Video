@@ -1,9 +1,8 @@
 """Deep Spatial Contextual Long-term Recurrent Convolutional Network
-Without Scene Context information (PlacesCNN)"""
+Without Scene Context information (PlacesCNN) module"""
 import torch
 import torchvision
 import torch.nn as nn
-import torch.nn.functional as F
 
 from models.cnn_vgg16.local_cnn import LocalFeatsCNN
 ### from models.places_vgg16.places_cnn import PlacesCNN
