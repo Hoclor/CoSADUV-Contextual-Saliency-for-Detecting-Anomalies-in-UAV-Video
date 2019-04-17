@@ -22,18 +22,18 @@ class CoSADUV_NoTemporal(nn.Module):
         # LSTM_2 hidden size: 128
         # LSTM_3 hidden size: 128
         # LSTM_4 hidden size: 128
-        self.LSTMs_hsz = (128, 128, 128, 128)
+        self.pixel_LSTMs_hsz = (128, 128, 128, 128)
 
         # Input size of the LSTMs
         # LSTM_1 input size: channel of local_feats output (512)
         # LSTM_2 input size: 256 (2 * 128 as LSTMs output 128 values, *2 for bLSTM)
         # LSTM_3 input size: 256 (same reason as above)
         # LSTM_4 input size: 256 (same reason as above)
-        self.LSTMs_isz = (
+        self.pixel_LSTMs_isz = (
             512,
-            2 * self.LSTMs_hsz[0],
-            2 * self.LSTMs_hsz[1],
-            2 * self.LSTMs_hsz[2],
+            2 * self.pixel_LSTMs_hsz[0],
+            2 * self.pixel_LSTMs_hsz[1],
+            2 * self.pixel_LSTMs_hsz[2],
         )
 
         if local_feats_net == "Seg":
@@ -41,42 +41,47 @@ class CoSADUV_NoTemporal(nn.Module):
         else:
             self.local_feats = LocalFeatsCNN()
 
-        self.context = PlacesCNN(input_dim=input_dim)
-        self.context_fc_1 = nn.Linear(128, self.LSTMs_isz[0])
-        self.context_fc_rest = nn.Linear(128, self.LSTMs_isz[1])
+        self.scene_context = PlacesCNN(input_dim=input_dim)
+        self.scene_context_fc_1 = nn.Linear(128, self.pixel_LSTMs_isz[0])
+        self.scene_context_fc_rest = nn.Linear(128, self.pixel_LSTMs_isz[1])
 
         # Constructing LSTMs:
-        self.blstm_h_1 = nn.LSTM(
-            input_size=self.LSTMs_isz[0],
-            hidden_size=self.LSTMs_hsz[0],
+        self.pixel_blstm_h_1 = nn.LSTM(
+            input_size=self.pixel_LSTMs_isz[0],
+            hidden_size=self.pixel_LSTMs_hsz[0],
             num_layers=1,
             batch_first=True,
             bidirectional=True,
         )
-        self.blstm_v_1 = nn.LSTM(
-            input_size=self.LSTMs_isz[1],
-            hidden_size=self.LSTMs_hsz[1],
+        self.pixel_blstm_v_1 = nn.LSTM(
+            input_size=self.pixel_LSTMs_isz[1],
+            hidden_size=self.pixel_LSTMs_hsz[1],
             num_layers=1,
             batch_first=True,
             bidirectional=True,
         )
-        self.blstm_h_2 = nn.LSTM(
-            input_size=self.LSTMs_isz[2],
-            hidden_size=self.LSTMs_hsz[2],
+        self.pixel_blstm_h_2 = nn.LSTM(
+            input_size=self.pixel_LSTMs_isz[2],
+            hidden_size=self.pixel_LSTMs_hsz[2],
             num_layers=1,
             batch_first=True,
             bidirectional=True,
         )
-        self.blstm_v_2 = nn.LSTM(
-            input_size=self.LSTMs_isz[3],
-            hidden_size=self.LSTMs_hsz[3],
+        self.pixel_blstm_v_2 = nn.LSTM(
+            input_size=self.pixel_LSTMs_isz[3],
+            hidden_size=self.pixel_LSTMs_hsz[3],
             num_layers=1,
             batch_first=True,
             bidirectional=True,
         )
 
         # Initialize the biases of the forget gates to 1 for all blstms
-        for blstm in [self.blstm_h_1, self.blstm_v_1, self.blstm_h_2, self.blstm_v_2]:
+        for blstm in [
+            self.pixel_blstm_h_1,
+            self.pixel_blstm_v_1,
+            self.pixel_blstm_h_2,
+            self.pixel_blstm_v_2,
+        ]:
             # Below code taken from:
             # https://discuss.pytorch.org/t/set-forget-gate-bias-of-lstm/1745/4
             for names in blstm._all_weights:
@@ -87,7 +92,7 @@ class CoSADUV_NoTemporal(nn.Module):
                     bias.data[start:end].fill_(1.0)
 
         # Last conv to move to one channel
-        self.last_conv = nn.Conv2d(2 * self.LSTMs_hsz[3], 1, 1)
+        self.last_conv = nn.Conv2d(2 * self.pixel_LSTMs_hsz[-1], 1, 1)
 
         # # softmax
         # self.score = nn.Softmax(dim=2)
@@ -109,17 +114,19 @@ class CoSADUV_NoTemporal(nn.Module):
         H_lf, W_lf = local_feats.size()[2:]
 
         # Get scene feature information
-        context = self.context(x)
+        raw_scene_context = self.scene_context(x)
         # Create context input into BLSTM_1
-        context_1 = self.context_fc_1(context)
+        scene_context_first = self.scene_context_fc_1(raw_scene_context)
         # Create context input into BLSTM_[2,3,4]
-        context_rest = self.context_fc_rest(context)
+        scene_context_rest = self.scene_context_fc_rest(raw_scene_context)
 
         # Horizontal BLSTM_1
         # local_feats_h shape: (N, H, W, C)
         local_feats_h = local_feats.transpose(1, 2).transpose(2, 3).contiguous()
         # Context shape: (N, 1, C)
-        context_h = context_1.contiguous().view(N, 1, self.LSTMs_isz[0])
+        scene_context_h = scene_context_first.contiguous().view(
+            N, 1, self.pixel_LSTMs_isz[0]
+        )
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
@@ -127,10 +134,10 @@ class CoSADUV_NoTemporal(nn.Module):
         for row in local_feats_h.split(1, 1):  # row shape (N, 1, W, C)
             # Add context to the start and end of the row
             row = row.squeeze(1)
-            row = torch.cat((context_h, row, context_h), dim=1)
+            row = torch.cat((scene_context_h, row, scene_context_h), dim=1)
             # FIXME: Error here if using PyTorch version >=1.0:
             # BLSTM returns nan for all values in row but context_h (first and last)
-            result, _ = self.blstm_h_1(row)
+            result, _ = self.pixel_blstm_h_1(row)
             result = result[:, 1:-1, :]
             rows.append(result)
         # Reconstruct the image by stacking the rows
@@ -139,7 +146,9 @@ class CoSADUV_NoTemporal(nn.Module):
 
         # Vertical BLSTM_1
         # Context shape: (N, 1, C)
-        context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[1])
+        scene_context_v = scene_context_rest.contiguous().view(
+            N, 1, self.pixel_LSTMs_isz[1]
+        )
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
@@ -147,8 +156,8 @@ class CoSADUV_NoTemporal(nn.Module):
         for col in output_h.split(1, 2):  # col shape (N, H, 1, C)
             # Add context to the start and end of the col
             col = col.squeeze(2)
-            col = torch.cat((context_v, col, context_v), dim=1)
-            result, _ = self.blstm_v_1(col)
+            col = torch.cat((scene_context_v, col, scene_context_v), dim=1)
+            result, _ = self.pixel_blstm_v_1(col)
             result = result[:, 1:-1, :]
             cols.append(result)
         # Reconstruct the image by stacking the columns
@@ -157,7 +166,9 @@ class CoSADUV_NoTemporal(nn.Module):
 
         # Horizontal BLSTM_2
         # Context shape: (N, 1, C)
-        context_h_2 = context_rest.contiguous().view(N, 1, self.LSTMs_isz[2])
+        scene_context_h_2 = scene_context_rest.contiguous().view(
+            N, 1, self.pixel_LSTMs_isz[2]
+        )
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
@@ -165,8 +176,8 @@ class CoSADUV_NoTemporal(nn.Module):
         for row in output_hv.split(1, 1):  # row shape (N, 1, W, C)
             # Add context to the start and end of the row
             row = row.squeeze(1)
-            row = torch.cat((context_h_2, row, context_h_2), dim=1)
-            result, _ = self.blstm_h_2(row)
+            row = torch.cat((scene_context_h_2, row, scene_context_h_2), dim=1)
+            result, _ = self.pixel_blstm_h_2(row)
             result = result[:, 1:-1, :]
             rows.append(result)
         # Reconstruct the image by stacking the rows
@@ -175,7 +186,9 @@ class CoSADUV_NoTemporal(nn.Module):
 
         # Vertical BLSTM_2
         # Context shape: (N, 1, C)
-        context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[3])
+        scene_context_v = scene_context_rest.contiguous().view(
+            N, 1, self.pixel_LSTMs_isz[3]
+        )
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
@@ -183,8 +196,8 @@ class CoSADUV_NoTemporal(nn.Module):
         for col in output_hvh.split(1, 2):  # col shape (N, H, 1, C)
             # Add context to the start and end of the col
             col = col.squeeze(2)
-            col = torch.cat((context_v, col, context_v), dim=1)
-            result, _ = self.blstm_v_2(col)
+            col = torch.cat((scene_context_v, col, scene_context_v), dim=1)
+            result, _ = self.pixel_blstm_v_2(col)
             result = result[:, 1:-1, :]
             cols.append(result)
         # Reconstruct the image by stacking the columns
@@ -193,12 +206,12 @@ class CoSADUV_NoTemporal(nn.Module):
         del cols, col, result
 
         # Reduce channel dimension to 1
-        output_conv = self.last_conv(output_hvhv)
+        output_conv = self.last_conv(output_hvhv)  # Shape (N, 1, H, W)
 
-        N, C, _, _, = output_conv.size()
+        # N, _, H, W, = output_conv.size()
 
         # Upsampling - nn.functional.interpolate does not exist in < 0.4.1,
-        # but upsample is deprecated in > 0.4.0, so use this switch
+        # but upsample is deprecated in > 0.4.0
         if torch.__version__ == "0.4.0":
             output_upsampled = nn.functional.upsample(
                 output_conv, size=self.input_dim, mode="bilinear", align_corners=True
