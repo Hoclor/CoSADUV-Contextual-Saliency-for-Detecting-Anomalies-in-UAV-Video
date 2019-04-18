@@ -96,8 +96,8 @@ class CoSADUV(nn.Module):
 
         # LSTM applied to the sequence in time domain, one hidden cell per pixel
         self.temporal_LSTM = nn.LSTM(
-            input_size=input_dim[0] * input_dim[1],
-            hidden_size=input_dim[0] * input_dim[1],
+            input_size=input_dim[0]//8 * input_dim[1]//8,
+            hidden_size=input_dim[0]//8 * input_dim[1]//8,
             num_layers=1,
             batch_first=True,
         )
@@ -255,12 +255,17 @@ class CoSADUV(nn.Module):
                 align_corners=True,
             )
 
+        # Normalize the output by subtracting the minimum and dividing by the maximum, yielding outputs in the range [0, 1]
+        output_score = output_upsampled - output_upsampled.min()
+        output_score = output_score / output_score.max() if output_score.max() != 0 else output_score
+
+
         # # Softmax scoring
         # output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
 
         # output_score = output_score.contiguous().view(N, C, H, W)
 
-        return output_upsampled
+        return output_score
 
     def clear_temporal_state(self):
         self.temporal_LSTM_state = None
