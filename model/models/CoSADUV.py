@@ -271,6 +271,15 @@ class CoSADUV(nn.Module):
         self.temporal_LSTM_state = None
         self.stored_temporal_state = False
 
+    def detach_temporal_state(self):
+        """Wraps hidden states in new Variables, to detach them from their history."""
+        if type(self.temporal_LSTM_state) == type(None):
+            pass
+        else:
+            self.temporal_LSTM_state[0].detach_()
+            self.temporal_LSTM_state[1].detach_()
+            self.temporal_LSTM_state = (self.temporal_LSTM_state[0].detach(), self.temporal_LSTM_state[1].detach())
+
     @property
     def is_cuda(self):
         """
