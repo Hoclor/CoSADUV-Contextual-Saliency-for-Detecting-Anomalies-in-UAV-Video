@@ -61,17 +61,8 @@ def CE_MAE_loss(x, y):
     Used by: https://paperswithcode.com/paper/pyramid-dilated-deeper-convlstm-for-video
     to train model for video saliency evaluation
     """
-    # If dimensionality of x is 2, insert a singleton batch dimension
-    if len(x.shape) == 2:
-        x = x.squeeze(0)
-        y = y.squeeze(0)
-    # Loop over each image in the batch, apply NSS, return the average
-    loss = 0
-    for i in range(x.shape[0]):
-        x_i, y_i = x[i, :, :], y[i, :, :]
-        loss += torch.nn.functional.binary_cross_entropy(x_i, y_i) + MAE_loss(x_i, y_i)
-    # Return the sum of CE and MAE
-    return loss / x.shape[0]
+    return torch.nn.functional.binary_cross_entropy(x, y) + torch.nn.functional.l1_loss(x, y)
+
 
 
 # def CE_loss(x, y):
