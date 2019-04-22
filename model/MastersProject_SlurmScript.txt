@@ -14,9 +14,9 @@
 #SBATCH -t 48:00:00
 ## Time limit ~5 hours for 240x320 20 epochs, ~26 hours for 480x640 20 epochs
 # Job tracking
-#SBATCH --job-name=DSCLRCN
+#SBATCH --job-name=CoSADUV
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=simon.gokstorp@durham.ac.uk
+#SBATCH --mail-user=pbqk24@durham.ac.uk
 
 # Source the bash profile
 # (required to use the module command)
@@ -29,3 +29,4 @@ source ~/envs/MastersProject_0.4torch/bin/activate
 # Run your program
 #stdbuf -oL python3 main_ncc.py
 python3 -u main_ncc.py
+
