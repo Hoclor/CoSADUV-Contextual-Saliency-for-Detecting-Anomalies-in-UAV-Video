@@ -197,13 +197,26 @@ class Solver(object):
                 if self.location == "ncc":
                     inner_train_loop = enumerate(loader, 0)
                 elif self.location == "jupyter":
-                    inner_train_loop = enumerate(tqdm_notebook(loader, desc="Minibatches"), 0)
+                    inner_train_loop = enumerate(
+                        tqdm_notebook(loader, desc="Minibatches"), 0
+                    )
                 else:
                     inner_train_loop = enumerate(tqdm(loader, desc="Minibatches"), 0)
+
+                # If the model is temporal, reset its temporal state
+                # at the start of each video
+                if model.temporal:
+                    model.clear_temporal_state()
 
                 # Repeat training for each batch in the loader
                 for i, data in inner_train_loop:
                     # Batch of items in training set
+
+                    # If the model is temporal, detach its temporal state
+                    # at the start of each batch (so it doesn't backpropagate beyond
+                    # the last 'batchsize' frames - to reduce memory consumption)
+                    if model.temporal:
+                        model.detach_temporal_state()
 
                     # Count the number of minibatches performed since last backprop
                     counter += 1
@@ -271,7 +284,9 @@ class Solver(object):
                 if self.location == "ncc":
                     inner_val_loop = enumerate(loader, 0)
                 elif self.location == "jupyter":
-                    inner_val_loop = enumerate(tqdm_notebook(loader, desc="Minibatches"), 0)
+                    inner_val_loop = enumerate(
+                        tqdm_notebook(loader, desc="Minibatches"), 0
+                    )
                 else:
                     inner_val_loop = enumerate(tqdm(loader, desc="Minibatches"), 0)
 
