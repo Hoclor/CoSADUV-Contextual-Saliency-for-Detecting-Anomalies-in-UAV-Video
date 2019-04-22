@@ -13,6 +13,7 @@ import numpy as np
 class DSCLRCN(nn.Module):
     def __init__(self, input_dim=(480, 640), local_feats_net="Seg"):
         super(DSCLRCN, self).__init__()
+        self.temporal = False
 
         self.input_dim = input_dim
 

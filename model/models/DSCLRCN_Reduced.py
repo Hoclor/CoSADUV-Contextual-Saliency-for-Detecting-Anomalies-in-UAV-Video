@@ -13,6 +13,7 @@ from models.segmentation_resnet50.segmentation_nn import SegmentationNN
 class DSCLRCN_Reduced(nn.Module):
     def __init__(self, input_dim=(480, 640), local_feats_net="Seg"):
         super(DSCLRCN_Reduced, self).__init__()
+        self.temporal = False
 
         self.input_dim = input_dim
 

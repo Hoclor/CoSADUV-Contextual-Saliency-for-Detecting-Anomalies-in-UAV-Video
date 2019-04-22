@@ -14,6 +14,7 @@ from models.segmentation_resnet50.segmentation_nn import SegmentationNN
 class CoSADUV_NoTemporal(nn.Module):
     def __init__(self, input_dim=(480, 640), local_feats_net="Seg"):
         super(CoSADUV_NoTemporal, self).__init__()
+        self.temporal = False
 
         self.input_dim = input_dim
 
