@@ -12,7 +12,7 @@ def main():
     from util import loss_functions
     from util.solver import Solver
 
-    location = ""  # ncc or '', where the code is to be run (affects output)
+    location = "ncc"  # ncc or '', where the code is to be run (affects output)
     if location == "ncc":
         print_func = print
     else:
@@ -20,7 +20,7 @@ def main():
 
     ### Data options ###
 
-    dataset_root_dir = "Dataset/UAV123"  # Dataset/[SALICON, UAV123]
+    dataset_root_dir = "Dataset/SALICON"  # Dataset/[SALICON, UAV123]
     # Name of mean_image file: Must be located at dataset_root_dir/mean_image_name
     mean_image_name = "mean_image.npy"
     # Height, width of images
@@ -42,8 +42,8 @@ def main():
     # torch.nn.functional.kl_div
     # CE_MAE_loss
     # PCC_loss
-    loss_func = loss_functions.CE_MAE_loss  # Recommended: NSS_loss
-    test_loss_func = loss_functions.CE_MAE_loss
+    loss_func = torch.nn.functional.kl_div  # Recommended: NSS_loss
+    test_loss_func = loss_functions.NSS_loss
 
     ### Prepare optimiser ###
     if batchsize % minibatchsize:
@@ -201,6 +201,7 @@ def main():
 def test_model(model, test_set, loss_fn, location="ncc"):
     import tqdm as tqdm
     import numpy as np
+    import cv2
     import torch
 
     loss = 0
