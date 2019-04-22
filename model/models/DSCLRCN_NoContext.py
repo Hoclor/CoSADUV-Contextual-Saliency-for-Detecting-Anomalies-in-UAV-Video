@@ -1,19 +1,19 @@
-"""LocalFeaturesCNN"""
+"""Deep Spatial Contextual Long-term Recurrent Convolutional Network
+Without Scene Context information (PlacesCNN) module"""
+import numpy as np
 import torch
-import torchvision
 import torch.nn as nn
-import torch.nn.functional as F
+import torchvision
 
 from models.cnn_vgg16.local_cnn import LocalFeatsCNN
-from models.places_vgg16.places_cnn import PlacesCNN
+### from models.places_vgg16.places_cnn import PlacesCNN
 from models.segmentation_resnet50.segmentation_nn import SegmentationNN
 
-import numpy as np
 
 
-class DSCLRCN(nn.Module):
-    def __init__(self, input_dim=(96, 128), local_feats_net="CNN"):
-        super(DSCLRCN, self).__init__()
+class DSCLRCN_NoContext(nn.Module):
+    def __init__(self, input_dim=(480, 640), local_feats_net="Seg"):
+        super(DSCLRCN_NoContext, self).__init__()
 
         self.input_dim = input_dim
 
@@ -41,10 +41,9 @@ class DSCLRCN(nn.Module):
         else:
             self.local_feats = LocalFeatsCNN()
 
-        self.context = PlacesCNN(input_dim=input_dim)
-
-        self.context_fc_1 = nn.Linear(128, self.LSTMs_isz[0])
-        self.context_fc_rest = nn.Linear(128, self.LSTMs_isz[1])
+        ### self.context = PlacesCNN(input_dim=input_dim)
+        ### self.context_fc_1 = nn.Linear(128, self.LSTMs_isz[0])
+        ### self.context_fc_rest = nn.Linear(128, self.LSTMs_isz[1])
 
         # Constructing LSTMs:
         self.blstm_h_1 = nn.LSTM(
@@ -109,20 +108,18 @@ class DSCLRCN(nn.Module):
         local_feats = self.local_feats(x)  # Shape (N, C, H, W)
         H_lf, W_lf = local_feats.size()[2:]
 
-        # Get scene feature information
-        context = self.context(x)
-        context_1 = self.context_fc_1(context)  # Create context input into BLSTM_1
-        context_rest = self.context_fc_rest(
-            context
-        )  # Create context input into BLSTM_[2,3,4]
+        ### # Get scene feature information
+        ### context = self.context(x)
+        ### # Create context input into BLSTM_1
+        ### context_1 = self.context_fc_1(context)
+        ### # Create context input into BLSTM_[2,3,4]
+        ### context_rest = self.context_fc_rest(context)
 
         # Horizontal BLSTM_1
-        local_feats_h = (
-            local_feats.transpose(1, 2).transpose(2, 3).contiguous()
-        )  # Shape (N, H, W, C)
-        context_h = context_1.contiguous().view(
-            N, 1, self.LSTMs_isz[0]
-        )  # Context shape (N, 1, C)
+        # local_feats_h shape: (N, H, W, C)
+        local_feats_h = local_feats.transpose(1, 2).transpose(2, 3).contiguous()
+        ### # Context shape: (N, 1, C)
+        ### context_h = context_1.contiguous().view(N, 1, self.LSTMs_isz[0])
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
@@ -130,20 +127,19 @@ class DSCLRCN(nn.Module):
         for row in local_feats_h.split(1, 1):  # row shape (N, 1, W, C)
             # Add context to the start and end of the row
             row = row.squeeze(1)
-            row = torch.cat((context_h, row, context_h), dim=1)
+            ### row = torch.cat((context_h, row, context_h), dim=1)
             # FIXME: Error here if using PyTorch version >=1.0:
             # BLSTM returns nan for all values in row but context_h (first and last)
             result, _ = self.blstm_h_1(row)
-            result = result[:, 1:-1, :]
+            ### result = result[:, 1:-1, :]
             rows.append(result)
         # Reconstruct the image by stacking the rows
         output_h = torch.stack(rows, dim=1)  # Shape (N, H, W, C)
         del rows, row, result
 
         # Vertical BLSTM_1
-        context_v = context_rest.contiguous().view(
-            N, 1, self.LSTMs_isz[1]
-        )  # Context shape (N, 1, C)
+        ### # Context shape: (N, 1, C)
+        ### context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[1])
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
@@ -151,18 +147,17 @@ class DSCLRCN(nn.Module):
         for col in output_h.split(1, 2):  # col shape (N, H, 1, C)
             # Add context to the start and end of the col
             col = col.squeeze(2)
-            col = torch.cat((context_v, col, context_v), dim=1)
+            ### col = torch.cat((context_v, col, context_v), dim=1)
             result, _ = self.blstm_v_1(col)
-            result = result[:, 1:-1, :]
+            ### result = result[:, 1:-1, :]
             cols.append(result)
         # Reconstruct the image by stacking the columns
         output_hv = torch.stack(cols, dim=2)  # Shape (N, H, W, C)
         del cols, col, result
 
         # Horizontal BLSTM_2
-        context_h_2 = context_rest.contiguous().view(
-            N, 1, self.LSTMs_isz[2]
-        )  # Context shape (N, 1, C)
+        ### # Context shape: (N, 1, C)
+        ### context_h_2 = context_rest.contiguous().view(N, 1, self.LSTMs_isz[2])
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
@@ -170,18 +165,17 @@ class DSCLRCN(nn.Module):
         for row in output_hv.split(1, 1):  # row shape (N, 1, W, C)
             # Add context to the start and end of the row
             row = row.squeeze(1)
-            row = torch.cat((context_h_2, row, context_h_2), dim=1)
+            ### row = torch.cat((context_h_2, row, context_h_2), dim=1)
             result, _ = self.blstm_h_2(row)
-            result = result[:, 1:-1, :]
+            ### result = result[:, 1:-1, :]
             rows.append(result)
         # Reconstruct the image by stacking the rows
         output_hvh = torch.stack(rows, dim=1)  # Shape (N, H, W, C)
         del rows, row, result
 
         # Vertical BLSTM_2
-        context_v = context_rest.contiguous().view(
-            N, 1, self.LSTMs_isz[3]
-        )  # Context shape (N, 1, C)
+        ### # Context shape: (N, 1, C)
+        ### context_v = context_rest.contiguous().view(N, 1, self.LSTMs_isz[3])
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
@@ -189,9 +183,9 @@ class DSCLRCN(nn.Module):
         for col in output_hvh.split(1, 2):  # col shape (N, H, 1, C)
             # Add context to the start and end of the col
             col = col.squeeze(2)
-            col = torch.cat((context_v, col, context_v), dim=1)
+            ### col = torch.cat((context_v, col, context_v), dim=1)
             result, _ = self.blstm_v_2(col)
-            result = result[:, 1:-1, :]
+            ### result = result[:, 1:-1, :]
             cols.append(result)
         # Reconstruct the image by stacking the columns
         output_hvhv = torch.stack(cols, dim=2)  # Shape (N, H, W, C)

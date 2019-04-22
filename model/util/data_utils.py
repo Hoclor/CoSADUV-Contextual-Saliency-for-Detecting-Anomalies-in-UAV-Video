@@ -1,18 +1,15 @@
 """Data utility functions."""
 import os
+import pickle
 import random
 import sys
 
 import numpy as np
 import torch
 import torch.utils.data as data
-
-from scipy.ndimage import imread
 from scipy.misc import imresize
-
+from scipy.ndimage import imread
 from skimage import io, transform
-
-import pickle
 
 import cv2
 
@@ -319,4 +316,3 @@ def get_video_datasets(
     mean_image = mean_image.astype(np.float32) / 255.0  # Convert to [0, 1] (float)
 
     return (train_data, val_data, test_data, mean_image)
-

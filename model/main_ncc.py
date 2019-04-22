@@ -1,15 +1,14 @@
 def main():
-    import numpy as np
     import pickle
 
-    import cv2
-
+    import numpy as np
     from torch.autograd import Variable
     from tqdm import tqdm
 
-    from models.DSCLRCN_PyTorch import DSCLRCN
-    from util.data_utils import get_SALICON_datasets, get_video_datasets
+    import cv2
+    from models.CoSADUV_NoTemporal import CoSADUV_NoTemporal
     from util import loss_functions
+    from util.data_utils import get_SALICON_datasets, get_video_datasets
     from util.solver import Solver
 
     location = "ncc"  # ncc or '', where the code is to be run (affects output)
@@ -38,8 +37,9 @@ def main():
     optim_str = "SGD"  # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-4 if Adam
     # Loss functions:
-    # NSS_loss
     # torch.nn.functional.kl_div
+    # From loss_functions (use loss_functions.LOSS_FUNCTION_NAME)
+    # NSS_loss
     # CE_MAE_loss
     # PCC_loss
     loss_func = torch.nn.functional.kl_div  # Recommended: NSS_loss
@@ -110,7 +110,7 @@ def main():
 
     ### Training ###
 
-    model = DSCLRCN(input_dim=img_size, local_feats_net="Seg")
+    model = CoSADUV_NoTemporal(input_dim=img_size, local_feats_net="Seg")
 
     print("Starting train on model with settings:")
     print("### Dataset settings ###")
@@ -128,6 +128,7 @@ def main():
     print("Effective lr: {}".format(str(optim_args["lr"] * num_minibatches)))
     print("Actual lr: {}".format(str(optim_args["lr"])))
     print("Loss function: {}".format(loss_func.__name__))
+    print("Model: {}".format(type(model).__name__))
     print("\n")
 
     # Create a solver with the options given above and appropriate location
@@ -173,7 +174,7 @@ def main():
         checkpoint = torch.load(filename, map_location="cpu")
     start_epoch = checkpoint["epoch"]
     # Create the model
-    model = DSCLRCN(input_dim=img_size, local_feats_net="Seg")
+    model = CoSADUV_NoTemporal(input_dim=img_size, local_feats_net="Seg")
     model.load_state_dict(checkpoint["state_dict"])
     if torch.cuda.is_available():
         model = model.cuda()

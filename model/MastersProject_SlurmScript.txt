@@ -27,5 +27,5 @@ module load cuda/9.2
 source ~/envs/MastersProject_0.4torch/bin/activate
 
 # Run your program
-#stdbuf -oL python3 DSCLRCN_ncc.py
-python3 -u DSCLRCN_ncc.py
+#stdbuf -oL python3 main_ncc.py
+python3 -u main_ncc.py
