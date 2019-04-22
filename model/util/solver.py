@@ -326,7 +326,8 @@ class Solver(object):
                         val_loss
                     )
                 else:
-                    filename = "trained_models/best_model_{}_lr2_batch{}_epoch{}.pth".format(
+                    filename = "trained_models/best_model_{}_{}_batch{}_epoch{}.pth".format(
+                        type(model).__name__,
                         self.loss_func.__name__,
                         filename_args["batchsize"],
                         filename_args["epoch_number"],

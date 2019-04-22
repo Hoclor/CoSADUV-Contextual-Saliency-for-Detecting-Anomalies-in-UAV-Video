@@ -147,8 +147,8 @@ def main():
     )
 
     # Saving the model:
-    model_name = "{}_lr2_batch{}_epoch{}".format(
-        loss_func.__name__, batchsize, epoch_number
+    model_name = "{}_{}_batch{}_epoch{}".format(
+        type(model).__name__, loss_func.__name__, batchsize, epoch_number
     )
     model.save("trained_models/model_" + model_name)
     with open("trained_models/solver_" + model_name + ".pkl", "wb") as outf:
