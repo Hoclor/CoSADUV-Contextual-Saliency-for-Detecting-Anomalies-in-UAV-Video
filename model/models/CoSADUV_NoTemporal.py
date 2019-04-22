@@ -226,8 +226,11 @@ class CoSADUV_NoTemporal(nn.Module):
 
         # Normalize the output by subtracting the minimum and dividing by the maximum, yielding outputs in the range [0, 1]
         output_score = output_upsampled - output_upsampled.min()
-        output_score = output_score / output_score.max() if output_score.max() != 0 else output_score
-
+        output_score = (
+            output_score / output_score.max()
+            if output_score.max() != 0
+            else output_score
+        )
 
         # # Softmax scoring
         # output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
