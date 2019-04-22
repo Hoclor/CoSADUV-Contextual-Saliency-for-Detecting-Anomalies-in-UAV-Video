@@ -19,7 +19,7 @@ def main():
 
     ### Data options ###
 
-    dataset_root_dir = "Dataset/SALICON"  # Dataset/[SALICON, UAV123]
+    dataset_root_dir = "Dataset/UAV123"  # Dataset/[SALICON, UAV123]
     # Name of mean_image file: Must be located at dataset_root_dir/mean_image_name
     mean_image_name = "mean_image.npy"
     # Height, width of images
