@@ -77,7 +77,7 @@ def MAE_loss(x, y):
 def KLDiv_loss(x, y):
     """Wrapper for PyTorch's KLDivLoss function"""
     x_log = x.log()
-    return torch.nn.functional.kl_div(x_log, y, size_average=False)
+    return torch.nn.functional.kl_div(x_log, y)
 
 
 # Pearson Cross Correlation
