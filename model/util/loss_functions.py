@@ -64,42 +64,6 @@ def CE_MAE_loss(x, y):
     return torch.nn.functional.binary_cross_entropy(x, y) + torch.nn.functional.l1_loss(x, y)
 
 
-
-# def CE_loss(x, y):
-#     """Computes the Cross Entropy loss of the given prediction x and target y"""
-#     # If dimensionality of x is 2, insert a singleton batch dimension
-#     if len(x.shape) == 2:
-#         x = x.squeeze(0)
-#         y = y.squeeze(0)
-#     # Loop over each image in the batch, apply NSS, return the average
-#     n = x.shape[1] * x.shape[2]
-#     loss = 0
-#     for i in range(x.shape[0]):
-#         x_i, y_i = x[i, :, :], y[i, :, :]
-#         loss += -1 / n * torch.sum(y_i * torch.log(x_i) + (1 - y_i) * torch.log(1 - x_i))
-#     return loss / x.shape[0]
-
-
-def MAE_loss(x, y):
-    """Computes the MAE loss of the given prediction x and target y"""
-    # If dimensionality of x is 2, insert a singleton batch dimension
-    if len(x.shape) == 2:
-        x = x.squeeze(0)
-        y = y.squeeze(0)
-    # Loop over each image in the batch, apply NSS, return the average
-    n = x.shape[1] * x.shape[2]
-    loss = 0
-    for i in range(x.shape[0]):
-        x_i, y_i = x[i, :, :], y[i, :, :]
-        loss += 1 / n * torch.sum(torch.abs(y_i - x_i))
-    return loss / x.shape[0]
-
-
-# def KLDiv_loss(x, y):
-#     """Wrapper for PyTorch's KLDivLoss function"""
-#     return torch.nn.functional.kl_div(x, y, reduction="batchmean")
-
-
 # Pearson Cross Correlation
 def PCC_loss(x, y):
     """Computes Pearson Cross Correlation loss
