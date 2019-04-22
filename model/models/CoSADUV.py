@@ -256,7 +256,8 @@ class CoSADUV(nn.Module):
                 align_corners=True,
             )
 
-        # Normalize the output by subtracting the minimum and dividing by the maximum, yielding outputs in the range [0, 1]
+        # Normalize the output by subtracting the minimum and dividing by the maximum,
+        # yielding outputs in the range [0, 1]
         output_score = output_upsampled - output_upsampled.min()
         output_score = (
             output_score / output_score.max()

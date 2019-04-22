@@ -214,6 +214,11 @@ def test_model(model, test_set, loss_fn, location="ncc"):
         if location != "ncc":
             video_loader = tqdm(video_loader, desc="Video")
 
+        # If the model is temporal, reset its temporal state
+        # at the start of each video
+        if model.temporal:
+            model.clear_temporal_state()
+
         for data in video_loader:
             inputs, labels = data
             if torch.cuda.is_available():
