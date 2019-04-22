@@ -64,7 +64,6 @@ def CE_MAE_loss(x, y):
     return torch.nn.functional.binary_cross_entropy(x, y) + torch.nn.functional.l1_loss(x, y)
 
 
-
 def CE_loss(x, y):
     """Computes the Cross Entropy loss of the given prediction x and target y"""
     return torch.nn.functional.binary_cross_entropy(x, y)
@@ -72,7 +71,7 @@ def CE_loss(x, y):
 
 def MAE_loss(x, y):
     """Computes the MAE loss of the given prediction x and target y"""
-   return torch.nn.fcuntional.l1_loss(x, y)
+    return torch.nn.functional.l1_loss(x, y)
 
 
 def KLDiv_loss(x, y):
