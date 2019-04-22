@@ -290,7 +290,18 @@ class Solver(object):
                 else:
                     inner_val_loop = enumerate(tqdm(loader, desc="Minibatches"), 0)
 
+                    # If the model is temporal, reset its temporal state
+                    # at the start of each video
+                    if model.temporal:
+                        model.clear_temporal_state()
+
                 for ii, data in inner_val_loop:
+                    # If the model is temporal, detach its temporal state
+                    # at the start of each batch (so it doesn't backpropagate beyond
+                    # the last 'batchsize' frames - to reduce memory consumption)
+                    if model.temporal:
+                        model.detach_temporal_state()
+
                     inputs, labels = data
                     # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
                     labels = labels.unsqueeze(3)
