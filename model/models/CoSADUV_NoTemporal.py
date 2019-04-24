@@ -96,7 +96,7 @@ class CoSADUV_NoTemporal(nn.Module):
         self.last_conv = nn.Conv2d(2 * self.pixel_LSTMs_hsz[-1], 1, 1)
 
         # # softmax
-        # self.score = nn.Softmax(dim=2)
+        self.score = nn.Sigmoid()
 
     def forward(self, x):
         """
@@ -224,18 +224,8 @@ class CoSADUV_NoTemporal(nn.Module):
                 output_conv, size=self.input_dim, mode="bilinear", align_corners=True
             )
 
-        # Normalize the output by subtracting the minimum and dividing by the maximum, yielding outputs in the range [0, 1]
-        output_score = output_upsampled - output_upsampled.min()
-        output_score = (
-            output_score / output_score.max()
-            if output_score.max() != 0
-            else output_score
-        )
-
-        # # Softmax scoring
-        # output_score = self.score(output_upsampled.contiguous().view(N, C, -1))
-
-        # output_score = output_score.contiguous().view(N, C, H, W)
+        # Sigmoid scoring - project each pixel's value into probability space (0, 1)
+        output_score = self.score(output_upsampled)
 
         return output_score
 
