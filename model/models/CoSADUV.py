@@ -151,7 +151,6 @@ class CoSADUV(nn.Module):
             # Add context to the start and end of the row
             row = row.squeeze(1)
             row = torch.cat((scene_context_h, row, scene_context_h), dim=1)
-            # FIXME: Error here if using PyTorch version >=1.0:
             # BLSTM returns nan for all values in row but context_h (first and last)
             result, _ = self.pixel_blstm_h_1(row)
             result = result[:, 1:-1, :]
@@ -240,7 +239,7 @@ class CoSADUV(nn.Module):
             _, self.temporal_LSTM_state = self.temporal_LSTM(temporal_lstm_input)
             self.stored_temporal_state = True
         else:
-            output_conv = torch.cat((self.temporal_LSTM_state[0], output_conv), dim=1)
+            output_conv = torch.cat((self.temporal_LSTM_state[0].view(N, 1, H, W), output_conv), dim=1)
             output_conv = self.temporal_conv(output_conv)
             # Apply Temporal LSTM
             _, self.temporal_LSTM_state = self.temporal_LSTM(
