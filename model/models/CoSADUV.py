@@ -103,6 +103,9 @@ class CoSADUV(nn.Module):
             batch_first=True,
         )
 
+        # Actual final conv to move to one channel from conv+LSTM channels
+        self.temporal_conv = nn.Conv2d(2, 1, 1)
+
         # The hidden state of the temporal LSTM
         self.temporal_LSTM_state = None
         self.stored_temporal_state = False
@@ -237,11 +240,18 @@ class CoSADUV(nn.Module):
 
         output_temporal = output_temporal.contiguous().view(N, 1, H, W)
 
+        # Concatenate the temporal LSTM output with the conv output
+        # along channel dimension
+        output_both = torch.cat((output_temporal, output_conv), dim=1)
+
+        # Apply another convolution to reduce channel to 1 again
+        output_conv_2 = self.temporal_conv(output_both)
+
         # Upsampling - nn.functional.interpolate does not exist in < 0.4.1,
         # but upsample is deprecated in > 0.4.0
         if torch.__version__ == "0.4.0":
             output_upsampled = nn.functional.upsample(
-                output_temporal,
+                output_conv_2,
                 size=self.input_dim,
                 mode="bilinear",
                 align_corners=True,
@@ -250,7 +260,7 @@ class CoSADUV(nn.Module):
             # align_corners=False assumed, default behaviour was changed
             # from True to False from pytorch 0.3.1 to 0.4
             output_upsampled = nn.functional.interpolate(
-                output_temporal,
+                output_conv_2,
                 size=self.input_dim,
                 mode="bilinear",
                 align_corners=True,
