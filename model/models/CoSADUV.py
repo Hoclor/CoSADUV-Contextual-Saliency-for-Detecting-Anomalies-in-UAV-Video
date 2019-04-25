@@ -103,6 +103,9 @@ class CoSADUV(nn.Module):
             batch_first=True,
         )
 
+        # Actual final conv to move to one channel from conv+LSTM channels
+        self.temporal_conv = nn.Conv2d(2, 1, 1)
+
         # The hidden state of the temporal LSTM
         self.temporal_LSTM_state = None
         self.stored_temporal_state = False
@@ -148,7 +151,6 @@ class CoSADUV(nn.Module):
             # Add context to the start and end of the row
             row = row.squeeze(1)
             row = torch.cat((scene_context_h, row, scene_context_h), dim=1)
-            # FIXME: Error here if using PyTorch version >=1.0:
             # BLSTM returns nan for all values in row but context_h (first and last)
             result, _ = self.pixel_blstm_h_1(row)
             result = result[:, 1:-1, :]
@@ -223,25 +225,33 @@ class CoSADUV(nn.Module):
 
         N, _, H, W, = output_conv.size()
 
-        output_conv = output_conv.contiguous().view(N, 1, H * W)
+        # If no previous temporal state exists (this is the first frame in a video):
+        # Apply LSTM to produce the temporal state, and continue with output_conv
+        # Otherwise:
+        # Concatenate hidden part of temporal state with output_conv, and apply extra
+        # conv to this to return to 1 channel. Then apply LSTM to update temporal state
+        # Continue with the output of this extra conv
 
-        # Apply the temporal LSTM
-        # Give the current temporal state as input if there is one stored
-        if self.stored_temporal_state:
-            output_temporal, self.temporal_LSTM_state = self.temporal_LSTM(
-                output_conv, self.temporal_LSTM_state
-            )
-        else:
-            output_temporal, self.temporal_LSTM_state = self.temporal_LSTM(output_conv)
+        temporal_lstm_input = output_conv.contiguous().view(N, 1, H * W)
+
+        if not self.stored_temporal_state:
+            # Apply Temporal LSTM
+            _, self.temporal_LSTM_state = self.temporal_LSTM(temporal_lstm_input)
             self.stored_temporal_state = True
+        else:
+            output_conv = torch.cat((self.temporal_LSTM_state[0].view(N, 1, H, W), output_conv), dim=1)
+            output_conv = self.temporal_conv(output_conv)
+            # Apply Temporal LSTM
+            _, self.temporal_LSTM_state = self.temporal_LSTM(
+                temporal_lstm_input, self.temporal_LSTM_state
+            )
 
-        output_temporal = output_temporal.contiguous().view(N, 1, H, W)
 
         # Upsampling - nn.functional.interpolate does not exist in < 0.4.1,
         # but upsample is deprecated in > 0.4.0
         if torch.__version__ == "0.4.0":
             output_upsampled = nn.functional.upsample(
-                output_temporal,
+                output_conv,
                 size=self.input_dim,
                 mode="bilinear",
                 align_corners=True,
@@ -250,7 +260,7 @@ class CoSADUV(nn.Module):
             # align_corners=False assumed, default behaviour was changed
             # from True to False from pytorch 0.3.1 to 0.4
             output_upsampled = nn.functional.interpolate(
-                output_temporal,
+                output_conv,
                 size=self.input_dim,
                 mode="bilinear",
                 align_corners=True,
