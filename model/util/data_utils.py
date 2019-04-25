@@ -249,6 +249,7 @@ class VideoDataset(data.Dataset):
                 batch_size=batch_size,
                 num_workers=num_workers,
                 pin_memory=pin_memory,
+                drop_last=True
             )
             for video_name in video_names
         ]
