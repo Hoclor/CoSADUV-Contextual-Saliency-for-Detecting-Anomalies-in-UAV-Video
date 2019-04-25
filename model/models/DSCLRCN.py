@@ -216,7 +216,7 @@ class DSCLRCN(nn.Module):
         output_score = output_score.contiguous().view(N, C, H, W)
 
         # Bring output_score back to an output range of [0, 1] by dividing each image by the max value in the image
-        for i in N:
+        for i in range(N):
             output_score[i] /= output_score[i].max()
 
         return output_score
