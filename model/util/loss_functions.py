@@ -11,8 +11,8 @@ def NSS_loss(x, y):
         """
     # If dimensionality of x is 2, insert a singleton batch dimension
     if len(x.shape) == 2:
-        x = x.squeeze(0)
-        y = y.squeeze(0)
+        x = x.unsqueeze(0)
+        y = y.unsqueeze(0)
     # Loop over each image in the batch, apply NSS, return the average
     loss = 0
     for i in range(x.shape[0]):
@@ -37,8 +37,8 @@ def NSS_loss_2(x, y):
         """
     # If dimensionality of x is 2, insert a singleton batch dimension
     if len(x.shape) == 2:
-        x = x.squeeze(0)
-        y = y.squeeze(0)
+        x = x.unsqueeze(0)
+        y = y.unsqueeze(0)
     # Loop over each image in the batch, apply NSS, return the average
     loss = 0
     for i in range(x.shape[0]):

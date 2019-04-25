@@ -215,6 +215,12 @@ class DSCLRCN(nn.Module):
 
         output_score = output_score.contiguous().view(N, C, H, W)
 
+        output_norm = torch.empty_like(output_score)
+
+        # Bring output_score back to an output range of [0, 1] by dividing each image by the max value in the image
+        for i in range(N):
+            output_norm[i] /= output_score[i].max()
+
         return output_score
 
     @property
