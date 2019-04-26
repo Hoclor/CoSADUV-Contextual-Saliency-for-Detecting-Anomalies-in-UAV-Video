@@ -33,7 +33,7 @@ def main():
     batchsize = 20  # Recommended: 20.
     # Minibatchsize: Determines how many images are processed at a time on the GPU
     minibatchsize = 2  # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem.
-    epoch_number = 10  # Recommended: 10 (epoch_number =~ batchsize/2)
+    epoch_number = 5  # Recommended: 10 (epoch_number =~ batchsize/2)
     optim_str = "SGD"  # 'SGD' or 'Adam' Recommended: Adam
     optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-4 if Adam
     # Loss functions:
