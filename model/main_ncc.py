@@ -42,8 +42,8 @@ def main():
     # CE_MAE_loss
     # PCC_loss
     # KLDiv_loss
-    loss_func = loss_functions.KLDiv_loss  # Recommended: NSS_loss
-    test_loss_func = loss_functions.KLDiv_loss
+    loss_func = loss_functions.CE_MAE_loss  # Recommended: NSS_loss
+    test_loss_func = loss_functions.MAE_loss
 
     ### Prepare optimiser ###
     if batchsize % minibatchsize:
