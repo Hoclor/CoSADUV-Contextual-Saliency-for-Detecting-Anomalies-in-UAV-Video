@@ -17,8 +17,6 @@ def homebrew(x, y):
         non_targets = x_i.masked_select(y_i == 0)
         if len(targets) > 0:
             loss += non_targets.mean() - targets.mean()
-            print("Targets: {}".format(targets.mean().item()))
-            print("Non-targets: {}".format(non_targets.mean().item()))
         else:
             loss += non_targets.mean()
     return loss / x.shape[0]
