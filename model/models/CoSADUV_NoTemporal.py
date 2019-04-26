@@ -136,8 +136,6 @@ class CoSADUV_NoTemporal(nn.Module):
             # Add context to the start and end of the row
             row = row.squeeze(1)
             row = torch.cat((scene_context_h, row, scene_context_h), dim=1)
-            # FIXME: Error here if using PyTorch version >=1.0:
-            # BLSTM returns nan for all values in row but context_h (first and last)
             result, _ = self.pixel_blstm_h_1(row)
             result = result[:, 1:-1, :]
             rows.append(result)
