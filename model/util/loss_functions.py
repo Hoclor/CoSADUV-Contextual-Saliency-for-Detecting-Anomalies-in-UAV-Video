@@ -2,9 +2,9 @@ import numpy as np
 import torch
 
 def homebrew(x, y):
-    """Get loss as (1 + the mean value at non-target regions - the mean value at target regions)/2
+    """Get loss as the mean value at non-target regions - the mean value at target regions
     If no targets, loss = mean value at non-target regions
-    Loss function range: [0, 1], assuming output values are all in range [0, 1]"""
+    Loss function range: [-1, 1], assuming output values are all in range [0, 1]"""
     # If dimensionality of x is 2, insert a singleton batch dimension
     if len(x.shape) == 2:
         x = x.unsqueeze(0)
@@ -16,7 +16,9 @@ def homebrew(x, y):
         targets = x_i.masked_select(y_i > 0)
         non_targets = x_i.masked_select(y_i == 0)
         if len(targets) > 0:
-            loss += (1 + non_targets.mean() - targets.mean())/2
+            loss += non_targets.mean() - targets.mean()
+            print("Targets: {}".format(targets.mean().item()))
+            print("Non-targets: {}".format(non_targets.mean().item()))
         else:
             loss += non_targets.mean()
     return loss / x.shape[0]
