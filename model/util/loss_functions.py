@@ -1,6 +1,55 @@
 import numpy as np
 import torch
 
+def homebrew(x, y):
+    """Get loss as (1 + the mean value at non-target regions - the mean value at target regions)/2
+    If no targets, loss = mean value at non-target regions
+    Loss function range: [0, 1], assuming output values are all in range [0, 1]"""
+    # If dimensionality of x is 2, insert a singleton batch dimension
+    if len(x.shape) == 2:
+        x = x.unsqueeze(0)
+        y = y.unsqueeze(0)
+    # Loop over each image in the batch, apply NSS, return the average
+    loss = 0
+    for i in range(x.shape[0]):
+        x_i, y_i = x[i, :, :], y[i, :, :]
+        targets = x_i.masked_select(y_i > 0)
+        non_targets = x_i.masked_select(y_i == 0)
+        if len(targets) > 0:
+            loss += (1 + non_targets.mean() - targets.mean())/2
+        else:
+            loss += non_targets.mean()
+    return loss / x.shape[0]
+
+def NSS_alt(x, y):
+    """
+        Computes the Normalized Scanpath Saliency loss between x (output of a model)
+        and y (label).
+        x and y are assumed to be torch tensors, either individual images or batches.
+        If NSS cannot be computed (target is all 0 values), then the std dev of x is returned instead.
+        """
+    # If dimensionality of x is 2, insert a singleton batch dimension
+    if len(x.shape) == 2:
+        x = x.unsqueeze(0)
+        y = y.unsqueeze(0)
+    # Loop over each image in the batch, apply NSS, return the average
+    loss = 0
+    for i in range(x.shape[0]):
+        x_i, y_i = x[i, :, :], y[i, :, :]
+        if y_i.sum() > 0:
+            # Normalize x_i
+            x_i = (x_i - x_i.mean()) / x_i.std()
+            # Compute the element-wise multiplication of x_i and y_i
+            scanpath = x_i * y_i
+            # Compute the sum of the scanpath divided by the sum of values in y_i as NSS
+            # Return -NSS score as the loss
+            loss -= scanpath.sum() / y_i.sum()
+        else:
+            # If target is all 0, return loss as the std dev of x
+            loss += x.std()
+    # Return the -ve avg NSS score
+    return loss / x.shape[0]
+
 
 # Normalized Scanpath Saliency
 def NSS_loss(x, y):
