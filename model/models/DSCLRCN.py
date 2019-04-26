@@ -219,9 +219,9 @@ class DSCLRCN(nn.Module):
 
         # Bring output_score back to an output range of [0, 1] by dividing each image by the max value in the image
         for i in range(N):
-            output_norm[i] /= output_score[i].max()
+            output_norm[i] = output_score[i]/output_score[i].max()
 
-        return output_score
+        return output_norm
 
     @property
     def is_cuda(self):
