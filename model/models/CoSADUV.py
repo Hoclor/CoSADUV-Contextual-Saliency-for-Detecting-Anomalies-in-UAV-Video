@@ -239,31 +239,26 @@ class CoSADUV(nn.Module):
             _, self.temporal_LSTM_state = self.temporal_LSTM(temporal_lstm_input)
             self.stored_temporal_state = True
         else:
-            output_conv = torch.cat((self.temporal_LSTM_state[0].view(N, 1, H, W), output_conv), dim=1)
+            output_conv = torch.cat(
+                (self.temporal_LSTM_state[0].view(N, 1, H, W), output_conv), dim=1
+            )
             output_conv = self.temporal_conv(output_conv)
             # Apply Temporal LSTM
             _, self.temporal_LSTM_state = self.temporal_LSTM(
                 temporal_lstm_input, self.temporal_LSTM_state
             )
 
-
         # Upsampling - nn.functional.interpolate does not exist in < 0.4.1,
         # but upsample is deprecated in > 0.4.0
         if torch.__version__ == "0.4.0":
             output_upsampled = nn.functional.upsample(
-                output_conv,
-                size=self.input_dim,
-                mode="bilinear",
-                align_corners=True,
+                output_conv, size=self.input_dim, mode="bilinear", align_corners=True
             )
         else:
             # align_corners=False assumed, default behaviour was changed
             # from True to False from pytorch 0.3.1 to 0.4
             output_upsampled = nn.functional.interpolate(
-                output_conv,
-                size=self.input_dim,
-                mode="bilinear",
-                align_corners=True,
+                output_conv, size=self.input_dim, mode="bilinear", align_corners=True
             )
 
         # Sigmoid scoring - project each pixel's value into probability space (0, 1)
