@@ -61,7 +61,9 @@ def CE_MAE_loss(x, y):
     Used by: https://paperswithcode.com/paper/pyramid-dilated-deeper-convlstm-for-video
     to train model for video saliency evaluation
     """
-    return torch.nn.functional.binary_cross_entropy(x, y) + torch.nn.functional.l1_loss(x, y)
+    return torch.nn.functional.binary_cross_entropy(x, y) + torch.nn.functional.l1_loss(
+        x, y
+    )
 
 
 def CE_loss(x, y):
