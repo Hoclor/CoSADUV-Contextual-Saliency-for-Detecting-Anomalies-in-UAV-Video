@@ -128,8 +128,6 @@ class DSCLRCN(nn.Module):
             # Add context to the start and end of the row
             row = row.squeeze(1)
             row = torch.cat((context_h, row, context_h), dim=1)
-            # FIXME: Error here if using PyTorch version >=1.0:
-            # BLSTM returns nan for all values in row but context_h (first and last)
             result, _ = self.blstm_h_1(row)
             result = result[:, 1:-1, :]
             rows.append(result)
@@ -219,9 +217,9 @@ class DSCLRCN(nn.Module):
 
         # Bring output_score back to an output range of [0, 1] by dividing each image by the max value in the image
         for i in range(N):
-            output_norm[i] /= output_score[i].max()
+            output_norm[i] = output_score[i]/output_score[i].max()
 
-        return output_score
+        return output_norm
 
     @property
     def is_cuda(self):
