@@ -205,6 +205,9 @@ def test_model(model, test_set, loss_fn, location="ncc"):
     import cv2
     import torch
 
+    # Set the model to evaluation mode
+    model.eval()
+
     loss = 0
     count = 0
     test_loop = test_set

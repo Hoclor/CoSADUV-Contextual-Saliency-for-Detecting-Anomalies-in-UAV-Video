@@ -99,6 +99,7 @@ class Solver(object):
         num_minibatches=1,
         log_nth=0,
         filename_args={},
+        backprop_frames=1,
     ):
         """
         Train a given model with the provided data.
@@ -111,6 +112,8 @@ class Solver(object):
         - num_minibatches: the number of minibatches per bath
         - log_nth: log training accuracy and loss every nth iteration
         - filename_args: parameters for naming the checkpoint file
+        - backprop_frames: the number of frames to backpropagate through if the model
+          is temporal
         """
         ### Prepare optimiser ###
 
@@ -213,9 +216,9 @@ class Solver(object):
                     # Batch of items in training set
 
                     # If the model is temporal, detach its temporal state
-                    # at the start of each batch (so it doesn't backpropagate beyond
-                    # the last 'batchsize' frames - to reduce memory consumption)
-                    if model.temporal:
+                    # every 'backprop_frames' batches (so it doesn't backpropagate beyond
+                    # the last 'backprop_frames' frames - to reduce memory consumption)
+                    if model.temporal and i % backprop_frames == 0:
                         model.detach_temporal_state()
 
                     # Count the number of minibatches performed since last backprop
@@ -241,7 +244,12 @@ class Solver(object):
                     outputs = outputs.transpose(1, 2)
 
                     loss = self.loss_func(outputs, labels)
-                    loss.backward()
+                    # Keep the backprop graph if model is temporal and we are not about
+                    # to detach its temporal state
+                    if model.temporal and i % backprop_frames != -1:
+                        loss.backward(retain_graph=True)
+                    else:
+                        loss.backward()
                     # Only step and zero the gradients every num_minibatches steps
                     if counter == num_minibatches:
                         counter = 0  # Reset the minibatch counter
@@ -296,11 +304,6 @@ class Solver(object):
                         model.clear_temporal_state()
 
                 for ii, data in inner_val_loop:
-                    # If the model is temporal, detach its temporal state
-                    # at the start of each batch (so it doesn't backpropagate beyond
-                    # the last 'batchsize' frames - to reduce memory consumption)
-                    if model.temporal:
-                        model.detach_temporal_state()
 
                     inputs, labels = data
                     # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
@@ -367,7 +370,7 @@ class Solver(object):
             # Print the average Train loss for the last epoch
             # (avg of the logged losses, as decided by log_nth value)
             tqdm.write(
-                "[Epoch %i/%i] TRAIN NSS Loss: %f"
+                "[Epoch %i/%i] TRAIN {} score: %f".format(self.loss_func.__name__)
                 % (
                     j,
                     num_epochs,
@@ -375,7 +378,7 @@ class Solver(object):
                 )
             )
             tqdm.write(
-                "[Epoch %i/%i] VAL NSS Loss: %f"
+                "[Epoch %i/%i] VAL {} score: %f".format(self.loss_func.__name__)
                 % (j, num_epochs, self.val_loss_history[-1])
             )
             tqdm.write(

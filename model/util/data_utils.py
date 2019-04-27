@@ -146,9 +146,6 @@ class VideoData(data.Dataset):
             # Cap duration at the number of frames of this video
             duration = min(duration, len(self.frame_list))
 
-            # # Slice the frame list at a random (valid) index
-            #start_index = random.randrange(0, len(self.frame_list) - duration + 1)
-            
             # Slice the frame list from 0 to 'duration'
             start_index = 0
             self.frame_list = self.frame_list[start_index : start_index + duration]
@@ -249,7 +246,7 @@ class VideoDataset(data.Dataset):
                 batch_size=batch_size,
                 num_workers=num_workers,
                 pin_memory=pin_memory,
-                drop_last=True
+                drop_last=True,
             )
             for video_name in video_names
         ]

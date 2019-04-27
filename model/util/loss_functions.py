@@ -1,9 +1,10 @@
 import numpy as np
 import torch
 
-def homebrew(x, y):
-    """Get loss as the mean value at non-target regions - the mean value at target regions
-    If no targets, loss = mean value at non-target regions
+
+def DoM(x, y):
+    """Difference of Means: Get loss as the mean value at non-target regions
+    minus the mean value at target regions.
     Loss function range: [-1, 1], assuming output values are all in range [0, 1]"""
     # If dimensionality of x is 2, insert a singleton batch dimension
     if len(x.shape) == 2:
@@ -21,12 +22,14 @@ def homebrew(x, y):
             loss += non_targets.mean()
     return loss / x.shape[0]
 
+
 def NSS_alt(x, y):
     """
         Computes the Normalized Scanpath Saliency loss between x (output of a model)
         and y (label).
         x and y are assumed to be torch tensors, either individual images or batches.
-        If NSS cannot be computed (target is all 0 values), then the std dev of x is returned instead.
+        If NSS cannot be computed (target is all 0 values),
+        the std dev of x is returned instead.
         """
     # If dimensionality of x is 2, insert a singleton batch dimension
     if len(x.shape) == 2:
@@ -46,7 +49,7 @@ def NSS_alt(x, y):
             loss -= scanpath.sum() / y_i.sum()
         else:
             # If target is all 0, return loss as the std dev of x
-            loss += x.std()
+            loss += x_i.std()
     # Return the -ve avg NSS score
     return loss / x.shape[0]
 
@@ -110,7 +113,9 @@ def CE_MAE_loss(x, y):
     Used by: https://paperswithcode.com/paper/pyramid-dilated-deeper-convlstm-for-video
     to train model for video saliency evaluation
     """
-    return torch.nn.functional.binary_cross_entropy(x, y) + torch.nn.functional.l1_loss(x, y)
+    return torch.nn.functional.binary_cross_entropy(x, y) + torch.nn.functional.l1_loss(
+        x, y
+    )
 
 
 def CE_loss(x, y):
