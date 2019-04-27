@@ -1,9 +1,9 @@
 import numpy as np
 import torch
 
-def homebrew(x, y):
-    """Get loss as the mean value at non-target regions - the mean value at target regions
-    If no targets, loss = mean value at non-target regions
+def DoM(x, y):
+    """Difference of Means: Get loss as the mean value at non-target regions
+    minus the mean value at target regions.
     Loss function range: [-1, 1], assuming output values are all in range [0, 1]"""
     # If dimensionality of x is 2, insert a singleton batch dimension
     if len(x.shape) == 2:
