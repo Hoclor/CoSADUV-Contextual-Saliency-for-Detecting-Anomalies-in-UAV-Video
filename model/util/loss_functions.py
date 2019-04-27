@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+
 def DoM(x, y):
     """Difference of Means: Get loss as the mean value at non-target regions
     minus the mean value at target regions.
@@ -21,12 +22,14 @@ def DoM(x, y):
             loss += non_targets.mean()
     return loss / x.shape[0]
 
+
 def NSS_alt(x, y):
     """
         Computes the Normalized Scanpath Saliency loss between x (output of a model)
         and y (label).
         x and y are assumed to be torch tensors, either individual images or batches.
-        If NSS cannot be computed (target is all 0 values), then the std dev of x is returned instead.
+        If NSS cannot be computed (target is all 0 values),
+        the std dev of x is returned instead.
         """
     # If dimensionality of x is 2, insert a singleton batch dimension
     if len(x.shape) == 2:
