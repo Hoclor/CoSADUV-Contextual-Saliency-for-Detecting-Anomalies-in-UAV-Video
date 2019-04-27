@@ -231,7 +231,7 @@ class CoSADUV(nn.Module):
         # conv to this to return to 1 channel. Then apply LSTM to update temporal state
         # Continue with the output of this extra conv
 
-        temporal_lstm_input = output_conv.contiguous().view(N, 1, H * W)
+        temporal_lstm_input = output_conv.clone().contiguous().view(N, 1, H * W)
 
         if not self.stored_temporal_state:
             # Apply Temporal LSTM
