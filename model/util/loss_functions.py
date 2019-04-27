@@ -46,7 +46,7 @@ def NSS_alt(x, y):
             loss -= scanpath.sum() / y_i.sum()
         else:
             # If target is all 0, return loss as the std dev of x
-            loss += x.std()
+            loss += x_i.std()
     # Return the -ve avg NSS score
     return loss / x.shape[0]
 
