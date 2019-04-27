@@ -119,15 +119,13 @@ class DSCLRCN(nn.Module):
         # local_feats_h shape: (N, H, W, C)
         local_feats_h = local_feats.transpose(1, 2).transpose(2, 3).contiguous()
         # Context shape: (N, C)
-        context_h = context_1.contiguous().view(
-            N, self.LSTMs_isz[0]
-        )
+        context_h = context_1.contiguous().view(N, self.LSTMs_isz[0])
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
         rows = []
         for row in local_feats_h.split(1, 1):  # row shape (N, 1, W, C)
-            row = row.squeeze(1) # row shape (N, W, C)
+            row = row.squeeze(1)  # row shape (N, W, C)
             # Add context to the first and last pixel of the row
             row[:, 0, :] += context_h
             row[:, -1, :] += context_h
@@ -139,15 +137,13 @@ class DSCLRCN(nn.Module):
 
         # Vertical BLSTM_1
         # Context shape: (N, C)
-        context_v = context_rest.contiguous().view(
-            N, self.LSTMs_isz[1]
-        )
+        context_v = context_rest.contiguous().view(N, self.LSTMs_isz[1])
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
         cols = []
         for col in output_h.split(1, 2):  # col shape (N, H, 1, C)
-            col = col.squeeze(2) # col shape (N, H, C)
+            col = col.squeeze(2)  # col shape (N, H, C)
             # Add context to the first and last pixel of the col
             col[:, 0, :] += context_v
             col[:, -1, :] += context_v
@@ -159,15 +155,13 @@ class DSCLRCN(nn.Module):
 
         # Horizontal BLSTM_2
         # Context shape: (N, C)
-        context_h_2 = context_rest.contiguous().view(
-            N, self.LSTMs_isz[2]
-        )
+        context_h_2 = context_rest.contiguous().view(N, self.LSTMs_isz[2])
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
         rows = []
         for row in output_hv.split(1, 1):  # row shape (N, 1, W, C)
-            row = row.squeeze(1) # row shape (N, W, C)
+            row = row.squeeze(1)  # row shape (N, W, C)
             # Add context to the first and last pixel of the row
             row[:, 0, :] += context_h_2
             row[:, -1, :] += context_h_2
@@ -179,15 +173,13 @@ class DSCLRCN(nn.Module):
 
         # Vertical BLSTM_2
         # Context shape: (N, C)
-        context_v = context_rest.contiguous().view(
-            N, self.LSTMs_isz[3]
-        )
+        context_v = context_rest.contiguous().view(N, self.LSTMs_isz[3])
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
         cols = []
         for col in output_hvh.split(1, 2):  # col shape (N, H, 1, C)
-            col = col.squeeze(2) # col shape (N, H, C)
+            col = col.squeeze(2)  # col shape (N, H, C)
             # Add context to the first and last pixel of the col
             col[:, 0, :] += context_v
             col[:, -1, :] += context_v
@@ -223,9 +215,10 @@ class DSCLRCN(nn.Module):
 
         output_norm = torch.empty_like(output_score)
 
-        # Bring output_score back to an output range of [0, 1] by dividing each image by the max value in the image
+        # Bring output_score back to an output range of [0, 1] by dividing each image
+        # by the max value in the image
         for i in range(N):
-            output_norm[i] = output_score[i]/output_score[i].max()
+            output_norm[i] = output_score[i] / output_score[i].max()
 
         return output_norm
 
