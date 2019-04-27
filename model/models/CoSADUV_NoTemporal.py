@@ -124,80 +124,80 @@ class CoSADUV_NoTemporal(nn.Module):
         # Horizontal BLSTM_1
         # local_feats_h shape: (N, H, W, C)
         local_feats_h = local_feats.transpose(1, 2).transpose(2, 3).contiguous()
-        # Context shape: (N, 1, C)
+        # Context shape: (N, C)
         scene_context_h = scene_context_first.contiguous().view(
-            N, 1, self.pixel_LSTMs_isz[0]
+            N, self.pixel_LSTMs_isz[0]
         )
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
         rows = []
         for row in local_feats_h.split(1, 1):  # row shape (N, 1, W, C)
-            # Add context to the start and end of the row
-            row = row.squeeze(1)
-            row = torch.cat((scene_context_h, row, scene_context_h), dim=1)
+            row = row.squeeze(1) # row shape (N, W, C)
+            # Add context to the first and last pixel of the row
+            row[:, 0, :] += scene_context_h
+            row[:, -1, :] += scene_context_h
             result, _ = self.pixel_blstm_h_1(row)
-            result = result[:, 1:-1, :]
             rows.append(result)
         # Reconstruct the image by stacking the rows
         output_h = torch.stack(rows, dim=1)  # Shape (N, H, W, C)
         del rows, row, result
 
         # Vertical BLSTM_1
-        # Context shape: (N, 1, C)
+        # Context shape: (N, C)
         scene_context_v = scene_context_rest.contiguous().view(
-            N, 1, self.pixel_LSTMs_isz[1]
+            N, self.pixel_LSTMs_isz[1]
         )
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
         cols = []
         for col in output_h.split(1, 2):  # col shape (N, H, 1, C)
-            # Add context to the start and end of the col
-            col = col.squeeze(2)
-            col = torch.cat((scene_context_v, col, scene_context_v), dim=1)
+            col = col.squeeze(2) # col shape (N, H, C)
+            # Add context to the first and last pixel of the col
+            col[:, 0, :] += scene_context_v
+            col[:, -1, :] += scene_context_v
             result, _ = self.pixel_blstm_v_1(col)
-            result = result[:, 1:-1, :]
             cols.append(result)
         # Reconstruct the image by stacking the columns
         output_hv = torch.stack(cols, dim=2)  # Shape (N, H, W, C)
         del cols, col, result
 
         # Horizontal BLSTM_2
-        # Context shape: (N, 1, C)
+        # Context shape: (N, C)
         scene_context_h_2 = scene_context_rest.contiguous().view(
-            N, 1, self.pixel_LSTMs_isz[2]
+            N, self.pixel_LSTMs_isz[2]
         )
         # Loop over local_feats one row at a time:
         # split(1,1) splits it into individual rows,
         # squeeze removes the row dimension
         rows = []
         for row in output_hv.split(1, 1):  # row shape (N, 1, W, C)
-            # Add context to the start and end of the row
-            row = row.squeeze(1)
-            row = torch.cat((scene_context_h_2, row, scene_context_h_2), dim=1)
+            row = row.squeeze(1) # row shape (N, W, C)
+            # Add context to the first and last pixel of the row
+            row[:, 0, :] += scene_context_h_2
+            row[:, -1, :] += scene_context_h_2
             result, _ = self.pixel_blstm_h_2(row)
-            result = result[:, 1:-1, :]
             rows.append(result)
         # Reconstruct the image by stacking the rows
         output_hvh = torch.stack(rows, dim=1)  # Shape (N, H, W, C)
         del rows, row, result
 
         # Vertical BLSTM_2
-        # Context shape: (N, 1, C)
+        # Context shape: (N, C)
         scene_context_v = scene_context_rest.contiguous().view(
-            N, 1, self.pixel_LSTMs_isz[3]
+            N, self.pixel_LSTMs_isz[3]
         )
         # Loop over local_feats one column at a time:
         # split(1,2) splits it into individual columns,
         # squeeze removes the column dimension
         cols = []
         for col in output_hvh.split(1, 2):  # col shape (N, H, 1, C)
-            # Add context to the start and end of the col
-            col = col.squeeze(2)
-            col = torch.cat((scene_context_v, col, scene_context_v), dim=1)
+            col = col.squeeze(2) # col shape (N, H, C)
+            # Add context to the first and last pixel of the col
+            col[:, 0, :] += scene_context_v
+            col[:, -1, :] += scene_context_v
             result, _ = self.pixel_blstm_v_2(col)
-            result = result[:, 1:-1, :]
             cols.append(result)
         # Reconstruct the image by stacking the columns
         output_hvhv = torch.stack(cols, dim=2)  # Shape (N, H, W, C)
