@@ -34,10 +34,16 @@ class ConvLSTMCell(nn.Module):
         # generate empty prev_state, if None is provided
         if prev_state is None:
             state_size = [batch_size, self.hidden_size] + list(spatial_size)
-            prev_state = (
-                Variable(torch.zeros(state_size)),
-                Variable(torch.zeros(state_size)),
-            )
+            if torch.cuda.is_available():
+                prev_state = (
+                    Variable(torch.zeros(state_size)).cuda(),
+                    Variable(torch.zeros(state_size)).cuda(),
+                )
+            else:
+                prev_state = (
+                    Variable(torch.zeros(state_size)),
+                    Variable(torch.zeros(state_size)),
+                )
 
         prev_hidden, prev_cell = prev_state
 
