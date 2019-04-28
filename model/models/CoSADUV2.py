@@ -93,23 +93,15 @@ class CoSADUV(nn.Module):
                     start, end = n // 4, n // 2
                     bias.data[start:end].fill_(1.0)
 
-        # Last conv to move to one channel
-        self.last_conv = nn.Conv2d(2 * self.pixel_LSTMs_hsz[-1], 1, 1)
-
-        # LSTM applied to the sequence in time domain, one hidden cell per pixel
-        self.temporal_LSTM = nn.LSTM(
-            input_size=input_dim[0] // 8 * input_dim[1] // 8,
-            hidden_size=input_dim[0] // 8 * input_dim[1] // 8,
-            num_layers=1,
-            batch_first=True,
+        # convLSTM applied to the sequence in time domain
+        self.convLSTM = ConvLSTMCell(
+            input_size=2 * self.pixel_LSTMs_hsz[-1], hidden_size=1, kernel_size=3
         )
 
-        # Actual final conv to move to one channel from conv+LSTM channels
-        self.temporal_conv = nn.Conv2d(2, 1, 1)
-
-        # The hidden state of the temporal LSTM
-        self.temporal_LSTM_state = None
-        self.stored_temporal_state = False
+        # The stored hidden state of the convLSTM
+        # None if none is stored, else (hidden, cell)
+        self.convLSTM_state = None
+        self.stored_convLSTM_state = False
 
         # # softmax
         self.score = nn.Sigmoid()
@@ -220,66 +212,52 @@ class CoSADUV(nn.Module):
         output_hvhv = output_hvhv.transpose(1, 3).transpose(2, 3)  # Shape (N, C, H, W)
         del cols, col, result
 
-        # Reduce channel dimension to 1
-        output_conv = self.last_conv(output_hvhv)  # Shape (N, 1, H, W)
+        # Reduce channel dimension to 1 with convLSTM
+
+        # This is essentially an LSTM with convolution kernels instead of scalar gates
+        # All inputs, cell state, hidden state, gates, are 3D tensors with last 2
+        # dimensions being spatial (height, width)
+        self.convLSTM_state = self.convLSTM(output_hvhv, self.convLSTM_state)  # 2-tuple
+
+        # Extract the hidden state from the convLSTM_state as the saliency prediction
+        output_conv = self.convLSTM_state[0]  # Shape (N, 1, H, W)
 
         N, _, H, W, = output_conv.size()
 
-        # If no previous temporal state exists (this is the first frame in a video):
-        # Apply LSTM to produce the temporal state, and continue with output_conv
-        # Otherwise:
-        # Concatenate hidden part of temporal state with output_conv, and apply extra
-        # conv to this to return to 1 channel. Then apply LSTM to update temporal state
-        # Continue with the output of this extra conv
-
-        temporal_lstm_input = output_conv.clone().contiguous().view(N, 1, H * W)
-
-        if not self.stored_temporal_state:
-            # Apply Temporal LSTM
-            _, self.temporal_LSTM_state = self.temporal_LSTM(temporal_lstm_input)
-            self.stored_temporal_state = True
-        else:
-            output_conv = torch.cat(
-                (self.temporal_LSTM_state[0].view(N, 1, H, W), output_conv), dim=1
-            )
-            output_conv = self.temporal_conv(output_conv)
-            # Apply Temporal LSTM
-            _, self.temporal_LSTM_state = self.temporal_LSTM(
-                temporal_lstm_input, self.temporal_LSTM_state
-            )
+        # LSTM uses tanh activation function, which has range (-1, 1). Rescale this into
+        # range (0, 1) to get prediction for saliency as a probability
+        # (tanh is a rescaled sigmoid, so this is essentially same as applying sigmoid)
+        output_score = (output_conv + 1) / 2
 
         # Upsampling - nn.functional.interpolate does not exist in < 0.4.1,
         # but upsample is deprecated in > 0.4.0
         if torch.__version__ == "0.4.0":
             output_upsampled = nn.functional.upsample(
-                output_conv, size=self.input_dim, mode="bilinear", align_corners=True
+                output_score, size=self.input_dim, mode="bilinear", align_corners=True
             )
         else:
             # align_corners=False assumed, default behaviour was changed
             # from True to False from pytorch 0.3.1 to 0.4
             output_upsampled = nn.functional.interpolate(
-                output_conv, size=self.input_dim, mode="bilinear", align_corners=True
+                output_score, size=self.input_dim, mode="bilinear", align_corners=True
             )
 
-        # Sigmoid scoring - project each pixel's value into probability space (0, 1)
-        output_score = self.score(output_upsampled)
-
-        return output_score
+        return output_upsampled
 
     def clear_temporal_state(self):
-        self.temporal_LSTM_state = None
-        self.stored_temporal_state = False
+        self.convLSTM_state = None
+        self.stored_convLSTM_state = False
 
     def detach_temporal_state(self):
         """Wraps hidden states in new Variables, to detach them from their history."""
-        if type(self.temporal_LSTM_state) == type(None):
+        if type(self.convLSTM_state) == type(None):
             pass
         else:
-            self.temporal_LSTM_state[0].detach_()
-            self.temporal_LSTM_state[1].detach_()
-            self.temporal_LSTM_state = (
-                self.temporal_LSTM_state[0].detach(),
-                self.temporal_LSTM_state[1].detach(),
+            self.convLSTM_state[0].detach_()
+            self.convLSTM_state[1].detach_()
+            self.convLSTM_state = (
+                self.convLSTM_state[0].detach(),
+                self.convLSTM_state[1].detach(),
             )
 
     @property
