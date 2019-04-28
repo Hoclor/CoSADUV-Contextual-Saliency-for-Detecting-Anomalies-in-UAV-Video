@@ -136,6 +136,10 @@ class Solver(object):
         iter_per_epoch = int(
             math.ceil(sum([len(loader) for loader in train_loader]) / num_minibatches)
         )  # Count an iter as a full batch, not a minibatch
+        val_iter_per_epoch = int(
+            math.ceil(sum([len(loader) for loader in val_loader]) / num_minibatches)
+        )  # Count an iter as a full batch, not a minibatch
+
 
         tqdm.write("START TRAIN.")
 
@@ -150,7 +154,7 @@ class Solver(object):
         )
         tqdm.write(
             "Approx. val frames per epoch: {}".format(
-                iter_per_epoch * filename_args["batchsize"]
+                val_iter_per_epoch * filename_args["batchsize"]
             )
         )
         tqdm.write("Frames per batch: {}".format(filename_args["batchsize"]))
