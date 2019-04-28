@@ -383,6 +383,14 @@ if __name__ == "__main__":
         required=False,
         default="C:\\Users\\simon\\GitRepositories\\MastersProject\\DSCLRCN-PyTorch\\Dataset\\UAV123\\train",
     )
+    parser.add_argument(
+        "--length",
+        "-len",
+        dest="duration",
+        help="How many frames of each sequence to write (max)",
+        required=True,
+        default="500",
+    )
     parser.add_argument("--verbose", "-v", dest="verbose", action="store_true")
     args = parser.parse_args()
 
@@ -497,7 +505,7 @@ if __name__ == "__main__":
                     sequence,
                     targets[section],
                     img_size,
-                    duration=500,
+                    duration=int(args.duration),
                     display=False,
                 )
     elif args.name == None:
