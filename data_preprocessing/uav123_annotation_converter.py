@@ -19,6 +19,7 @@ def draw_annotations(
     target_folder=None,
     img_size=(640, 480),
     display=False,
+    duration=None,
 ):
     tqdm.write(sequence_name)
     # Get the sequnce folder and annotations folder
@@ -118,6 +119,7 @@ def draw_groundtruth(
     target_folder=None,
     img_size=(640, 480),
     display=False,
+    duration=None,
 ):
     tqdm.write(sequence_name)
     # Get the sequnce folder and annotations folder
@@ -532,6 +534,7 @@ if __name__ == "__main__":
                 target_folder=args.target_folder,
                 img_size=img_size,
                 display=args.verbose,
+            duration=int(args.duration),
             )
     elif len(args.name.strip().split(",")) > 1:
         for seq_name in tqdm(args.name.strip().split(",")):
@@ -541,6 +544,7 @@ if __name__ == "__main__":
                 target_folder=args.target_folder,
                 img_size=img_size,
                 display=args.verbose,
+            duration=int(args.duration),
             )
     else:
         # Draw bounding boxes on the original video, or ground-truth saliency maps,
@@ -551,5 +555,6 @@ if __name__ == "__main__":
             target_folder=args.target_folder,
             img_size=img_size,
             display=args.verbose,
+            duration=int(args.duration),
         )
 
