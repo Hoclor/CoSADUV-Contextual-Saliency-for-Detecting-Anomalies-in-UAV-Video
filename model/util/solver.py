@@ -308,6 +308,9 @@ class Solver(object):
                         model.clear_temporal_state()
 
                 for ii, data in inner_val_loop:
+                    # If model is temporal, deatch the state (precaution)
+                    if model.temporal:
+                       model.clear_temporal_state() 
 
                     inputs, labels = data
                     # Unsqueeze labels so they're shaped as [batch_size, H, W, 1]
