@@ -1,5 +1,7 @@
 """Model for Contextual Saliency for Anomaly Detection in UAV Video (CoSADUV)
 Based on the Deep Spatial Contextual Long-term Recurrent Convolutional Network model
+
+This model with ConvLSTM temporal implementation, Sigmoid activation function
 """
 import numpy as np
 import torch
