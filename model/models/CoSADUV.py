@@ -270,7 +270,7 @@ class CoSADUV(nn.Module):
         self.stored_temporal_state = False
 
     def detach_temporal_state(self):
-        """Wraps hidden states in new Variables, to detach them from their history."""
+        """Detaches hidden and cell state from their history."""
         if type(self.temporal_LSTM_state) == type(None):
             pass
         else:

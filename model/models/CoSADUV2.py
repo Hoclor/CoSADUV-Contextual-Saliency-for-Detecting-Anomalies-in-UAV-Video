@@ -249,7 +249,7 @@ class CoSADUV(nn.Module):
         self.stored_convLSTM_state = False
 
     def detach_temporal_state(self):
-        """Wraps hidden states in new Variables, to detach them from their history."""
+        """Detaches hidden and cell state from their history."""
         if type(self.convLSTM_state) == type(None):
             pass
         else:
