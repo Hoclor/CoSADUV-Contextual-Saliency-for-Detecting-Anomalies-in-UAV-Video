@@ -10,22 +10,20 @@ import torch.nn.functional as f
 from torch.autograd import Variable
 
 
-# Define some constants
-KERNEL_SIZE = 3
-PADDING = KERNEL_SIZE // 2
-
-
 class ConvLSTMCell(nn.Module):
     """
     Generate a convolutional LSTM cell
     """
 
-    def __init__(self, input_size, hidden_size):
+    def __init__(self, input_size, hidden_size, kernel_size=3):
         super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.Gates = nn.Conv2d(
-            input_size + hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING
+            input_size + hidden_size,
+            4 * hidden_size,
+            kernel_size,
+            padding=kernel_size // 2,
         )
 
     def forward(self, input_, prev_state):
