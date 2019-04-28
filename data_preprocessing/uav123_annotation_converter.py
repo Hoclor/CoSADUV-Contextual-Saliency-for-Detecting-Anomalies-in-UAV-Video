@@ -471,9 +471,9 @@ if __name__ == "__main__":
             elif i % 4 == 2:
                 sequences.append((seq, "test"))
         targets = {
-            "train": "C:\\Users\\simon\\GitRepositories\\MastersProject\\DSCLRCN-PyTorch\\Dataset\\UAV123\\train",
-            "val": "C:\\Users\\simon\\GitRepositories\\MastersProject\\DSCLRCN-PyTorch\\Dataset\\UAV123\\val",
-            "test": "C:\\Users\\simon\\GitRepositories\\MastersProject\\DSCLRCN-PyTorch\\Dataset\\UAV123\\test",
+            "train": "C:\\Users\\simon\\GitRepositories\\MastersProject\\model\\Dataset\\UAV123\\train",
+            "val": "C:\\Users\\simon\\GitRepositories\\MastersProject\\model\\Dataset\\UAV123\\val",
+            "test": "C:\\Users\\simon\\GitRepositories\\MastersProject\\model\\Dataset\\UAV123\\test",
         }
         # Loop over all sequences
         for sequence in tqdm(sequences):
