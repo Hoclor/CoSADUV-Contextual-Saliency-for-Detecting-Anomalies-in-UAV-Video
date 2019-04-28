@@ -6,7 +6,6 @@ Original author: Alfredo Canziani
 
 import torch
 from torch import nn
-import torch.nn.functional as f
 from torch.autograd import Variable
 
 
