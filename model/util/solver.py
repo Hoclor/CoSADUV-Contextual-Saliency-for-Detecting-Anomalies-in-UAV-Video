@@ -351,6 +351,7 @@ class Solver(object):
                         filename_args["epoch_number"],
                     )
                 self.best_val_loss = val_loss
+                model.cpu()
                 torch.save(
                     {
                         "epoch": j + 1,
@@ -359,6 +360,8 @@ class Solver(object):
                     },
                     filename,
                 )
+                if torch.cuda.is_available():
+                    model.cuda()
                 tqdm.write("Checkpoint created with loss: {:6f}".format(val_loss))
 
             # Free up memory
