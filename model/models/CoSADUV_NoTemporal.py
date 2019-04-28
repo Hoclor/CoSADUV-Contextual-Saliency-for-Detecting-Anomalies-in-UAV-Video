@@ -122,7 +122,7 @@ class CoSADUV_NoTemporal(nn.Module):
 
         # Horizontal BLSTM_1
         # local_feats_h shape: (N, H, W, C)
-        local_feats_h = local_feats.transpose(1, 2).transpose(2, 3).contiguous()
+        local_feats_h = local_feats.permute(0, 2, 3, 1).contiguous()
         # Context shape: (N, C)
         scene_context_h = scene_context_first.contiguous().view(
             N, self.pixel_LSTMs_isz[0]
@@ -200,7 +200,7 @@ class CoSADUV_NoTemporal(nn.Module):
             cols.append(result)
         # Reconstruct the image by stacking the columns
         output_hvhv = torch.stack(cols, dim=2)  # Shape (N, H, W, C)
-        output_hvhv = output_hvhv.transpose(1, 3).transpose(2, 3)  # Shape (N, C, H, W)
+        output_hvhv = output_hvhv.permute(0, 3, 1, 2)  # Shape (N, C, H, W)
         del cols, col, result
 
         # Reduce channel dimension to 1

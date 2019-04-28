@@ -242,10 +242,9 @@ class Solver(object):
 
                     # train the model (forward propagation) on the inputs
                     outputs = model(inputs)
-                    # transpose the outputs so it's in the order [N, H, W, C]
+                    # permute the outputs so it's in the order [N, H, W, C]
                     # instead of [N, C, H, W]
-                    outputs = outputs.transpose(1, 3)
-                    outputs = outputs.transpose(1, 2)
+                    outputs = outputs.permute(0, 2, 3, 1)
 
                     loss = self.loss_func(outputs, labels)
                     # Keep the backprop graph if model is temporal and we are not about
@@ -322,10 +321,9 @@ class Solver(object):
                     labels_val = Variable(labels)
 
                     outputs_val = model(inputs_val)
-                    # transpose the outputs so it's in the order [N, H, W, C]
+                    # permute the outputs so it's in the order [N, H, W, C]
                     # instead of [N, C, H, W]
-                    outputs_val = outputs_val.transpose(1, 3)
-                    outputs_val = outputs_val.transpose(1, 2)
+                    outputs_val = outputs_val.permute(0, 2, 3, 1)
 
                     val_loss += self.loss_func(outputs_val, labels_val).item()
 
