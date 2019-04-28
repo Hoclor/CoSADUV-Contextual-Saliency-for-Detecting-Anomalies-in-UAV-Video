@@ -213,11 +213,12 @@ def draw_groundtruth(
     cv2.destroyAllWindows()
 
 
-def prepare_for_nvvl(
+def prepare_for_videoloader(
     dataset_folder,
     sequence_name,
     target_folder=None,
     img_size=(640, 480),
+    duration=500,
     display=False,
 ):
     """ Writes frames of the original sequence into target_folder/sequence_name/frames,
@@ -265,6 +266,11 @@ def prepare_for_nvvl(
         return ret
 
     annotations = list(map(process_line, annotations))
+
+    # Only process the first 'duration' frames, or max len of video if less
+    duration = min(duration, len(annotations))
+    annotations = annotations[:duration]
+    frames = frames[:duration]
 
     width, height = img_size
 
@@ -377,6 +383,14 @@ if __name__ == "__main__":
         required=False,
         default="C:\\Users\\simon\\GitRepositories\\MastersProject\\DSCLRCN-PyTorch\\Dataset\\UAV123\\train",
     )
+    parser.add_argument(
+        "--length",
+        "-len",
+        dest="duration",
+        help="How many frames of each sequence to write (max)",
+        required=True,
+        default="500",
+    )
     parser.add_argument("--verbose", "-v", dest="verbose", action="store_true")
     args = parser.parse_args()
 
@@ -385,7 +399,7 @@ if __name__ == "__main__":
     elif args.drawing_function == "groundtruth":
         drawing_function = draw_groundtruth
     elif args.drawing_function == "nvvl":
-        drawing_function = prepare_for_nvvl
+        drawing_function = prepare_for_videoloader
     elif args.default == False:
         print(
             "Error: either --function/-f must be given, or --default must be specified. See -h for more info."
@@ -486,7 +500,14 @@ if __name__ == "__main__":
         # Loop over all sequences
         for section in tqdm(["train", "val", "test"]):
             for sequence in tqdm(sequences[section]):
-                prepare_for_nvvl(dataset, sequence, targets[section], img_size, False)
+                prepare_for_videoloader(
+                    dataset,
+                    sequence,
+                    targets[section],
+                    img_size,
+                    duration=int(args.duration),
+                    display=False,
+                )
     elif args.name == None:
         # Read all files in the folder and call the appropriate function on each
         # video/annotation pair found.
