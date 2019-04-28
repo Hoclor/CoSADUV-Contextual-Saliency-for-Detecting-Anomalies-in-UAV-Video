@@ -341,7 +341,7 @@ if __name__ == "__main__":
         "--function",
         "-f",
         dest="drawing_function",
-        help="Function to use: 'bounding_boxes', 'groundtruth', or 'nvvl'",
+        help="Function to use: 'bounding_boxes', 'groundtruth', or 'videoloader'",
         required=False,
     )
     parser.add_argument(
@@ -398,7 +398,7 @@ if __name__ == "__main__":
         drawing_function = draw_annotations
     elif args.drawing_function == "groundtruth":
         drawing_function = draw_groundtruth
-    elif args.drawing_function == "nvvl":
+    elif args.drawing_function == "videoloader":
         drawing_function = prepare_for_videoloader
     elif args.default == False:
         print(
