@@ -275,6 +275,10 @@ def prepare_for_nvvl(
         # Copy a new blank frame
         target_frame = np.copy(blank_frame)
 
+        # Check if we have processed the entire video sequence - if so, stop
+        if frame_count >= len(frames):
+            break
+
         # Get the corresponding frame name
         frame_name = frames[frame_count]
 
