@@ -1,7 +1,6 @@
 """Model for Contextual Saliency for Anomaly Detection in UAV Video (CoSADUV)
 Based on the Deep Spatial Contextual Long-term Recurrent Convolutional Network model.
 This version is without the temporal module (treats frames as independent images)"""
-import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
@@ -133,7 +132,7 @@ class CoSADUV_NoTemporal(nn.Module):
         # squeeze removes the row dimension
         rows = []
         for row in local_feats_h.split(1, 1):  # row shape (N, 1, W, C)
-            row = row.squeeze(1) # row shape (N, W, C)
+            row = row.squeeze(1)  # row shape (N, W, C)
             # Add context to the first and last pixel of the row
             row[:, 0, :] += scene_context_h
             row[:, -1, :] += scene_context_h
@@ -153,7 +152,7 @@ class CoSADUV_NoTemporal(nn.Module):
         # squeeze removes the column dimension
         cols = []
         for col in output_h.split(1, 2):  # col shape (N, H, 1, C)
-            col = col.squeeze(2) # col shape (N, H, C)
+            col = col.squeeze(2)  # col shape (N, H, C)
             # Add context to the first and last pixel of the col
             col[:, 0, :] += scene_context_v
             col[:, -1, :] += scene_context_v
@@ -173,7 +172,7 @@ class CoSADUV_NoTemporal(nn.Module):
         # squeeze removes the row dimension
         rows = []
         for row in output_hv.split(1, 1):  # row shape (N, 1, W, C)
-            row = row.squeeze(1) # row shape (N, W, C)
+            row = row.squeeze(1)  # row shape (N, W, C)
             # Add context to the first and last pixel of the row
             row[:, 0, :] += scene_context_h_2
             row[:, -1, :] += scene_context_h_2
@@ -193,7 +192,7 @@ class CoSADUV_NoTemporal(nn.Module):
         # squeeze removes the column dimension
         cols = []
         for col in output_hvh.split(1, 2):  # col shape (N, H, 1, C)
-            col = col.squeeze(2) # col shape (N, H, C)
+            col = col.squeeze(2)  # col shape (N, H, C)
             # Add context to the first and last pixel of the col
             col[:, 0, :] += scene_context_v
             col[:, -1, :] += scene_context_v
