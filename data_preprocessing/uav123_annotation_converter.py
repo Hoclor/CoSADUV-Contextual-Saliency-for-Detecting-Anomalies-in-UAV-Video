@@ -393,93 +393,97 @@ if __name__ == "__main__":
 
     if args.default == True:
         dataset = "C:\\Users\\simon\\Downloads\\Project Datasets\\UAV123\\UAV123"
-        img_size = (640, 480)
-        all_sequences = [
-            "bike1",
-            "bike2",
-            "bike3",
-            "boat1",
-            "boat2",
-            "boat3",
-            "boat4",
-            "boat5",
-            "boat6",
-            "boat7",
-            "boat8",
-            "boat9",
-            "building1",
-            "building2",
-            "building3",
-            "building4",
-            "building5",
-            "car10",
-            "car11",
-            "car12",
-            "car13",
-            "car14",
-            "car15",
-            "car17",
-            "car18",
-            "car2",
-            "car3",
-            "car4",
-            "car5",
-            "car7",
-            "car9",
-            "person1",
-            "person10",
-            "person11",
-            "person13",
-            "person15",
-            "person16",
-            "person18",
-            "person20",
-            "person21",
-            "person22",
-            "person23",
-            "person3",
-            "person6",
-            "person9",
-            "truck1",
-            "truck2",
-            "truck3",
-            "uav2",
-            "uav3",
-            "uav4",
-            "uav5",
-            "uav6",
-            "uav7",
-            "uav8",
-            "wakeboard1",
-            "wakeboard10",
-            "wakeboard2",
-            "wakeboard3",
-            "wakeboard4",
-            "wakeboard5",
-            "wakeboard6",
-            "wakeboard7",
-            "wakeboard8",
-            "wakeboard9",
-        ]
-        sequences = []  # List of sequences as 2-tuples: (sequence_name, section)
-        # Split the sequences 50% train, 25% val, 25% test
-        for i, seq in enumerate(all_sequences):
-            if i % 4 == 0 or i % 4 == 3:
-                sequences.append((seq, "train"))
-            elif i % 4 == 1:
-                sequences.append((seq, "val"))
-            elif i % 4 == 2:
-                sequences.append((seq, "test"))
+        img_size = (640, 480)  # Original size (1280x720)
+        # Omit Building sequences, UAV sequences, and simulated sequences
+        # List of sequences split into train, val, test sets
+        sequences = {
+            "train": [
+                "bike1",
+                "bird1",
+                "boat1",
+                "boat4",
+                "boat7",
+                "boat8",
+                "boat9",
+                "car1",
+                "car4",
+                "car7",
+                "car10",
+                "car12",
+                "car13",
+                "car16",
+                "car17",
+                "car18",
+                "group1",
+                "person1",
+                "person2",
+                "person3",
+                "person4",
+                "person5",
+                "person6",
+                "person13",
+                "person14",
+                "person15",
+                "person16",
+                "person17",
+                "truck1",
+                "truck2",
+                "wakeboard1",
+                "wakeboard2",
+                "wakeboard3",
+                "wakeboard4",
+                "wakeboard5",
+            ],
+            "val": [
+                "bike2",
+                "boat2",
+                "boat5",
+                "car11",
+                "car14",
+                "car2",
+                "car5",
+                "car8",
+                "group2",
+                "person7",
+                "person8",
+                "person9",
+                "person10",
+                "person11",
+                "person12",
+                "truck3",
+                "wakeboard6",
+                "wakeboard7",
+            ],
+            "test": [
+                "bike3",
+                "boat3",
+                "boat6",
+                "car15",
+                "car3",
+                "car6",
+                "car9",
+                "group3",
+                "person18",
+                "person19",
+                "person20",
+                "person21",
+                "person22",
+                "person23",
+                "truck4",
+                "wakeboard8",
+                "wakeboard9",
+                "wakeboard10",
+            ],
+        }
         targets = {
             "train": "C:\\Users\\simon\\GitRepositories\\MastersProject\\model\\Dataset\\UAV123\\train",
             "val": "C:\\Users\\simon\\GitRepositories\\MastersProject\\model\\Dataset\\UAV123\\val",
             "test": "C:\\Users\\simon\\GitRepositories\\MastersProject\\model\\Dataset\\UAV123\\test",
         }
         # Loop over all sequences
-        for sequence in tqdm(sequences):
-            prepare_for_nvvl(
-                dataset, sequence[0], targets[sequence[1]], img_size, False
-            )
+        for section in tqdm(["train", "val", "test"]):
+            for sequence in tqdm(sequences[section]):
+                prepare_for_nvvl(dataset, sequence, targets[section], img_size, False)
     elif args.name == None:
         # Read all files in the folder and call the appropriate function on each
         # video/annotation pair found.
