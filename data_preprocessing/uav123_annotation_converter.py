@@ -277,7 +277,7 @@ def prepare_for_nvvl(
 
         # Check if we have processed the entire video sequence - if so, stop
         if frame_count >= len(frames):
-            break
+            continue
 
         # Get the corresponding frame name
         frame_name = frames[frame_count]
