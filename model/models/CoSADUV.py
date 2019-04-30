@@ -243,6 +243,10 @@ class CoSADUV(nn.Module):
             output_upsampled = nn.functional.interpolate(
                 output_score, size=self.input_dim, mode="bilinear", align_corners=True
             )
+        
+        # If model is set to eval, detach the temporal state after each application
+        if not self.training:
+            self.detach_temporal_state()
 
         return output_upsampled
 
