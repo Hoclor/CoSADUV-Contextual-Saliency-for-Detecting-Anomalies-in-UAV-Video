@@ -103,7 +103,6 @@ class CoSADUV(nn.Module):
         # The stored hidden state of the convLSTM
         # None if none is stored, else (hidden, cell)
         self.convLSTM_state = None
-        self.stored_convLSTM_state = False
 
         # # softmax
         self.score = nn.Sigmoid()
@@ -248,7 +247,6 @@ class CoSADUV(nn.Module):
 
     def clear_temporal_state(self):
         self.convLSTM_state = None
-        self.stored_convLSTM_state = False
 
     def detach_temporal_state(self):
         """Detaches hidden and cell state from their history."""
