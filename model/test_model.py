@@ -121,7 +121,7 @@ def load_model_from_checkpoint(model_name):
     elif "CoSADUV" in model_name:
         model = CoSADUV(input_dim=img_size, local_feats_net="Seg")
     else:
-        print("Error: no model name found in filename: {}".format(model_name))
+        tqdm.write("Error: no model name found in filename: {}".format(model_name))
         return
     # Ignore extra parameters ('.num_batches_tracked'
     # that are added on NCC due to different pytorch version)
@@ -129,7 +129,7 @@ def load_model_from_checkpoint(model_name):
         checkpoint["state_dict"], strict=False
     )
 
-    print(
+    tqdm.write(
         "=> loaded model checkpoint '{}' (trained for {} epochs)\n   with architecture {}".format(
             model_name, checkpoint["epoch"], type(model).__name__
         )
@@ -137,7 +137,7 @@ def load_model_from_checkpoint(model_name):
 
     if torch.cuda.is_available():
         model = model.cuda()
-        print("   loaded to cuda")
+        tqdm.write("   loaded to cuda")
     model.eval()
     return model
 
@@ -159,25 +159,26 @@ model_names = []
 # DSCLRCN models
 ## Trained on SALICON
 ### NSS_loss
-# model_names.append("DSCLRCN/SALICON/NSS -1.62NSS val best and last/best_model_DSCLRCN_NSS_loss_batch20_epoch5")
+model_names.append("DSCLRCN/SALICON/NSS -1.62NSS val best and last/best_model_DSCLRCN_NSS_loss_batch20_epoch5")
 ## Trained on UAV123
 ### NSS_alt loss func
-# model_names.append("DSCLRCN/UAV123/NSS_alt 1.38last 3.15best testing/best_model_DSCLRCN_NSS_alt_batch20_epoch5")
+model_names.append("DSCLRCN/UAV123/NSS_alt 1.38last 3.15best testing/best_model_DSCLRCN_NSS_alt_batch20_epoch5")
 
 
 # CoSADUV_NoTemporal models
 ## Trained on UAV123
 ### DoM loss func
-# NEED TO COLLECT
+model_names.append("CoSADUV_NoTemporal/UAV123 DoM - -0.55DoM val/best_model_CoSADUV_NoTemporal_DoM_batch20_epoch5")
 ### NSS_alt loss func
-# RUNNING ON COMP #4 E216
+model_names.append("CoSADUV_NoTemporal/UAV123 NSS_alt Adam lr 1e-4 - -1.36/best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5")
 ### CE_MAE loss func
-# model_names.append("CoSADUV_NoTemporal/best_model_CoSADUV_NoTemporal_CE_MAE_loss_batch20_epoch10")
+model_names.append("CoSADUV_NoTemporal/best_model_CoSADUV_NoTemporal_CE_MAE_loss_batch20_epoch10")
 
 
 # CoSADUV models (CoSADUV2)
 ## Trained on UAV123
 ### DoM loss func
+# RUNNING ON NCC
 ### NSS_alt loss func
 model_names.append("CoSADUV/Adam lr 1e-3 1frame backprop size1 kernel -2train -0.7val 1epoch/best_model_CoSADUV_NSS_alt_batch20_epoch5")
 ### CE_MAE loss func
@@ -186,11 +187,12 @@ max_name_len = max([len(name) for name in model_names])
 # Load the models specified above
 iterable = model_names
 
-for i, name in enumerate(iterable):
-    if "best_model" in name:
-        models.append(load_model_from_checkpoint(name))
-    else:
-        models.append(load_model(name))
+#for i, name in enumerate(iterable):
+#    if "best_model" in name:
+#        models.append(load_model_from_checkpoint(name))
+#    else:
+#        models.append(load_model(name))
+
 
 print()
 print("Loaded all specified models")
@@ -257,17 +259,21 @@ def test_model(model, data_loader, loss_fn=loss_functions.MAE_loss):
     return loss_sum, loss_count, loss_sum_2, loss_count_2
 
 # Obtaining NSS Loss values on the test set for different models:
-for i, model in enumerate(tqdm(models)):
+for i, model_name in enumerate(tqdm(model_names)):
+    tqdm.write("model name: {}".format(model_name))
+    if "best_model" in model_name:
+        model = load_model_from_checkpoint(model_name)
+    else:
+        model = load_model(model_name)
+    test_losses = []
     for loss_fn in tqdm([loss_functions.NSS_alt, loss_functions.CE_MAE_loss, loss_functions.CE_loss, loss_functions.MAE_loss, loss_functions.DoM]):
-        test_losses = []
         test_losses.append([loss_fn, test_model(model, val_loader, loss_fn=loss_fn)])
 
     # Print out the result
     # Data is stored as [loss_fn, [sum1, count1, sum2, count2]],
     # where sum2 and count2 are only used for NSS_alt
     
-    print("[{}] Model: ".format(i, model_names[i]))
-    print("{} score on test set:".format(loss_fn.__name__))
+    tqdm.write("[{}] Model: ".format(i, model_names[i]))
 
     for i, data in enumerate(test_losses):
         sum1, count1, sum2, count2 = data[1]
@@ -288,3 +294,4 @@ for i, model in enumerate(tqdm(models)):
                     data[0].__name__, sum1 / count1
                 )
             )
+    del model
