@@ -94,7 +94,8 @@ def main():
                 pin_memory=True,
             )
         ]
-    elif "UAV123" in dataset_root_dir:
+    else:
+        # Assume dataset is in VideoDataset structure
         train_loader, val_loader, test_loader, mean_image = get_video_datasets(
             dataset_root_dir,
             mean_image_name,
