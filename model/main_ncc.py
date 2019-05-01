@@ -200,7 +200,7 @@ def main():
 
 
 def test_model(model, test_set, loss_fn, location="ncc"):
-    import tqdm as tqdm
+    from tqdm import tqdm
     import numpy as np
     import cv2
     import torch
