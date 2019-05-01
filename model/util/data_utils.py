@@ -166,7 +166,7 @@ class VideoData(data.Dataset):
 
         # Load the target
         target = imread(
-            os.path.join(self.video_folder, "targets", self.frame_list[index])
+            os.path.join(self.video_folder, "targets", self.frame_list[index]), "L"
         )
         target = imresize(target, self.img_size)
 
