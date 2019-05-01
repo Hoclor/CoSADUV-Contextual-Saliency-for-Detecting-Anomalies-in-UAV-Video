@@ -11,6 +11,8 @@ from tqdm import tqdm
 import cv2
 print("CUDA available: {}".format(torch.cuda.is_available()))
 
+location = "ncc"
+
 # Import model architectures
 from models.DSCLRCN_OldContext import DSCLRCN
 from models.CoSADUV import CoSADUV
@@ -159,10 +161,10 @@ model_names = []
 # DSCLRCN models
 ## Trained on SALICON
 ### NSS_loss
-model_names.append("DSCLRCN/SALICON NSS -1.62NSS val best and last/best_model_DSCLRCN_NSS_loss_batch20_epoch5")
+# model_names.append("DSCLRCN/SALICON NSS -1.62NSS val best and last/best_model_DSCLRCN_NSS_loss_batch20_epoch5")
 ## Trained on UAV123
 ### NSS_alt loss func
-model_names.append("DSCLRCN/UAV123 NSS_alt 1.38last 3.15best testing/best_model_DSCLRCN_NSS_alt_batch20_epoch5")
+# model_names.append("DSCLRCN/UAV123 NSS_alt 1.38last 3.15best testing/best_model_DSCLRCN_NSS_alt_batch20_epoch5")
 
 
 # CoSADUV_NoTemporal models
@@ -170,9 +172,9 @@ model_names.append("DSCLRCN/UAV123 NSS_alt 1.38last 3.15best testing/best_model_
 ### DoM loss func
 model_names.append("CoSADUV_NoTemporal/DoM SGD 0.01lr - 3.16 NSS_alt/best_model_CoSADUV_NoTemporal_DoM_batch20_epoch6")
 ### NSS_alt loss func
-model_names.append("CoSADUV_NoTemporal/NSS_alt Adam lr 1e-4 - 1.36/best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5")
+# model_names.append("CoSADUV_NoTemporal/NSS_alt Adam lr 1e-4 - 1.36/best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5")
 ### CE_MAE loss func
-model_names.append("CoSADUV_NoTemporal/best_model_CoSADUV_NoTemporal_CE_MAE_loss_batch20_epoch10")
+# model_names.append("CoSADUV_NoTemporal/best_model_CoSADUV_NoTemporal_CE_MAE_loss_batch20_epoch10")
 
 
 # CoSADUV models (CoSADUV2)
@@ -180,7 +182,7 @@ model_names.append("CoSADUV_NoTemporal/best_model_CoSADUV_NoTemporal_CE_MAE_loss
 ### NSS_alt loss func
 #### 1 Frame backpropagation
 #### Kernel size 1
-model_names.append("CoSADUV/NSS_alt Adam 0.001lr 1frame backprop size1 kernel -2train -0.7val 1epoch/best_model_CoSADUV_NSS_alt_batch20_epoch5")
+# model_names.append("CoSADUV/NSS_alt Adam 0.001lr 1frame backprop size1 kernel -2train -0.7val 1epoch/best_model_CoSADUV_NSS_alt_batch20_epoch5")
 #### Kernel size 3
 model_names.append("CoSADUV/NSS_alt Adam 0.01lr 1frame backprop size3 kernel/best_model_CoSADUV_NSS_alt_batch20_epoch5")
 #### 2 Frame backpropagation
@@ -219,11 +221,21 @@ def test_model(model, data_loader, loss_fns=[loss_functions.MAE_loss]):
         else:
             loss_sums.append([0, 0])
             loss_counts.append([0, 0])
-    for video_loader in tqdm(data_loader):
+    
+    loop1 = data_loader
+    if location != "ncc":
+        loop1 = tqdm(loop1)
+
+    for video_loader in loop1:
         # Reset temporal state if model is temporal
         if model.temporal:
             model.clear_temporal_state()
-        for data in tqdm(video_loader):
+        
+        loop2 = video_loader
+        if location != "ncc":
+            loop2 = tqdm(loop2)
+
+        for data in loop2:
             inputs, labels = data
             if torch.cuda.is_available():
                 inputs = inputs.cuda()
@@ -273,7 +285,11 @@ def test_model(model, data_loader, loss_fns=[loss_functions.MAE_loss]):
     return loss_sums, loss_counts
 
 # Obtaining loss values on the test set for different models:
-for i, model_name in enumerate(tqdm(model_names)):
+loop3 = model_names
+if location != "ncc":
+    loop3 = tqdm(loop3)
+
+for i, model_name in enumerate(loop3):
     tqdm.write("model name: {}".format(model_name))
     if "best_model" in model_name:
         model = load_model_from_checkpoint(model_name)
