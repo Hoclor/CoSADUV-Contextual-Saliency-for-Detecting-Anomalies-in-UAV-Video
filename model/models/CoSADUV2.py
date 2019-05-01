@@ -222,7 +222,7 @@ class CoSADUV(nn.Module):
         self.convLSTM_state = self.convLSTM(output_hvhv, self.convLSTM_state)  # 2-tuple
 
         # Extract the hidden state from the convLSTM_state as the saliency prediction
-        output_conv = self.convLSTM_state[0]  # Shape (N, 1, H, W)
+        output_conv = self.convLSTM_state[0].clone()  # Shape (N, 1, H, W)
 
         N, _, H, W, = output_conv.size()
 
