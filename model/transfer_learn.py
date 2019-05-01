@@ -25,7 +25,7 @@ def main():
     # Height, width of images
     img_size = (480, 640)  # Original: 480, 640, reimplementation: 96, 128
     # Duration: Length of sequences loaded from each video, if a video dataset is used
-    duration = 300
+    duration = 500
 
     ### Training options ###
 
@@ -35,7 +35,7 @@ def main():
     minibatchsize = 2  # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem.
     epoch_number = 5  # Recommended: 10 (epoch_number =~ batchsize/2)
     optim_str = "SGD"  # 'SGD' or 'Adam' Recommended: Adam
-    optim_args = {"lr": 1e-3}  # 1e-2 if SGD, 1e-4 if Adam
+    optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-4 if Adam
     # Loss functions:
     # From loss_functions (use loss_functions.LOSS_FUNCTION_NAME)
     # NSS_loss
@@ -113,8 +113,8 @@ def main():
 
     # Load the model state dict
     # Load the checkpoint
-    # filename = "CoSADUV_NoTemporal/DoM SGD 0.01lr - 3.16 NSS_alt/best_model_CoSADUV_NoTemporal_DoM_batch20_epoch6.pth"
-    filename = "CoSADUV_NoTemporal/NSS_alt Adam lr 1e-4 - 1.36/best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5"
+    filename = "trained_models/CoSADUV_NoTemporal/DoM SGD 0.01lr - 3.16 NSS_alt/best_model_CoSADUV_NoTemporal_DoM_batch20_epoch6.pth"
+    # filename = "trained_models/CoSADUV_NoTemporal/NSS_alt Adam lr 1e-4 - 1.36/best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5.pth"
     if torch.cuda.is_available():
         checkpoint = torch.load(filename)
     else:
