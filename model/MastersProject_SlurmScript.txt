@@ -7,7 +7,7 @@
 
 # GPU selection, job type, QOS
 #SBATCH --gres=gpu:1
-## SBATCH --nodelist=gpu3
+#SBATCH --nodelist=gpu4
 #SBATCH -p "ug-gpu-small"
 #SBATCH --qos="short"
 # Time limit
