@@ -38,15 +38,6 @@ from util.solver import Solver
 # Minibatchsize: Determines how many images are processed at a time on the GPU
 minibatchsize = 1  # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem.
 
-# Loss functions:
-# From loss_functions (use loss_functions.LOSS_FUNCTION_NAME)
-# NSS_loss
-# CE_MAE_loss
-# PCC_loss
-# KLDiv_loss
-loss_func = loss_functions.NSS_alt  # Recommended: NSS_loss
-test_loss_func = loss_functions.CE_MAE_loss
-
 ########## PREPARE DATASETS ##########
 
 ### Prepare datasets and loaders ###
