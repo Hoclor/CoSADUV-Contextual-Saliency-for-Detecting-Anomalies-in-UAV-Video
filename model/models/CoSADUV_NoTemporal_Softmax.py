@@ -95,8 +95,9 @@ class CoSADUV_NoTemporal(nn.Module):
         # Last conv to move to one channel
         self.last_conv = nn.Conv2d(2 * self.pixel_LSTMs_hsz[-1], 1, 1)
 
-        # # softmax
+        # softmax
         self.score = nn.Softmax(dim=2)
+
 
     def forward(self, x):
         """
