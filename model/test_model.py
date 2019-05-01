@@ -184,20 +184,6 @@ model_names.append("CoSADUV/NSS_alt Adam 0.01lr 2frame backprop size3 kernel - 6
 ### CE_MAE loss func
 # Only very poor results achieved
 
-max_name_len = max([len(name) for name in model_names])
-# Load the models specified above
-iterable = model_names
-
-#for i, name in enumerate(iterable):
-#    if "best_model" in name:
-#        models.append(load_model_from_checkpoint(name))
-#    else:
-#        models.append(load_model(name))
-
-
-print()
-print("Loaded all specified models")
-
 ########## TEST THE MODEL ##########
 
 # Define a function for testing a model
@@ -212,21 +198,21 @@ def test_model(model, data_loader, loss_fns=[loss_functions.MAE_loss]):
         else:
             loss_sums.append([0, 0])
             loss_counts.append([0, 0])
-    
+
     loop1 = data_loader
     if location != "ncc":
         loop1 = tqdm(loop1)
 
-    for video_loader in loop1:
+    for i, video_loader in enumerate(loop1):
         # Reset temporal state if model is temporal
         if model.temporal:
             model.clear_temporal_state()
-        
+
         loop2 = video_loader
         if location != "ncc":
             loop2 = tqdm(loop2)
 
-        for data in loop2:
+        for j, data in enumerate(loop2):
             inputs, labels = data
             if torch.cuda.is_available():
                 inputs = inputs.cuda()
