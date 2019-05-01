@@ -201,11 +201,16 @@ print("Loaded all specified models")
 
 # Define a function for testing a model
 # Output is resized to the size of the data_source
-def test_model(model, data_loader, loss_fn=loss_functions.MAE_loss):
-    loss_sum = 0
-    loss_sum_2 = 0 # Only used for NSS_alt
-    loss_count = 0
-    loss_count_2 = 0 # Only used for NSS_alt
+def test_model(model, data_loader, loss_fns=[loss_functions.MAE_loss]):
+    loss_sums = []
+    loss_counts = []
+    for i, loss_fn in enumerate(loss_fns):
+        if loss_fn != loss_functions.NSS_alt:
+            loss_sums.append(0)
+            loss_counts.append(0)
+        else:
+            loss_sums.append([0, 0])
+            loss_counts.append([0, 0])
     for video_loader in tqdm(data_loader):
         # Reset temporal state if model is temporal
         if model.temporal:
@@ -242,21 +247,22 @@ def test_model(model, data_loader, loss_fn=loss_functions.MAE_loss):
             if torch.cuda.is_available():
                 outputs = outputs.cuda()
                 labels = labels.cuda()
-            
-            # If loss fn is NSS_alt, manually add std_dev() if the target is all-0
-            if loss_fn == loss_functions.NSS_alt:
-                for i in range(len(labels)):
-                    if labels[i].sum() == 0:
-                        loss_sum_2 += outputs[i].std().item()
-                        loss_count_2 += 1
-                    else:
-                        loss_sum += loss_fn(outputs[i], labels[i]).item()
-                        loss_count += 1
-            else:
-                loss_sum += loss_fn(outputs, labels).item()
-                loss_count += 1
+            # Apply each loss function, add results to corresponding entry in loss_sums and loss_counts
+            for i, loss_fn in enumerate(loss_fns):
+                # If loss fn is NSS_alt, manually add std_dev() if the target is all-0
+                if loss_fn == loss_functions.NSS_alt:
+                    for i in range(len(labels)):
+                        if labels[i].sum() == 0:
+                            loss_sums[i][1] += outputs[i].std().item()
+                            loss_counts[i][1] += 1
+                        else:
+                            loss_sums[i][0] += loss_fn(outputs[i], labels[i]).item()
+                            loss_counts[i][0] += 1
+                else:
+                    loss_sums[i] += loss_fn(outputs, labels).item()
+                    loss_counts[i] += 1
 
-    return loss_sum, loss_count, loss_sum_2, loss_count_2
+    return loss_sums, loss_counts
 
 # Obtaining NSS Loss values on the test set for different models:
 for i, model_name in enumerate(tqdm(model_names)):
@@ -265,33 +271,31 @@ for i, model_name in enumerate(tqdm(model_names)):
         model = load_model_from_checkpoint(model_name)
     else:
         model = load_model(model_name)
-    test_losses = []
-    for loss_fn in tqdm([loss_functions.NSS_alt, loss_functions.CE_MAE_loss, loss_functions.CE_loss, loss_functions.MAE_loss, loss_functions.DoM]):
-        test_losses.append([loss_fn, test_model(model, val_loader, loss_fn=loss_fn)])
+
+    loss_fns = [loss_functions.NSS_alt, loss_functions.CE_MAE_loss, loss_functions.CE_loss, loss_functions.MAE_loss, loss_functions.DoM]
+
+    test_losses, test_counts = test_model(model, val_loader, loss_fns=loss_fns)
 
     # Print out the result
-    # Data is stored as [loss_fn, [sum1, count1, sum2, count2]],
-    # where sum2 and count2 are only used for NSS_alt
     
     tqdm.write("[{}] Model: ".format(i, model_names[i]))
 
-    for i, data in enumerate(test_losses):
-        sum1, count1, sum2, count2 = data[1]
-        if data[0] == loss_functions.NSS_alt:
+    for i, func in enumerate(loss_fns):
+        if func == loss_functions.NSS_alt:
             tqdm.write(
                 ("{:25} : {:6f}").format(
-                    'NSS_alt (+ve imgs)', sum1 / count1
+                    'NSS_alt (+ve imgs)', test_losses[i][0] / test_counts[i][0]
                 )
             )
             tqdm.write(
                 ("{:25} : {:6f}").format(
-                    'NSS_alt (-ve imgs)', sum2 / count2
+                    'NSS_alt (-ve imgs)', test_losses[i][1] / test_counts[i][1]
                 )
             )
         else:
             tqdm.write(
                 ("{:25} : {:6f}").format(
-                    data[0].__name__, sum1 / count1
+                    func.__name__, test_losses[i] / test_counts[i]
                 )
             )
     del model
