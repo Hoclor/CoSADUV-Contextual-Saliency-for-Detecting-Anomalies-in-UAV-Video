@@ -159,29 +159,37 @@ model_names = []
 # DSCLRCN models
 ## Trained on SALICON
 ### NSS_loss
-model_names.append("DSCLRCN/SALICON/NSS -1.62NSS val best and last/best_model_DSCLRCN_NSS_loss_batch20_epoch5")
+model_names.append("DSCLRCN/SALICON NSS -1.62NSS val best and last/best_model_DSCLRCN_NSS_loss_batch20_epoch5")
 ## Trained on UAV123
 ### NSS_alt loss func
-model_names.append("DSCLRCN/UAV123/NSS_alt 1.38last 3.15best testing/best_model_DSCLRCN_NSS_alt_batch20_epoch5")
+model_names.append("DSCLRCN/UAV123 NSS_alt 1.38last 3.15best testing/best_model_DSCLRCN_NSS_alt_batch20_epoch5")
 
 
 # CoSADUV_NoTemporal models
 ## Trained on UAV123
 ### DoM loss func
-model_names.append("CoSADUV_NoTemporal/UAV123 DoM - -0.55DoM val/best_model_CoSADUV_NoTemporal_DoM_batch20_epoch5")
+model_names.append("CoSADUV_NoTemporal/DoM SGD 0.01lr - 3.16 NSS_alt/best_model_CoSADUV_NoTemporal_DoM_batch20_epoch6")
 ### NSS_alt loss func
-model_names.append("CoSADUV_NoTemporal/UAV123 NSS_alt Adam lr 1e-4 - -1.36/best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5")
+model_names.append("CoSADUV_NoTemporal/NSS_alt Adam lr 1e-4 - 1.36/best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5")
 ### CE_MAE loss func
 model_names.append("CoSADUV_NoTemporal/best_model_CoSADUV_NoTemporal_CE_MAE_loss_batch20_epoch10")
 
 
 # CoSADUV models (CoSADUV2)
 ## Trained on UAV123
-### DoM loss func
-# RUNNING ON NCC
 ### NSS_alt loss func
-model_names.append("CoSADUV/Adam lr 1e-3 1frame backprop size1 kernel -2train -0.7val 1epoch/best_model_CoSADUV_NSS_alt_batch20_epoch5")
+#### 1 Frame backpropagation
+#### Kernel size 1
+model_names.append("CoSADUV/NSS_alt Adam 0.001lr 1frame backprop size1 kernel -2train -0.7val 1epoch/best_model_CoSADUV_NSS_alt_batch20_epoch5")
+#### Kernel size 3
+model_names.append("CoSADUV/NSS_alt Adam 0.01lr 1frame backprop size3 kernel/best_model_CoSADUV_NSS_alt_batch20_epoch5")
+#### 2 Frame backpropagation
+#### Kernel size 3
+model_names.append("CoSADUV/NSS_alt Adam 0.01lr 2frame backprop size3 kernel - 6.56 NSS_alt val/best_model_CoSADUV_NSS_alt_batch20_epoch5")
+### DoM loss func
+# Only very poor results achieved
 ### CE_MAE loss func
+# Only very poor results achieved
 
 max_name_len = max([len(name) for name in model_names])
 # Load the models specified above
