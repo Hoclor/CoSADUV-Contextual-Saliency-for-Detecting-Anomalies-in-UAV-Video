@@ -272,7 +272,7 @@ def test_model(model, data_loader, loss_fns=[loss_functions.MAE_loss]):
 
     return loss_sums, loss_counts
 
-# Obtaining NSS Loss values on the test set for different models:
+# Obtaining loss values on the test set for different models:
 for i, model_name in enumerate(tqdm(model_names)):
     tqdm.write("model name: {}".format(model_name))
     if "best_model" in model_name:
