@@ -27,6 +27,9 @@ else:
 
 dataset_name = input("Dataset (SALICON/UAV123/EyeTrackUAV): ")
 
+if dataset_name in ["UAV123", "EyeTrackUAV"]:
+    sequence_name = input("Sequence name: ")
+
 if dataset_name not in ["SALICON", "UAV123", "EyeTrackUAV"]:
     print_func("Error: unrecognized dataset '{}'".format(dataset_name))
     exit()
@@ -39,38 +42,17 @@ img_size = (480, 640)  # Original: 480, 640, reimplementation: 96, 128
 # Duration: Length of sequences loaded from each video, if a video dataset is used
 duration = 300
 
-### Training options ###
+### Testing options ###
 
-# Batchsize: Determines how many images are processed before backpropagation is done
-batchsize = 20  # Recommended: 20.
 # Minibatchsize: Determines how many images are processed at a time on the GPU
-minibatchsize = 2  # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem.
-epoch_number = 5  # Recommended: 10 (epoch_number =~ batchsize/2)
-optim_str = "SGD"  # 'SGD' or 'Adam' Recommended: Adam
-optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-2 if Adam
+minibatchsize = 1  # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem.
 # Loss functions:
 # From loss_functions (use loss_functions.LOSS_FUNCTION_NAME)
 # NSS_loss
 # CE_MAE_loss
 # PCC_loss
 # KLDiv_loss
-loss_func = loss_functions.DoM  # Recommended: NSS_loss
-test_loss_func = loss_functions.NSS_alt
-
-### Prepare optimiser ###
-if batchsize % minibatchsize:
-    print(
-        "Error, batchsize % minibatchsize must equal 0 ({} % {} != 0).".format(
-            batchsize, minibatchsize
-        )
-    )
-    exit()
-num_minibatches = batchsize / minibatchsize
-
-# Scale the lr down as smaller minibatches are used
-optim_args["lr"] /= num_minibatches
-
-optim = torch.optim.SGD if optim_str == "SGD" else torch.optim.Adam
+loss_funcs = [loss_functions.NSS_alt, loss_functions.MAE_loss, loss_functions.DoM]  # Recommended: NSS_loss
 
 ### Prepare datasets and loaders ###
 
