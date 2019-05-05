@@ -21,6 +21,13 @@ if location == "ncc":
 else:
     print_func = tqdm.write
 
+### General options ###
+
+# Height, width of images
+img_size = (480, 640)  # Original: 480, 640, reimplementation: 96, 128
+# Duration: Length of sequences loaded from each video, if a video dataset is used
+duration = 300
+
 ### Model options ###
 model_text = """Models available for demonstration (at index i):
     DSCLRCN (all with NSS_alt loss function):
@@ -139,10 +146,6 @@ if dataset_name not in ["SALICON", "UAV123", "EyeTrackUAV"]:
 dataset_root_dir = "Dataset/" + dataset_name  # Dataset/[SALICON, UAV123]
 # Name of mean_image file: Must be located at dataset_root_dir/mean_image_name
 mean_image_name = "mean_image.npy"
-# Height, width of images
-img_size = (480, 640)  # Original: 480, 640, reimplementation: 96, 128
-# Duration: Length of sequences loaded from each video, if a video dataset is used
-duration = 300
 
 ### Testing options ###
 
