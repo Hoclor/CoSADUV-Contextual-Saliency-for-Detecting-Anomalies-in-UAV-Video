@@ -35,7 +35,7 @@ def main():
     minibatchsize = 2  # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem.
     epoch_number = 5  # Recommended: 10 (epoch_number =~ batchsize/2)
     optim_str = "SGD"  # 'SGD' or 'Adam' Recommended: Adam
-    optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-4 if Adam
+    optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-2 if Adam
     # Loss functions:
     # From loss_functions (use loss_functions.LOSS_FUNCTION_NAME)
     # NSS_loss
