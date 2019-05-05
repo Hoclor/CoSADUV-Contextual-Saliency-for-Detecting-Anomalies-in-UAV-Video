@@ -25,7 +25,13 @@ else:
 
 ### Data options ###
 
-dataset_root_dir = "Dataset/UAV123"  # Dataset/[SALICON, UAV123]
+dataset_name = input("Dataset (SALICON/UAV123/EyeTrackUAV): ")
+
+if dataset_name not in ["SALICON", "UAV123", "EyeTrackUAV"]:
+    print_func("Error: unrecognized dataset '{}'".format(dataset_name))
+    exit()
+
+dataset_root_dir = "Dataset/" + dataset_name  # Dataset/[SALICON, UAV123]
 # Name of mean_image file: Must be located at dataset_root_dir/mean_image_name
 mean_image_name = "mean_image.npy"
 # Height, width of images
@@ -255,4 +261,3 @@ print("Last model     : {:6f}".format(-1 * test_loss / test_count))
 print(
     "Best Checkpoint: {:6f}".format(-1 * test_loss_checkpoint / test_count_checkpoint)
 )
-
