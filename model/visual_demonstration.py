@@ -8,18 +8,16 @@ from torch.autograd import Variable
 from tqdm import tqdm
 
 import cv2
+from models.CoSADUV import CoSADUV
 from models.CoSADUV_NoTemporal import CoSADUV_NoTemporal
+from models.DSCLRCN import DSCLRCN
 from util import loss_functions
 from util.data_utils import get_SALICON_datasets, get_video_datasets
 from util.solver import Solver
 
-torch.multiprocessing.set_start_method("forkserver")  # spawn, forkserver, or fork
-# Use CuDNN with benchmarking for performance improvement:
-# from 1.05 batch20/s to 1.55 batch20/s on Quadro P4000
-torch.backends.cudnn.enabled = True
-torch.backends.cudnn.benchmark = True
+# torch.multiprocessing.set_start_method("forkserver")  # spawn, forkserver, or fork
 
-location = "ncc"  # ncc or '', where the code is to be run (affects output)
+location = ""  # ncc or '', where the code is to be run (affects output)
 if location == "ncc":
     print_func = print
 else:
