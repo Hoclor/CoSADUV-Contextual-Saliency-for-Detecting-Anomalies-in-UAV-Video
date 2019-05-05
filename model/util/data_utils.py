@@ -110,6 +110,7 @@ class VideoData(data.Dataset):
         duration=-1,
         img_size=(480, 640),
     ):
+        self.video_name = video_name
         self.video_folder = os.path.join(root_dir, section, video_name)
         self.section = section.lower()
         self.img_size = img_size  # Height, Width
