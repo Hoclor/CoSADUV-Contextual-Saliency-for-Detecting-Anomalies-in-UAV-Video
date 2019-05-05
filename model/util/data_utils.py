@@ -228,6 +228,8 @@ class VideoDataset(data.Dataset):
         if shuffle:
             random.shuffle(video_names)
 
+        self.video_names = video_names
+
         batch_size = loader_settings["batch_size"]
         num_workers = loader_settings["num_workers"]
         pin_memory = loader_settings["pin_memory"]
@@ -250,6 +252,9 @@ class VideoDataset(data.Dataset):
             )
             for video_name in video_names
         ]
+    
+    def get_videos(self):
+        return self.video_names
 
     def __getitem__(self, index):
         # Return the dataset of the video of the given index
