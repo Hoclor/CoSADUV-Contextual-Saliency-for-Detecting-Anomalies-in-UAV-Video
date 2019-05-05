@@ -167,29 +167,15 @@ def test_model(model, test_set, sequence_name="", loss_fns=[], location="ncc"):
                 return losses, counts
     return losses, counts
 
-# Load the checkpoint
-if torch.cuda.is_available():
-    checkpoint = torch.load(filename)
-else:
-    checkpoint = torch.load(filename, map_location="cpu")
-start_epoch = checkpoint["epoch"]
-# Create the model
-model = CoSADUV_NoTemporal(input_dim=img_size, local_feats_net="Seg")
-model.load_state_dict(checkpoint["state_dict"])
-if torch.cuda.is_available():
-    model = model.cuda()
+if dataset_name == "SALICON":
+    print_func("Testing model on SALICON")
 
-# Test the checkpoint
-print_func("Testing best checkpoint, after {} epochs of training".format(start_epoch))
-test_loss_checkpoint, test_count_checkpoint = test_model(
-    model, test_loader, test_loss_func, location=location
+test_losses, test_counts = test_model(
+    model, test_loader, sequence_name, loss_funcs, location=location
 )
 
 # Print out the result
-print()
-print("{} score on test set:".format(test_loss_func.__name__))
-print("(Higher is better)")
-print("Last model     : {:6f}".format(-1 * test_loss / test_count))
-print(
-    "Best Checkpoint: {:6f}".format(-1 * test_loss_checkpoint / test_count_checkpoint)
-)
+print("Mean scores")
+for loss_fn in loss_funcs:
+    if test_counts[i] > 0:
+        print("{}: {}".format(loss_fn.__name__, test_losses[i] / test_counts[i]))
