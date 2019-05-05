@@ -104,72 +104,68 @@ else:
     )
 
 ### Testing ###
-def test_model(model, test_set, loss_fn, location="ncc"):
+def test_model(model, test_set, sequence_name="", loss_fns=[], location="ncc"):
     # Set the model to evaluation mode
     model.eval()
-
-    loss = 0
-    count = 0
+    losses = [0 for _ in loss_fns]
+    counts = [0 for _ in loss_fns]
     test_loop = test_set
-    if location != "ncc":
-        test_loop = tqdm(test_loop, desc="Test (best checkpoint)")
+    # Only use tqdm here if we loop through all videos
+    if location != "ncc" and sequence_name == "":
+        test_loop = tqdm(test_loop)
     for video_loader in test_loop:
+        # Skip videos until the one named sequence_name is found
+        if sequence_name != "" and sequence_name != video_loader.video_name:
+            continue
         if location != "ncc":
-            video_loader = tqdm(video_loader, desc="Video")
+            video_loader = tqdm(video_loader, desc=video_loader.video_name)
 
         # If the model is temporal, reset its temporal state
         # at the start of each video
         if model.temporal:
             model.clear_temporal_state()
 
-        for data in video_loader:
+        for i, data in enumerate(video_loader):
+            # Reset the model for each image if dataset is SALICON
+            if dataset_name == "SALICON" and model.temporal:
+                model.clear_temporal_state()
             inputs, labels = data
             if torch.cuda.is_available():
                 inputs = inputs.cuda()
                 labels = labels.cuda()
             # Produce the output
             outputs = model(inputs).squeeze(1)
+            if inputs.shape != labels.shape:
             # Move the output to the CPU so we can process it using numpy
             outputs = outputs.cpu().data.numpy()
-
-            # Resize the images to input size
+                # Resize the images to labels size
             outputs = np.array(
                 [
                     cv2.resize(output, (labels.shape[2], labels.shape[1]))
                     for output in outputs
                 ]
             )
-            # Apply a Gaussian filter to blur the saliency maps
-            sigma = 0.035 * min(labels.shape[1], labels.shape[2])
-            kernel_size = int(4 * sigma)
-            # make sure the kernel size is odd
-            kernel_size += 1 if kernel_size % 2 == 0 else 0
-            outputs = np.array(
-                [
-                    cv2.GaussianBlur(output, (kernel_size, kernel_size), sigma)
-                    for output in outputs
-                ]
-            )
-
             outputs = torch.from_numpy(outputs)
             if torch.cuda.is_available():
                 outputs = outputs.cuda()
                 labels = labels.cuda()
-            loss += loss_fn(outputs, labels).item()
-            count += 1
-    return loss, count
 
-
-print_func("Testing model")
-print_func("(on val set if using SALICON, otherwise on test set)\n")
-
-test_loss, test_count = test_model(
-    model, test_loader, test_loss_func, location=location
-)
-
-# Delete the model to free up memory
-del model
-filename = "trained_models/best_model_" + model_name + ".pth"
+            vid_loss = [loss_fn(outputs, labels).item() for loss_fn in loss_fns]
+            print_func("Frame [{}]".format(i))
+            for j in range(len(vid_loss)):
+                losses[j] += vid_loss[i]
+                counts[j] += 1
+                print_func("    {}: {}".format(loss_fns[i].__name__, vid_loss[i]))
+            # Show the input, GT, prediction with cv2
+            output = cv2.cvtColor(outputs.squeeze(), cv2.COLOR_GRAY2BGR)
+            label = cv2.cvtColor(label.squeeze(), cv2.COLOR_GRAY2BGR)
+            _input = cv2.cvtColor(inputs.squeeze(), cv2.COLOR_RGB2BGR)
+            out = np.hstack((_input, label, output)) 
+            cv2.imshow("Output")
+            if cv2.waitKey(1) == 'q':
+                cv2.destroyAllWindows()
+                return losses, counts
+    return losses, counts
 
 # Load the checkpoint
 if torch.cuda.is_available():
