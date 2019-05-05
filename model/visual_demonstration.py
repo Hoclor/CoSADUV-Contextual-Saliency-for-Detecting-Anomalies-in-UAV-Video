@@ -25,7 +25,7 @@ else:
 
 ### Data options ###
 
-dataset_name = input("Dataset (SALICON/UAV123/EyeTrackUAV): ")
+dataset_name = input("Dataset (UAV123/EyeTrackUAV): ")
 
 if dataset_name in ["UAV123", "EyeTrackUAV"]:
     sequence_name = input("Sequence name: ")
