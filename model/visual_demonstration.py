@@ -34,12 +34,12 @@ model_text = """Models available for demonstration (at index i):
         [0] trained on SALICON
         [1] trained on UAV123
     CoSADUV_NoTemporal (all trained on UAV123):
-        [2] DoM loss function
+        [2] DoM loss function (best CoSADUV_NT)
         [3] NSS_alt loss function
         [4] CE_MAE loss function
     CoSADUV (all trained on UAV123, with NSS_alt loss function):
         [5] 1x1 convLSTM kernel, 1 frame backprop
-        [6] 3x3 convLSTM kernel, 1 frame backprop
+        [6] 3x3 convLSTM kernel, 1 frame backprop (best CoSADUV)
         [7] 3x3 convLSTM kernel, 2 frame backprop
     CoSADUV_NoTemporal + Transfer Learning (UAV123 + EyeTrackUAV):
         [8] DoM loss function
