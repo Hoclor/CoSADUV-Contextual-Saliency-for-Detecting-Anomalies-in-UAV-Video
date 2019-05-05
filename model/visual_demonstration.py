@@ -15,13 +15,115 @@ from util import loss_functions
 from util.data_utils import get_SALICON_datasets, get_video_datasets
 from util.solver import Solver
 
-# torch.multiprocessing.set_start_method("forkserver")  # spawn, forkserver, or fork
-
 location = ""  # ncc or '', where the code is to be run (affects output)
 if location == "ncc":
     print_func = print
 else:
     print_func = tqdm.write
+
+### Model options ###
+model_text = """Models available for demonstration (at index i):
+    DSCLRCN (all with NSS_alt loss function):
+        [0] trained on SALICON
+        [1] trained on UAV123
+    CoSADUV_NoTemporal (all trained on UAV123):
+        [2] DoM loss function
+        [3] NSS_alt loss function
+        [4] CE_MAE loss function
+    CoSADUV (all trained on UAV123, with NSS_alt loss function):
+        [5] 1x1 convLSTM kernel, 1 frame backprop
+        [6] 3x3 convLSTM kernel, 1 frame backprop
+        [7] 3x3 convLSTM kernel, 2 frame backprop
+    CoSADUV_NoTemporal + Transfer Learning (UAV123 + EyeTrackUAV):
+        [8] DoM loss function
+        [9] NSS_alt loss function\n"""
+print(model_text)
+model_index = int(input("Model index: (0-9): "))
+
+def load_model_from_checkpoint(model_name):
+    filename = "trained_models/" + model_name + ".pth"
+    if torch.cuda.is_available():
+        checkpoint = torch.load(filename)
+    else:
+        # Load GPU model on CPU
+        checkpoint = torch.load(filename, map_location="cpu")
+    start_epoch = checkpoint["epoch"]
+    best_accuracy = checkpoint["best_accuracy"]
+
+    if "DSCLRCN" in model_name:
+        model = DSCLRCN(input_dim=img_size, local_feats_net="Seg")
+    elif "CoSADUV_NoTemporal" in model_name:
+        model = CoSADUV_NoTemporal(input_dim=img_size, local_feats_net="Seg")
+    elif "CoSADUV" in model_name:
+        model = CoSADUV(input_dim=img_size, local_feats_net="Seg")
+    else:
+        tqdm.write("Error: no model name found in filename: {}".format(model_name))
+        return
+    # Ignore extra parameters ('.num_batches_tracked'
+    # that are added on NCC due to different pytorch version)
+    model.load_state_dict(checkpoint["state_dict"], strict=False)
+
+    tqdm.write(
+        "=> loaded model checkpoint '{}' (trained for {} epochs)\n   with architecture {}".format(
+            model_name, checkpoint["epoch"], type(model).__name__
+        )
+    )
+
+    if torch.cuda.is_available():
+        model = model.cuda()
+        tqdm.write("   loaded to cuda")
+    model.eval()
+    return model
+
+def load_model(model_name):
+    model = torch.load("trained_models/" + model_name, map_location="cpu")
+    print("=> loaded model '{}'".format(model_name))
+    if torch.cuda.is_available():
+        model = model.cuda()
+        print("   loaded to cuda")
+    model.eval()
+    return model
+
+# List of all models available 
+models = []
+
+# DSCLRCN models
+## Trained on SALICON
+### NSS_loss
+models.append("DSCLRCN/SALICON NSS -1.62NSS val best and last/best_model_DSCLRCN_NSS_loss_batch20_epoch5")
+## Trained on UAV123
+### NSS_alt loss func
+models.append("DSCLRCN/UAV123 NSS_alt 1.38last 3.15best testing/best_model_DSCLRCN_NSS_alt_batch20_epoch5")
+
+# CoSADUV_NoTemporal models
+## Trained on UAV123
+### DoM loss func
+models.append("CoSADUV_NoTemporal/DoM SGD 0.01lr - 3.16 NSS_alt/best_model_CoSADUV_NoTemporal_DoM_batch20_epoch6")
+### NSS_alt loss func
+models.append("CoSADUV_NoTemporal/NSS_alt Adam lr 1e-4 - 1.36/best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5")
+### CE_MAE loss func
+models.append("CoSADUV_NoTemporal/best_model_CoSADUV_NoTemporal_CE_MAE_loss_batch20_epoch10")
+
+# CoSADUV models (CoSADUV2)
+## Trained on UAV123
+### NSS_alt loss func
+#### 1 Frame backpropagation
+#### Kernel size 1
+models.append("CoSADUV/NSS_alt Adam 0.001lr 1frame backprop size1 kernel -2train -0.7val 1epoch/best_model_CoSADUV_NSS_alt_batch20_epoch5")
+#### Kernel size 3
+models.append("CoSADUV/NSS_alt Adam 0.01lr 1frame backprop size3 kernel/best_model_CoSADUV_NSS_alt_batch20_epoch5")
+#### 2 Frame backpropagation
+#### Kernel size 3
+models.append(
+    "CoSADUV/NSS_alt Adam 0.01lr 2frame backprop size3 kernel - 6.56 NSS_alt val/best_model_CoSADUV_NSS_alt_batch20_epoch5"
+)
+
+model_name = models[model_index]
+
+if "best_model" in model_name:
+    model = load_model_from_checkpoint(model_name)
+else:
+    model = load_model(model_name)
 
 ### Data options ###
 
@@ -136,19 +238,19 @@ def test_model(model, test_set, sequence_name="", loss_fns=[], location="ncc"):
             # Produce the output
             outputs = model(inputs).squeeze(1)
             if inputs.shape != labels.shape:
-            # Move the output to the CPU so we can process it using numpy
-            outputs = outputs.cpu().data.numpy()
+                # Move the output to the CPU so we can process it using numpy
+                outputs = outputs.cpu().data.numpy()
                 # Resize the images to labels size
-            outputs = np.array(
-                [
-                    cv2.resize(output, (labels.shape[2], labels.shape[1]))
-                    for output in outputs
-                ]
-            )
-            outputs = torch.from_numpy(outputs)
-            if torch.cuda.is_available():
-                outputs = outputs.cuda()
-                labels = labels.cuda()
+                outputs = np.array(
+                    [
+                        cv2.resize(output, (labels.shape[2], labels.shape[1]))
+                        for output in outputs
+                    ]
+                )
+                outputs = torch.from_numpy(outputs)
+                if torch.cuda.is_available():
+                    outputs = outputs.cuda()
+                    labels = labels.cuda()
 
             vid_loss = [loss_fn(outputs, labels).item() for loss_fn in loss_fns]
             print_func("Frame [{}]".format(i))
