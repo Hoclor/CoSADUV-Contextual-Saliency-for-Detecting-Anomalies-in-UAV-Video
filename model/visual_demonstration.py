@@ -95,59 +95,13 @@ else:
         mean_image_name,
         duration=duration,
         img_size=img_size,
-        shuffle=True,
+        shuffle=False,
         loader_settings={
             "batch_size": minibatchsize,
             "num_workers": 8,
             "pin_memory": False,
         },
     )
-
-### Training ###
-
-model = CoSADUV_NoTemporal(input_dim=img_size, local_feats_net="Seg")
-
-print("Starting train on model with settings:")
-print("### Dataset settings ###")
-print("Dataset: {}".format(dataset_root_dir.split("/")[-1]))
-print("Image size: ({}h, {}w)".format(img_size[0], img_size[1]))
-print("Sequence duration: {}".format(duration))
-print("")
-print("### Training settings ###")
-print("Batch size: {}".format(batchsize))
-print("Minibatch size: {}".format(minibatchsize))
-print("Epochs: {}".format(epoch_number))
-print("")
-print("### Optimiser settings ###")
-print("Optimiser: {}".format(optim_str))
-print("Effective lr: {}".format(str(optim_args["lr"] * num_minibatches)))
-print("Actual lr: {}".format(str(optim_args["lr"])))
-print("Loss function: {}".format(loss_func.__name__))
-print("Model: {}".format(type(model).__name__))
-print("\n")
-
-# Create a solver with the options given above and appropriate location
-solver = Solver(
-    optim=optim, optim_args=optim_args, loss_func=loss_func, location=location
-)
-# Start training
-solver.train(
-    model,
-    train_loader,
-    val_loader,
-    num_epochs=epoch_number,
-    num_minibatches=num_minibatches,
-    log_nth=50,
-    filename_args={"batchsize": batchsize, "epoch_number": epoch_number},
-)
-
-# Saving the model:
-model_name = "{}_{}_batch{}_epoch{}".format(
-    type(model).__name__, loss_func.__name__, batchsize, epoch_number
-)
-model.save("trained_models/model_" + model_name)
-with open("trained_models/solver_" + model_name + ".pkl", "wb") as outf:
-    pickle.dump(solver, outf, pickle.HIGHEST_PROTOCOL)
 
 ### Testing ###
 def test_model(model, test_set, loss_fn, location="ncc"):
