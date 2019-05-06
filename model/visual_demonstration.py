@@ -227,7 +227,6 @@ def main():
         for j, video_loader in enumerate(loop1):
             # Skip videos until the one named sequence_name is found
             if sequence_name != "" and j < seq_index:
-                print(j, "<", seq_index)
                 continue
             if j > seq_index:
                 break
