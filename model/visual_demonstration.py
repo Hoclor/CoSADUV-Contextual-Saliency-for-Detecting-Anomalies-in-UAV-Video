@@ -125,6 +125,10 @@ def main():
         "CoSADUV/NSS_alt Adam 0.01lr 2frame backprop size3 kernel - 6.56 NSS_alt val/best_model_CoSADUV_NSS_alt_batch20_epoch5"
     )
 
+    # Transfer learned models
+    models.append("best_model_CoSADUV_NoTemporal_DoM_batch20_epoch5")
+    models.append("best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5")
+
     model_name = models[model_index]
 
     if "best_model" in model_name:
