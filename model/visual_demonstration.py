@@ -137,7 +137,26 @@ def main():
     print()
     dataset_name = input("Dataset (UAV123/EyeTrackUAV): ")
 
-    if dataset_name in ["UAV123", "EyeTrackUAV"]:
+    if dataset_name == "UAV123":
+        sequences_string = """bike [1-3]
+boat [1-9]
+car [1-18]
+group [1-3]
+person [1-23]
+truck [1-4]
+wakeboard [1-10]"""
+        print(sequences_string)
+        sequence_name = input("Sequence name: ")
+
+    if dataset_name == "EyeTrackUAV":
+        sequences_string = """bike3
+boat [6, 8]
+car [2, 4, 6, 7, 8, 10, 13]
+group2
+person [3, 13, 14, 18, 20]
+truck1
+wakeboard10"""
+        print(sequences_string)
         sequence_name = input("Sequence name: ")
 
     if dataset_name not in ["SALICON", "UAV123", "EyeTrackUAV"]:
