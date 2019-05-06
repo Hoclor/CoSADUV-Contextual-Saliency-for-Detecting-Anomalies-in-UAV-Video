@@ -312,7 +312,7 @@ def main():
 
     # Print out the result
     print("Mean scores")
-    for loss_fn in loss_funcs:
+    for i, loss_fn in enumerate(loss_funcs):
         if test_counts[i] > 0:
             print("{}: {}".format(loss_fn.__name__, test_losses[i] / test_counts[i]))
 
