@@ -265,6 +265,11 @@ def main():
                         outputs = outputs.cuda()
                         labels = labels.cuda()
 
+                # Scale output to [0, 1] if model is temporal
+                if model.temporal:
+                    outputs -= outputs.min()
+                    outputs /= outputs.max()
+
                 vid_loss = [loss_fn(outputs, labels).item() for loss_fn in loss_fns]
                 print_func("Frame [{}]".format(i))
                 for j in range(len(vid_loss)):
