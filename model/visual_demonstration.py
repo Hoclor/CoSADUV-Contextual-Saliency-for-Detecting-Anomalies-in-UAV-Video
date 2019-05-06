@@ -277,7 +277,6 @@ def main():
                     counts[j] += 1
                     print_func("    {:8}: {:4f}".format(loss_fns[j].__name__, vid_loss[j]))
                 # Show the input, GT, prediction with cv2
-                print(inputs.squeeze().cpu().data.numpy().transpose(1, 2, 0).shape, mean_image.shape)
                 _input = inputs.squeeze().cpu().data.numpy().transpose(1, 2, 0) + mean_image
                 _input = cv2.cvtColor(_input, cv2.COLOR_RGB2BGR)
                 label = cv2.cvtColor(labels.squeeze().cpu().data.numpy(), cv2.COLOR_GRAY2BGR)
