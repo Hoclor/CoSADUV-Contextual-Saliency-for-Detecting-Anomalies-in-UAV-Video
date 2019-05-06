@@ -278,7 +278,7 @@ def main():
                 for j in range(len(vid_loss)):
                     losses[j] += vid_loss[j]
                     counts[j] += 1
-                    print_func("    {:8}: {:4f}".format(loss_fns[j].__name__, vid_loss[j]))
+                    print_func("    {:8}: {:3f}".format(loss_fns[j].__name__, vid_loss[j]))
                 # Show the input, GT, prediction with cv2
                 _input = inputs.squeeze().cpu().data.numpy().transpose(1, 2, 0) + mean_image
                 _input = cv2.cvtColor(_input, cv2.COLOR_RGB2BGR)
@@ -316,7 +316,7 @@ def main():
     print("Mean scores")
     for i, loss_fn in enumerate(loss_funcs):
         if test_counts[i] > 0:
-            print("{}: {}".format(loss_fn.__name__, test_losses[i] / test_counts[i]))
+            print("{:8}: {:3f}".format(loss_fn.__name__, test_losses[i] / test_counts[i]))
 
 
 if __name__ == '__main__':
