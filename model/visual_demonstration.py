@@ -272,6 +272,10 @@ wakeboard10"""
             1,
         )
 
+        losses = [0 for _ in loss_fns]
+        losses_1 = [0 for _ in loss_fns]
+        counts = [0 for _ in loss_fns]
+
         # Only use tqdm here if we loop through all videos
         if location != "ncc" and sequence_name == "":
             loop1 = tqdm(loop1)
