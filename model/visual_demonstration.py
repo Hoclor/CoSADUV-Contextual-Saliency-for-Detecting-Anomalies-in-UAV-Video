@@ -2,6 +2,7 @@ def main():
     # NoTemporal DoM:
     # 2.2 frames/s on GeForce RTX 2080 Ti, 10989 MB memory, using 3200 MB GPU memory and 3700 MB RAM, with
     import pickle
+    import os
 
     import numpy as np
     from torch.autograd import Variable
@@ -45,7 +46,8 @@ def main():
             [8] DoM loss function
             [9] NSS_alt loss function\n"""
     print(model_text)
-    model_index = int(input("Model index: (0-9): "))
+    model_index = int(input("First model index: (0-9): "))
+    model_index_2 = int(input("Second model index: (0-9): "))
 
     def load_model_from_checkpoint(model_name):
         filename = "trained_models/" + model_name + ".pth"
@@ -129,12 +131,19 @@ def main():
     models.append("best_model_CoSADUV_NoTemporal_DoM_batch20_epoch5")
     models.append("best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5")
 
-    model_name = models[model_index]
+    model_name_1 = models[model_index]
+    model_name_2 = models[model_index_2]
 
-    if "best_model" in model_name:
-        model = load_model_from_checkpoint(model_name)
+    if "best_model" in model_name_1:
+        model_1 = load_model_from_checkpoint(model_name_1)
     else:
-        model = load_model(model_name)
+        model_1 = load_model(model_name_1)
+
+    if "best_model" in model_name_2:
+        model_2 = load_model_from_checkpoint(model_name_2)
+    else:
+        model_2 = load_model(model_name_2)
+
 
     ### Data options ###
 
@@ -233,17 +242,36 @@ wakeboard10"""
         )
 
     ### Testing ###
-    def test_model(model, test_set, sequence_name="", loss_fns=[], location="ncc"):
+    def test_model(models, test_set, sequence_name="", loss_fns=[], location="ncc"):
         # Get the index of the sequence
         seq_index = test_set.get_videos().index(sequence_name)
         if seq_index < 0:
             print("Error: sequence '{}' not found".format(sequence_name))
             quit()
         # Set the model to evaluation mode
-        model.eval()
-        losses = [0 for _ in loss_fns]
-        counts = [0 for _ in loss_fns]
+        models[0].eval()
+        models[1].eval()
         loop1 = test_set
+
+        # Define the codec and create VideoWriter objects
+        fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+        framerate = 30
+        (width, height) = (640*2+3, 480*2+3)
+        out_30fps = cv2.VideoWriter(
+            os.path.join(".", sequence_name + "_30fps.avi"),
+            fourcc,
+            framerate,
+            (width, height),
+            1,
+        )
+        out_2fps = cv2.VideoWriter(
+            os.path.join(".", sequence_name + "_2fps.avi"),
+            fourcc,
+            2,
+            (width, height),
+            1,
+        )
+
         # Only use tqdm here if we loop through all videos
         if location != "ncc" and sequence_name == "":
             loop1 = tqdm(loop1)
@@ -259,19 +287,24 @@ wakeboard10"""
 
             # If the model is temporal, reset its temporal state
             # at the start of each video
-            if model.temporal:
-                model.clear_temporal_state()
+            if models[0].temporal:
+                models[0].clear_temporal_state()
+            if models[1].temporal:
+                models[1].clear_temporal_state()
 
             for i, data in enumerate(loop2):
                 # Reset the model for each image if dataset is SALICON
-                if dataset_name == "SALICON" and model.temporal:
-                    model.clear_temporal_state()
+                if dataset_name == "SALICON" and models[0].temporal:
+                    models[0].clear_temporal_state()
+                if dataset_name == "SALICON" and models[1].temporal:
+                    models[1].clear_temporal_state()
                 inputs, labels = data
                 if torch.cuda.is_available():
                     inputs = inputs.cuda()
                     labels = labels.cuda()
                 # Produce the output
-                outputs = model(inputs).squeeze(1)
+                outputs = models[0](inputs).squeeze(1)
+                outputs_1 = models[1](inputs).squeeze(1)
                 if inputs.shape != labels.shape:
                     # Move the output to the CPU so we can process it using numpy
                     outputs = outputs.cpu().data.numpy()
@@ -288,29 +321,44 @@ wakeboard10"""
                         labels = labels.cuda()
 
                 # Scale output to [0, 1] if model is temporal
-                if model.temporal:
+                if models[0].temporal:
                     outputs -= outputs.min()
                     outputs /= outputs.max()
+                if models[1].temporal:
+                    outputs_1 -= outputs_1.min()
+                    outputs_1 /= outputs_1.max()
 
                 vid_loss = [loss_fn(outputs, labels).item() for loss_fn in loss_fns]
+                vid_loss_1 = [loss_fn(outputs_1, labels).item() for loss_fn in loss_fns]
                 print_func("Frame [{}]".format(i))
+
                 for j in range(len(vid_loss)):
                     losses[j] += vid_loss[j]
+                    losses_1[j] += vid_loss_1[j]
                     counts[j] += 1
-                    print_func("    {:8}: {:3f}".format(loss_fns[j].__name__, vid_loss[j]))
+                    print_func("    [0] {:8}: {:3f}".format(loss_fns[j].__name__, vid_loss[j]))
+                    print_func("    [1] {:8}: {:3f}".format(loss_fns[j].__name__, vid_loss_1[j]))
+
                 # Show the input, GT, prediction with cv2
                 _input = inputs.squeeze().cpu().data.numpy().transpose(1, 2, 0) + mean_image
-                _input = cv2.cvtColor(_input, cv2.COLOR_RGB2BGR)
-                label = cv2.cvtColor(labels.squeeze().cpu().data.numpy(), cv2.COLOR_GRAY2BGR)
-                output = cv2.cvtColor(outputs.squeeze().cpu().data.numpy(), cv2.COLOR_GRAY2BGR)
+                _input = (cv2.cvtColor(_input, cv2.COLOR_RGB2BGR)*255).astype(np.uint8)
+                label = (cv2.cvtColor(labels.squeeze().cpu().data.numpy(), cv2.COLOR_GRAY2BGR)*255).astype(np.uint8)
+                output = (cv2.cvtColor(outputs.squeeze().cpu().data.numpy(), cv2.COLOR_GRAY2BGR)*255).astype(np.uint8)
+                output_1 = (cv2.cvtColor(outputs_1.squeeze().cpu().data.numpy(), cv2.COLOR_GRAY2BGR)*255).astype(np.uint8)
                 # Add a white vertical line between each image
-                vert = np.ones((480, 3, 3))*255
-                out = np.hstack((_input, vert, label, vert, output))
+                vert = np.ones((480, 3, 3), dtype=np.uint8)*255
+                out = np.hstack((_input, vert, label))
+                out2 = np.hstack((output, vert, output_1))
+                hor = np.ones((3, 640*2+3, 3), dtype=np.uint8)*255
+                out = np.vstack((out, hor, out2))
+
+                # Display the frame
                 cv2.imshow("Output", out)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
+
         cv2.destroyAllWindows()
-        return losses, counts
+        return losses, losses_1, counts
 
     if dataset_name == "SALICON":
         print_func("Running val set")
@@ -326,17 +374,20 @@ wakeboard10"""
         elif sequence_name in test_loader.get_videos():
             print("Running sequence {} in test set".format(sequence_name))
             test_model_loader = test_loader
+        else:
+            print("Error: unrecognized sequence '{}'".format(sequence_name))
+            quit()
 
-    test_losses, test_counts = test_model(
-        model, test_model_loader, sequence_name, loss_funcs, location=location
+    losses, losses_1, counts = test_model(
+        [model_1, model_2], test_model_loader, sequence_name, loss_funcs, location=location
     )
 
     # Print out the result
     print("Mean scores")
     for i, loss_fn in enumerate(loss_funcs):
-        if test_counts[i] > 0:
-            print("{:8}: {:3f}".format(loss_fn.__name__, test_losses[i] / test_counts[i]))
-
+        if counts[i] > 0:
+            print("[0] {:8}: {:3f}".format(loss_fn.__name__, losses[i] / counts[i]))
+            print("[1] {:8}: {:3f}".format(loss_fn.__name__, losses_1[i] / counts[i]))
 
 if __name__ == '__main__':
     import torch
