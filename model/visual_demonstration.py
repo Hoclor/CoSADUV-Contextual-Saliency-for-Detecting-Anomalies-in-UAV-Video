@@ -26,7 +26,7 @@ def main():
     # Height, width of images
     img_size = (480, 640)  # Original: 480, 640, reimplementation: 96, 128
     # Duration: Length of sequences loaded from each video, if a video dataset is used
-    duration = 300
+    duration = 10000
 
     ### Model options ###
     model_text = """Models available for demonstration (at index i):
