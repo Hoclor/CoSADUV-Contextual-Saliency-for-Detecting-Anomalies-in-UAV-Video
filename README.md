@@ -2,9 +2,7 @@
 
 Created and tested using Python 3.5.3, [PyTorch 0.4.0](https://pytorch.org/), and [OpenCV 3.4.3](https://opencv.org/)
 
-Repository for my Master's Project on the topic of "Contextual Saliency for Detecting Anomalies within Unmanned Aerial Vehicle (UAV) Video".
-
-Paper available [here](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/paper.pdf).
+Repository for my Master's Project on the topic of "Contextual Saliency for Detecting Anomalies within Unmanned Aerial Vehicle (UAV) Video". Paper available [here](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/paper.pdf).
 
 ## Architectures
 
