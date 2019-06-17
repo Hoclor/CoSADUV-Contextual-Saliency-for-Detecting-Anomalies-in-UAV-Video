@@ -25,7 +25,7 @@ The architecture was modified by replacing the "Conv+Softmax" with a [Convolutio
 ## Example Results
 
 
-[![Example](https://github.com/Hoclor/MastersProject-CoSADUV/blob/master/images/person7_thumbnail.png)](https://youtu.be/9qyMTolKbqc)
+[![Example](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/images/person7_thumbnail.PNG)](https://youtu.be/9qyMTolKbqc)
 
 Click the video above to play it. The video shows the performane of the model on a sequence from the [UAV123](https://uav123.org/) dataset (This was also used to train the model). It presents four streams simultaneously:
 - top-left is the input sequence
