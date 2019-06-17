@@ -2,6 +2,9 @@
 
 Based off the same code as `cvat_annotation_converter.py'
 (https://gist.github.com/cheind/9850e35bb08cfe12500942fb8b55531f).
+
+Created for use with NVVL, which was subsequently abandoned. Included for archival
+purposes (not used).
 """
 import os
 import random
