@@ -35,7 +35,7 @@ def main():
     minibatchsize = 2  # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem.
     epoch_number = 5  # Recommended: 10 (epoch_number =~ batchsize/2)
     optim_str = "SGD"  # 'SGD' or 'Adam' Recommended: Adam
-    optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-4 if Adam
+    optim_args = {"lr": 1e-2}  # 1e-2 if SGD, 1e-2 if Adam
     # Loss functions:
     # From loss_functions (use loss_functions.LOSS_FUNCTION_NAME)
     # NSS_loss
@@ -230,32 +230,21 @@ def test_model(model, test_set, loss_fn, location="ncc"):
                 labels = labels.cuda()
             # Produce the output
             outputs = model(inputs).squeeze(1)
-            # Move the output to the CPU so we can process it using numpy
-            outputs = outputs.cpu().data.numpy()
+            if inputs.shape != labels.shape:
+                # Move the output to the CPU so we can process it using numpy
+                outputs = outputs.cpu().data.numpy()
+                # Resize the images to labels size
+                outputs = np.array(
+                    [
+                        cv2.resize(output, (labels.shape[2], labels.shape[1]))
+                        for output in outputs
+                    ]
+                )
+                outputs = torch.from_numpy(outputs)
+                if torch.cuda.is_available():
+                    outputs = outputs.cuda()
+                    labels = labels.cuda()
 
-            # Resize the images to input size
-            outputs = np.array(
-                [
-                    cv2.resize(output, (labels.shape[2], labels.shape[1]))
-                    for output in outputs
-                ]
-            )
-            # Apply a Gaussian filter to blur the saliency maps
-            sigma = 0.035 * min(labels.shape[1], labels.shape[2])
-            kernel_size = int(4 * sigma)
-            # make sure the kernel size is odd
-            kernel_size += 1 if kernel_size % 2 == 0 else 0
-            outputs = np.array(
-                [
-                    cv2.GaussianBlur(output, (kernel_size, kernel_size), sigma)
-                    for output in outputs
-                ]
-            )
-
-            outputs = torch.from_numpy(outputs)
-            if torch.cuda.is_available():
-                outputs = outputs.cuda()
-                labels = labels.cuda()
             loss += loss_fn(outputs, labels).item()
             count += 1
     return loss, count

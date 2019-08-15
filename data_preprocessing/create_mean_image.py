@@ -1,4 +1,7 @@
-"""File containing data-related utility functions for reading/writing data.
+"""Script to create a mean image of data, specifically the SALICON dataset.
+Assumes the data is structured as the SALICON dataset, i.e. all images are
+contained in a single folder named 'images', and all train set images have
+'train' in the name.
 """
 # Author = Simon Gokstorp
 # Date = November 2018

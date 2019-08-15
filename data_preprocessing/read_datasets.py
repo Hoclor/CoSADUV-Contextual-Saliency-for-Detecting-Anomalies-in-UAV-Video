@@ -1,4 +1,6 @@
-"""File containing data-related utility functions for reading/writing data.
+"""Script to convert SALICON data into pickle files for quick loading.
+Only works for small datasets/resolutions (works for 96x128 SALICON, but
+not for full-size SALICON). Included for archival purposes (not used).
 """
 # Author = Simon Gokstorp
 # Date = November 2018

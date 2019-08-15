@@ -23,7 +23,7 @@ def main():
     from util.data_utils import get_SALICON_datasets, get_video_datasets
 
     ### Data options ###
-    dataset_root_dir = "Dataset/UAV123"  # Dataset/[SALICON, UAV123]
+    dataset_root_dir = "Dataset/UAV123_LIKE_MISC"  # Dataset/[SALICON, UAV123, UAV123_LIKE_MISC]
     mean_image_name = (
         "mean_image.npy"
     )  # Must be located at dataset_root_dir/mean_image_name
@@ -163,9 +163,9 @@ def main():
     # CoSADUV_NoTemporal models
     ## Trained on UAV123
     ### DoM loss func
-    model_names.append(
-        "CoSADUV_NoTemporal/DoM SGD 0.01lr - 3.16 NSS_alt/best_model_CoSADUV_NoTemporal_DoM_batch20_epoch6"
-    )
+    # model_names.append(
+    #     "CoSADUV_NoTemporal/DoM SGD 0.01lr - 3.16 NSS_alt/best_model_CoSADUV_NoTemporal_DoM_batch20_epoch6"
+    # )
     ### NSS_alt loss func
     # model_names.append("CoSADUV_NoTemporal/NSS_alt Adam lr 1e-4 - 1.36/best_model_CoSADUV_NoTemporal_NSS_alt_batch20_epoch5")
     ### CE_MAE loss func
@@ -178,9 +178,9 @@ def main():
     #### Kernel size 1
     # model_names.append("CoSADUV/NSS_alt Adam 0.001lr 1frame backprop size1 kernel -2train -0.7val 1epoch/best_model_CoSADUV_NSS_alt_batch20_epoch5")
     #### Kernel size 3
-    model_names.append(
-        "CoSADUV/NSS_alt Adam 0.01lr 1frame backprop size3 kernel/best_model_CoSADUV_NSS_alt_batch20_epoch5"
-    )
+    # model_names.append(
+    #     "CoSADUV/NSS_alt Adam 0.01lr 1frame backprop size3 kernel/best_model_CoSADUV_NSS_alt_batch20_epoch5"
+    # )
     #### 2 Frame backpropagation
     #### Kernel size 3
     model_names.append(
@@ -301,7 +301,7 @@ def main():
             loss_functions.DoM,
         ]
 
-        test_losses, test_counts = test_model(model, val_loader, loss_fns=loss_fns)
+        test_losses, test_counts = test_model(model, test_loader, loss_fns=loss_fns)
 
         # Print out the result
 
@@ -311,12 +311,12 @@ def main():
             if func == loss_functions.NSS_alt:
                 tqdm.write(
                     ("{:25} : {:6f}").format(
-                        "NSS_alt (+ve imgs)", test_losses[i][0] / test_counts[i][0]
+                        "NSS_alt (+ve imgs)", test_losses[i][0] / max(test_counts[i][0], 1)
                     )
                 )
                 tqdm.write(
                     ("{:25} : {:6f}").format(
-                        "NSS_alt (-ve imgs)", test_losses[i][1] / test_counts[i][1]
+                        "NSS_alt (-ve imgs)", test_losses[i][1] / max(test_counts[i][1], 1)
                     )
                 )
             else:
