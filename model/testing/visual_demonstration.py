@@ -148,7 +148,7 @@ def main():
     ### Data options ###
 
     print()
-    dataset_name = input("Dataset (UAV123/EyeTrackUAV): ")
+    dataset_name = input("Dataset (UAV123/EyeTrackUAV/MISC): ")
 
     if dataset_name == "UAV123":
         sequences_string = """bike [1-3]
@@ -172,7 +172,11 @@ wakeboard10"""
         print(sequences_string)
         sequence_name = input("Sequence name: ")
 
-    if dataset_name not in ["SALICON", "UAV123", "EyeTrackUAV"]:
+    if dataset_name == "MISC":
+        dataset_name = "UAV123_LIKE_MISC"
+        sequence_name = "video1"
+
+    if dataset_name not in ["SALICON", "UAV123", "EyeTrackUAV", "UAV123_LIKE_MISC"]:
         print_func("Error: unrecognized dataset '{}'".format(dataset_name))
         exit()
 
@@ -242,7 +246,7 @@ wakeboard10"""
         )
 
     ### Testing ###
-    def test_model(models, test_set, sequence_name="", loss_fns=[], location="ncc"):
+    def test_model(models, test_set, sequence_name="", loss_fns=[], save_video=True, location="ncc"):
         # Get the index of the sequence
         seq_index = test_set.get_videos().index(sequence_name)
         if seq_index < 0:
@@ -254,23 +258,24 @@ wakeboard10"""
         loop1 = test_set
 
         # Define the codec and create VideoWriter objects
-        fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-        framerate = 30
-        (width, height) = (640*2+3, 480*2+3)
-        out_30fps = cv2.VideoWriter(
-            os.path.join(".", sequence_name + "_30fps.avi"),
-            fourcc,
-            framerate,
-            (width, height),
-            1,
-        )
-        out_2fps = cv2.VideoWriter(
-            os.path.join(".", sequence_name + "_2fps.avi"),
-            fourcc,
-            2,
-            (width, height),
-            1,
-        )
+        if save_video:
+            fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+            framerate = 30
+            (width, height) = (640*2+3, 480*2+3)
+            out_30fps = cv2.VideoWriter(
+                os.path.join(".", sequence_name + "_30fps.avi"),
+                fourcc,
+                framerate,
+                (width, height),
+                1,
+            )
+            out_2fps = cv2.VideoWriter(
+                os.path.join(".", sequence_name + "_2fps.avi"),
+                fourcc,
+                2,
+                (width, height),
+                1,
+            )
 
         losses = [0 for _ in loss_fns]
         losses_1 = [0 for _ in loss_fns]
@@ -355,12 +360,21 @@ wakeboard10"""
                 out2 = np.hstack((output, vert, output_1))
                 hor = np.ones((3, 640*2+3, 3), dtype=np.uint8)*255
                 out = np.vstack((out, hor, out2))
+                
+                # Write the frames to the 30fps and 2fps videos
+                if save_video:
+                    out_30fps.write(out)
+                    out_2fps.write(out)
 
-                # Display the frame
-                cv2.imshow("Output", out)
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
-
+                # Display the frame if location is not ncc
+                if location != "ncc":
+                    cv2.imshow("Output", out)
+                    if cv2.waitKey(1) & 0xFF == ord("q"):
+                        break
+                    
+        if save_video:
+            out_30fps.release()
+            out_2fps.release()
         cv2.destroyAllWindows()
         return losses, losses_1, counts
 
@@ -381,9 +395,12 @@ wakeboard10"""
         else:
             print("Error: unrecognized sequence '{}'".format(sequence_name))
             quit()
+    
+    save_video = input("Save the video (y/n)?")
+    save_video = True if save_video.lower() == "y" else False
 
     losses, losses_1, counts = test_model(
-        [model_1, model_2], test_model_loader, sequence_name, loss_funcs, location=location
+        [model_1, model_2], test_model_loader, sequence_name, loss_funcs, save_video, location=location
     )
 
     # Print out the result
