@@ -148,7 +148,7 @@ def main():
     ### Data options ###
 
     print()
-    dataset_name = input("Dataset (UAV123/EyeTrackUAV): ")
+    dataset_name = input("Dataset (UAV123/EyeTrackUAV/MISC): ")
 
     if dataset_name == "UAV123":
         sequences_string = """bike [1-3]
@@ -172,7 +172,11 @@ wakeboard10"""
         print(sequences_string)
         sequence_name = input("Sequence name: ")
 
-    if dataset_name not in ["SALICON", "UAV123", "EyeTrackUAV"]:
+    if dataset_name == "MISC":
+        dataset_name = "UAV123_LIKE_MISC"
+        sequence_name = "video1"
+
+    if dataset_name not in ["SALICON", "UAV123", "EyeTrackUAV", "UAV123_LIKE_MISC"]:
         print_func("Error: unrecognized dataset '{}'".format(dataset_name))
         exit()
 
