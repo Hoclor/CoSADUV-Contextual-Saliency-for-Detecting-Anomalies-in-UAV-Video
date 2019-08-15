@@ -352,7 +352,8 @@ wakeboard10"""
                 out_30fps.write(out)
                 out_2fps.write(out)
 
-                # Display the frame
+                # Display the frame if location is not ncc
+                if location != "ncc":
                 cv2.imshow("Output", out)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
