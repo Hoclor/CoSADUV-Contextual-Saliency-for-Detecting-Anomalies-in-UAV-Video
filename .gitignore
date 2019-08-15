@@ -11,6 +11,10 @@
 # Slurm output
 *.out
 
+# Video output
+*.avi
+*.mp4
+
 ### Pre-generated ###
 
 # Byte-compiled / optimized / DLL files
