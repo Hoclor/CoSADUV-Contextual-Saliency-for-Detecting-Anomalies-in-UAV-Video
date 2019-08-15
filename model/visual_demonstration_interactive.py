@@ -1,9 +1,6 @@
 def main():
     # NoTemporal DoM:
-    # 2.2 frames/s on GeForce RTX 2080 Ti, 10989 MB memory, using 3200 MB GPU memory and 3700 MB RAM
-
-    # Instructions: ctrl-f for "SETTING" to find all settings you need to set
-    
+    # 2.2 frames/s on GeForce RTX 2080 Ti, 10989 MB memory, using 3200 MB GPU memory and 3700 MB RAM, with
     import pickle
     import os
 
@@ -33,7 +30,7 @@ def main():
     duration = 10000
 
     ### Model options ###
-    """Models available for demonstration (at index i):
+    model_text = """Models available for demonstration (at index i):
         DSCLRCN (all with NSS_alt loss function):
             [0] trained on SALICON
             [1] trained on UAV123
@@ -48,8 +45,9 @@ def main():
         CoSADUV_NoTemporal + Transfer Learning (UAV123 + EyeTrackUAV):
             [8] DoM loss function
             [9] NSS_alt loss function\n"""
-    model_index = 0 # SETTING
-    model_index_2 = 1 # SETTING
+    print(model_text)
+    model_index = int(input("First model index: (0-9): "))
+    model_index_2 = int(input("Second model index: (0-9): "))
 
     def load_model_from_checkpoint(model_name):
         filename = "trained_models/" + model_name + ".pth"
@@ -149,32 +147,34 @@ def main():
 
     ### Data options ###
 
-    # Dataset (UAV123/EyeTrackUAV/MISC)
-    dataset_name = "MISC" # SETTING
+    print()
+    dataset_name = input("Dataset (UAV123/EyeTrackUAV/MISC): ")
 
     if dataset_name == "UAV123":
-        """bike [1-3]
-        boat[1-9]
-        car[1-18]
-        group[1-3]
-        person[1-23]
-        truck[1-4]
-        wakeboard[1-10]"""
-        sequence_name = "car1" # SETTING if dataset_name == UAV123
+        sequences_string = """bike [1-3]
+boat [1-9]
+car [1-18]
+group [1-3]
+person [1-23]
+truck [1-4]
+wakeboard [1-10]"""
+        print(sequences_string)
+        sequence_name = input("Sequence name: ")
 
     if dataset_name == "EyeTrackUAV":
-        """bike3
-        boat[6, 8]
-        car[2, 4, 6, 7, 8, 10, 13]
-        group2
-        person[3, 13, 14, 18, 20]
-        truck1
-        wakeboard10"""
-        sequence_name = "car2" # SETTING if dataset_name == EyeTrackUAV
+        sequences_string = """bike3
+boat [6, 8]
+car [2, 4, 6, 7, 8, 10, 13]
+group2
+person [3, 13, 14, 18, 20]
+truck1
+wakeboard10"""
+        print(sequences_string)
+        sequence_name = input("Sequence name: ")
 
     if dataset_name == "MISC":
         dataset_name = "UAV123_LIKE_MISC"
-        sequence_name = "video1" # SETTING if dataset_name == MISC
+        sequence_name = "video1"
 
     if dataset_name not in ["SALICON", "UAV123", "EyeTrackUAV", "UAV123_LIKE_MISC"]:
         print_func("Error: unrecognized dataset '{}'".format(dataset_name))
@@ -396,8 +396,8 @@ def main():
             print("Error: unrecognized sequence '{}'".format(sequence_name))
             quit()
     
-    # Save the video (y/n)?
-    save_video = True # SETTING
+    save_video = input("Save the video (y/n)?")
+    save_video = True if save_video.lower() == "y" else False
 
     losses, losses_1, counts = test_model(
         [model_1, model_2], test_model_loader, sequence_name, loss_funcs, save_video, location=location
