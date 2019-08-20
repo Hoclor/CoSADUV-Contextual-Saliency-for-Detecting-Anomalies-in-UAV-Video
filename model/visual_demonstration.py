@@ -269,13 +269,6 @@ def main():
                 (width, height),
                 1,
             )
-            out_2fps = cv2.VideoWriter(
-                os.path.join(".", sequence_name + "_2fps.avi"),
-                fourcc,
-                2,
-                (width, height),
-                1,
-            )
 
         losses = [0 for _ in loss_fns]
         losses_1 = [0 for _ in loss_fns]
@@ -364,7 +357,6 @@ def main():
                 # Write the frames to the 30fps and 2fps videos
                 if save_video:
                     out_30fps.write(out)
-                    out_2fps.write(out)
 
                 # Display the frame if location is not ncc
                 if location != "ncc":
@@ -374,7 +366,6 @@ def main():
                     
         if save_video:
             out_30fps.release()
-            out_2fps.release()
         cv2.destroyAllWindows()
         return losses, losses_1, counts
 
