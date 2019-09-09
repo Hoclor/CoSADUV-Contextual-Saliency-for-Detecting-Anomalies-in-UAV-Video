@@ -6,8 +6,8 @@ and was then adapted for use with CVAT (which produces xml).
 """
 
 import cv2
-import xml.etree.ElementTree as ET
 import numpy as np
+import os
 from tqdm import tqdm
 
 
@@ -28,6 +28,9 @@ def extract_frames(video, height, width, start, end, display=False):
     else:
         tqdm_max_range = end
 
+    blank_frame = np.zeros((height, width), dtype=np.uint8)
+    os.mkdir("frames")
+    os.mkdir("targets")
 
     for frame_count in tqdm(range(tqdm_max_range)):
         # Read the next frame of the video
@@ -44,7 +47,10 @@ def extract_frames(video, height, width, start, end, display=False):
             frame = cv2.resize(frame, (width, height))
 
         # Write the frame
-        cv2.imwrite(".\\{}.jpg".format(str(frame_count).zfill(num_len)), frame)
+        cv2.imwrite("frames\\{}.jpg".format(str(frame_count).zfill(num_len)), frame)
+        # Write the target
+        cv2.imwrite("targets\\{}.jpg".format(str(frame_count).zfill(num_len)), blank_frame)
+
         # Display the resulting frame
         if display:
             cv2.imshow("frame", frame)
