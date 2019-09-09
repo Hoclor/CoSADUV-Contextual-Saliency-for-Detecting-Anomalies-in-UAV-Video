@@ -19,7 +19,7 @@ def main():
     from util.data_utils import get_SALICON_datasets, get_video_datasets
     from util.solver import Solver
 
-    location = ""  # ncc or '', where the code is to be run (affects output)
+    location = "ncc"  # SETTING ncc or '', where the code is to be run (affects output)
     if location == "ncc":
         print_func = print
     else:
@@ -48,8 +48,8 @@ def main():
         CoSADUV_NoTemporal + Transfer Learning (UAV123 + EyeTrackUAV):
             [8] DoM loss function
             [9] NSS_alt loss function\n"""
-    model_index = 0 # SETTING
-    model_index_2 = 1 # SETTING
+    model_index = 6 # SETTING
+    model_index_2 = 6 # SETTING
 
     def load_model_from_checkpoint(model_name):
         filename = "trained_models/" + model_name + ".pth"
@@ -160,7 +160,7 @@ def main():
         person[1-23]
         truck[1-4]
         wakeboard[1-10]"""
-        sequence_name = "car1" # SETTING if dataset_name == UAV123
+        sequence_name = "person9" # SETTING if dataset_name == UAV123
 
     if dataset_name == "EyeTrackUAV":
         """bike3
@@ -322,13 +322,14 @@ def main():
                         outputs = outputs.cuda()
                         labels = labels.cuda()
 
-                # Scale output to [0, 1] if model is temporal
+                # Threshold output if model is temporal
+                temp = outputs.clone().detach()
                 if models[0].temporal:
-                    outputs -= outputs.min()
-                    outputs /= outputs.max()
+                    outputs[outputs >= 0.50001] = 1
+                    outputs[outputs < 0.50001] = 0
                 if models[1].temporal:
-                    outputs_1 -= outputs_1.min()
-                    outputs_1 /= outputs_1.max()
+                    outputs_1[outputs_1 >= 0.50001] = 1
+                    outputs_1[outputs_1 < 0.50001] = 0
 
                 vid_loss = [loss_fn(outputs, labels).item() for loss_fn in loss_fns]
                 vid_loss_1 = [loss_fn(outputs_1, labels).item() for loss_fn in loss_fns]
