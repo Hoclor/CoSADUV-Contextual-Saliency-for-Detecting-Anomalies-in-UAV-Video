@@ -23,7 +23,7 @@ def main():
     from util.data_utils import get_SALICON_datasets, get_video_datasets
 
     ### Data options ###
-    dataset_root_dir = "Dataset/UAV123_LIKE_MISC"  # Dataset/[SALICON, UAV123, UAV123_LIKE_MISC]
+    dataset_root_dir = "Dataset/UAV123"  # Dataset/[SALICON, UAV123, UAV123_LIKE_MISC]
     mean_image_name = (
         "mean_image.npy"
     )  # Must be located at dataset_root_dir/mean_image_name
@@ -42,7 +42,7 @@ def main():
     ### Testing options ###
 
     # Minibatchsize: Determines how many images are processed at a time on the GPU
-    minibatchsize = 1  # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem.
+    minibatchsize = 2  # Recommended: 4 for 480x640 for >12GB mem, 2 for <12GB mem.
 
     ########## PREPARE DATASETS ##########
 
@@ -178,14 +178,15 @@ def main():
     #### Kernel size 1
     # model_names.append("CoSADUV/NSS_alt Adam 0.001lr 1frame backprop size1 kernel -2train -0.7val 1epoch/best_model_CoSADUV_NSS_alt_batch20_epoch5")
     #### Kernel size 3
-    # model_names.append(
-    #     "CoSADUV/NSS_alt Adam 0.01lr 1frame backprop size3 kernel/best_model_CoSADUV_NSS_alt_batch20_epoch5"
-    # )
+    model_names.append(
+        "CoSADUV/NSS_alt Adam 0.01lr 1frame backprop size3 kernel/best_model_CoSADUV_NSS_alt_batch20_epoch5"
+    )
+
     #### 2 Frame backpropagation
     #### Kernel size 3
-    model_names.append(
-        "CoSADUV/NSS_alt Adam 0.01lr 2frame backprop size3 kernel - 6.56 NSS_alt val/best_model_CoSADUV_NSS_alt_batch20_epoch5"
-    )
+    #model_names.append(
+    #    "CoSADUV/NSS_alt Adam 0.01lr 2frame backprop size3 kernel - 6.56 NSS_alt val/best_model_CoSADUV_NSS_alt_batch20_epoch5"
+    #)
     ### DoM loss func
     # Only very poor results achieved
     ### CE_MAE loss func
@@ -246,6 +247,11 @@ def main():
                 # Move the output to the CPU so we can process it using numpy
                 outputs = outputs.cpu().data.numpy()
 
+                # Threshold output if model is temporal
+                if model.temporal:
+                    outputs[outputs >= 0.50001] = 1
+                    outputs[outputs < 0.50001] = 0
+
                 # If outputs contains a single image, insert
                 # a singleton batchsize dimension at index 0
                 if len(outputs.shape) == 2:
@@ -287,7 +293,11 @@ def main():
         loop3 = tqdm(loop3)
 
     for i, model_name in enumerate(loop3):
-        tqdm.write("model name: {}".format(model_name))
+        if location != "ncc":
+            tqdm.write("model name: {}".format(model_name))
+        else:
+            print("model name: {}".format(model_name))
+
         if "best_model" in model_name:
             model = load_model_from_checkpoint(model_name)
         else:
@@ -295,7 +305,6 @@ def main():
 
         loss_fns = [
             loss_functions.NSS_alt,
-            loss_functions.CE_MAE_loss,
             loss_functions.CE_loss,
             loss_functions.MAE_loss,
             loss_functions.DoM,
