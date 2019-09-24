@@ -6,9 +6,9 @@ Repository for my Master's Project on the topic of "Contextual Saliency for Dete
 
 ## Architectures
 
-![Original DSCLRCN Architecture](https://github.com/Hoclor/MastersProject-CoSADUV/blob/master/images/CoSADUV.PNG "Original DSCLRCN Architecture")
+![Original DSCLRCN Architecture](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/images/CoSADUV.png "Our proposed CoSADUV architecture")
 
-The above DSCLRCN architecture ([original authors (and image source)](https://github.com/nian-liu/DSCLRCN), [re-implementation in PyTorch used for this project](https://github.com/AAshqar/DSCLRCN-PyTorch)) was used as a baseline.
+The DSCLRCN architecture ([original authors (and original image source)](https://github.com/nian-liu/DSCLRCN), [re-implementation in PyTorch used for this project](https://github.com/AAshqar/DSCLRCN-PyTorch)) was used as a baseline. Our proposed CoSADUV architecture is shown in the figure above, with changes from the DSCLRCN architecture shown with a grey background.
 
 The architecture was modified by replacing the "Conv+Softmax" with a [Convolutional-LSTM](https://github.com/ndrplz/ConvLSTM_pytorch) layer with kernel size 3x3 and a Sigmoid activation function. Additionally, several loss functions other than NSSLoss were investigated (see our [paper](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/paper.pdf) for more information). Architectures with the convolutional LSTM (CoSADUV) and without it (CoSADUV_NoTemporal, using a normal conv layer instead) are available.
 
