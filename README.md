@@ -4,7 +4,7 @@ Created and tested using Python 3.5.3, [PyTorch 0.4.0](https://pytorch.org/), an
 
 Repository for my Master's Project on the topic of "Contextual Saliency for Detecting Anomalies within Unmanned Aerial Vehicle (UAV) Video". Paper available [here](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/Contextual_Saliency_for_Detecting_Anomalies_within_Unmanned_Aerial_Vehicle_(UAV)_Video.pdf).
 
-Also code repository for our paper ["An Evaluation of Temporal and Non-Temporal Contextual Saliency Analysis for Generalized Wide-Area Search within Unmanned Aerial Vehicle Video"](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/Temporal_Contextual_Saliency_for_Wide_Area_Search_in_UAV_Video.pdf), under review for ICRA2020.
+This work and code was also used to produce a paper ["An Evaluation of Temporal and Non-Temporal Contextual Saliency Analysis for Generalized Wide-Area Search within Unmanned Aerial Vehicle Video"](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/Temporal_Contextual_Saliency_for_Wide_Area_Search_in_UAV_Video.pdf), currently under review for ICRA2020.
 
 ## Architectures
 
