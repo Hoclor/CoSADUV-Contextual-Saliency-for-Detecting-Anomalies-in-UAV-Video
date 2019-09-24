@@ -6,7 +6,7 @@ Repository for my Master's Project on the topic of "Contextual Saliency for Dete
 
 ## Architectures
 
-![Original DSCLRCN Architecture](https://github.com/Hoclor/MastersProject-CoSADUV/blob/master/images/DSCLRCN.PNG "Original DSCLRCN Architecture")
+![Original DSCLRCN Architecture](https://github.com/Hoclor/MastersProject-CoSADUV/blob/master/images/CoSADUV.PNG "Original DSCLRCN Architecture")
 
 The above DSCLRCN architecture ([original authors (and image source)](https://github.com/nian-liu/DSCLRCN), [re-implementation in PyTorch used for this project](https://github.com/AAshqar/DSCLRCN-PyTorch)) was used as a baseline.
 
