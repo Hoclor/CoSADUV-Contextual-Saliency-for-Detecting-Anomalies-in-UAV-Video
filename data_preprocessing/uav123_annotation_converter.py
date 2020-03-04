@@ -95,7 +95,7 @@ def draw_annotations(
         # Write the frame with boxes
         out.write(frame)
         # Also save the frame individually
-        cv2.imwrite(os.path.join(target_folder, frame_name[:-4] + ".png"), frame)
+        cv2.imwrite(os.path.join(target_folder, frame_name[:-4] + ".jpg"), frame)
         # Display the resulting frame
         if display:
             # Force the function to run at the framerate of the video
@@ -197,7 +197,7 @@ def draw_groundtruth(
         # Write the frame with boxes
         out.write(frame)
         # Also save the frame individually
-        cv2.imwrite(os.path.join(target_folder, frame_name[:-4] + ".png"), frame)
+        cv2.imwrite(os.path.join(target_folder, frame_name[:-4] + ".jpg"), frame)
         # Display the resulting frame
         if display:
             # Force the function to run at the framerate of the video
@@ -383,7 +383,8 @@ if __name__ == "__main__":
         dest="target_folder",
         help="Name of folder to write results to",
         required=False,
-        default="C:\\Users\\simon\\GitRepositories\\MastersProject\\DSCLRCN-PyTorch\\Dataset\\UAV123\\train",
+        
+        default="C:\\Users\\simon\\GitRepositories\\CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video\\model\\Dataset\\UAV123\\train",
     )
     parser.add_argument(
         "--length",
