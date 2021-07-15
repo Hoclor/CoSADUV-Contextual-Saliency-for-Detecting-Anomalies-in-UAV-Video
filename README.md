@@ -1,10 +1,12 @@
-# Contextual Saliency for Detecting Anomalies within Unmanned Aerial Vehicle (UAV) Video
+# Temporal and Non-Temporal Contextual Saliency Analysis for Generalized Wide-Area Search within Unmanned Aerial Vehicle (UAV) Video
 
 Created and tested using Python 3.5.3, [PyTorch 0.4.0](https://pytorch.org/), and [OpenCV 3.4.3](https://opencv.org/)
 
 Repository for my Master's Project on the topic of "Contextual Saliency for Detecting Anomalies within Unmanned Aerial Vehicle (UAV) Video". The master's thesis report is available [here](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/Contextual_Saliency_for_Detecting_Anomalies_within_Unmanned_Aerial_Vehicle_(UAV)_Video.pdf).
 
-This work and code was also used to produce a conference-style paper ["An Evaluation of Temporal and Non-Temporal Contextual Saliency Analysis for Generalized Wide-Area Search within Unmanned Aerial Vehicle Video"](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/Temporal_Contextual_Saliency_for_Wide_Area_Search_in_UAV_Video.pdf).
+This work was also accepted to be published in The Visual Computer under the title ["Temporal and Non-Temporal Contextual Saliency Analysis for
+Generalized Wide-Area Search within Unmanned Aerial Vehicle (UAV)
+Video"](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/Temporal_Contextual_Saliency_for_Wide_Area_Search_in_UAV_Video.pdf).
 
 ## Architectures
 
