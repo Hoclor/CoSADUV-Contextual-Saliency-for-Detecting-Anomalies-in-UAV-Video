@@ -4,9 +4,7 @@ Created and tested using Python 3.5.3, [PyTorch 0.4.0](https://pytorch.org/), an
 
 Repository for my Master's Project on the topic of "Contextual Saliency for Detecting Anomalies within Unmanned Aerial Vehicle (UAV) Video". The master's thesis report is available [here](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/Contextual_Saliency_for_Detecting_Anomalies_within_Unmanned_Aerial_Vehicle_(UAV)_Video.pdf).
 
-This work was also accepted to be published in The Visual Computer under the title ["Temporal and Non-Temporal Contextual Saliency Analysis for
-Generalized Wide-Area Search within Unmanned Aerial Vehicle (UAV)
-Video"](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/Temporal_Contextual_Saliency_for_Wide_Area_Search_in_UAV_Video.pdf).
+This work was also accepted to be published in The Visual Computer under the title ["Temporal and Non-Temporal Contextual Saliency Analysis for Generalized Wide-Area Search within Unmanned Aerial Vehicle (UAV) Video"](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/gokstorp2021TheVisualComputer.pdf).
 
 ## Architectures
 
@@ -42,13 +40,16 @@ Click the video above to play it. The video shows the performane of the model on
 If you make use of this work in any way, please reference the following:
 
 ```
-@MastersThesis{SimonGokstorp2019,
-    author     =     {Simon Gokstorp},
-    title     =     {{Contextual Saliency for Detecting Anomalies withing Unmanned Aerial Vehicle (UAV) Video}},
-    school     =     {Durham University},
-    address     =     {United Kingdom},
-    year     =     {2019},
-    }
+@article{gokstorp21saliency,
+ author = {Gökstorp, S. and Breckon, T.P.},
+ title = {Temporal and Non-Temporal Contextual Saliency Analysis for Generalized Wide-Area Search within Unmanned Aerial Vehicle (UAV) Video},
+ journal = {The Visual Computer},
+ year = {2021},
+ month = {December},
+ publisher = {Springer},
+ url = {https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/gokstorp2021TheVisualComputer.pdf},
+ note = {to appear},
+}
 ```
 
 If you have any questions/issues/ideas, feel free to open an issue here or contact me!
