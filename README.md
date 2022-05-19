@@ -40,16 +40,18 @@ Click the video above to play it. The video shows the performane of the model on
 If you make use of this work in any way, please reference the following:
 
 ```
-@article{gokstorp22saliency,
- author = {Gökstorp, S.G.E. and Breckon, T.P.},
- title = {Temporal and non-temporal contextual saliency analysis for generalized wide-area search within unmanned aerial vehicle (UAV) video},
- journal = {Vis. Comput.},
- volume = 38,
- pages = "2033--2040",
- year = {2022},
- publisher = {Springer},
+@article{Gokstorp_2021,
+ author = {Simon G. E. Gökstorp and Toby P. Breckon},
+ title = {Temporal and non-temporal contextual saliency analysis for generalized wide-area search within unmanned aerial vehicle ({UAV}) video},
+ journal = {The Visual Computer},
+ volume = {38},
+ number = {6},
+ pages = {2033--2040},
+ year = 2021,
+ month = {sep},
+ publisher = {Springer Science and Business Media {LLC}},
  doi = {10.1007/s00371-021-02264-6},
- url = {https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/gokstorp2021TheVisualComputer.pdf},
+ url = {https://doi.org/10.1007/s00371-021-02264-6},
 }
 ```
 
