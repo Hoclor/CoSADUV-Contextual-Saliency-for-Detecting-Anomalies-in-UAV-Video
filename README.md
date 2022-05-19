@@ -2,9 +2,9 @@
 
 Created and tested using Python 3.5.3, [PyTorch 0.4.0](https://pytorch.org/), and [OpenCV 3.4.3](https://opencv.org/)
 
-Repository for my Master's Project on the topic of "Contextual Saliency for Detecting Anomalies within Unmanned Aerial Vehicle (UAV) Video". The master's thesis report is available [here](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/Contextual_Saliency_for_Detecting_Anomalies_within_Unmanned_Aerial_Vehicle_(UAV)_Video.pdf).
+Repository for my Master's Project on the topic of "Contextual Saliency for Detecting Anomalies within Unmanned Aerial Vehicle (UAV) Video". The thesis report is available [here](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/Contextual_Saliency_for_Detecting_Anomalies_within_Unmanned_Aerial_Vehicle_(UAV)_Video.pdf).
 
-This work was also accepted to be published in The Visual Computer under the title ["Temporal and Non-Temporal Contextual Saliency Analysis for Generalized Wide-Area Search within Unmanned Aerial Vehicle (UAV) Video"](https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/gokstorp2021TheVisualComputer.pdf).
+This work was also published in The Visual Computer under the title ["Temporal and Non-Temporal Contextual Saliency Analysis for Generalized Wide-Area Search within Unmanned Aerial Vehicle (UAV) Video"](https://link.springer.com/article/10.1007/s00371-021-02264-6).
 
 ## Architectures
 
@@ -40,15 +40,16 @@ Click the video above to play it. The video shows the performane of the model on
 If you make use of this work in any way, please reference the following:
 
 ```
-@article{gokstorp21saliency,
- author = {Gökstorp, S. and Breckon, T.P.},
- title = {Temporal and Non-Temporal Contextual Saliency Analysis for Generalized Wide-Area Search within Unmanned Aerial Vehicle (UAV) Video},
- journal = {The Visual Computer},
- year = {2021},
- month = {December},
+@article{gokstorp22saliency,
+ author = {Gökstorp, S.G.E. and Breckon, T.P.},
+ title = {Temporal and non-temporal contextual saliency analysis for generalized wide-area search within unmanned aerial vehicle (UAV) video},
+ journal = {Vis. Comput.},
+ volume = 38,
+ pages = "2033--2040",
+ year = {2022},
  publisher = {Springer},
+ doi = {10.1007/s00371-021-02264-6},
  url = {https://github.com/Hoclor/CoSADUV-Contextual-Saliency-for-Detecting-Anomalies-in-UAV-Video/blob/master/gokstorp2021TheVisualComputer.pdf},
- note = {to appear},
 }
 ```
 
